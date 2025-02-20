@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../widgets/appbar/app_bar.dart';
+
 class AddPredictionPage extends StatefulWidget {
   const AddPredictionPage({Key? key}) : super(key: key);
 
@@ -10,31 +12,19 @@ class AddPredictionPage extends StatefulWidget {
 
 class _AddPredictionPageState extends State<AddPredictionPage> {
   final _formKey = GlobalKey<FormState>();
+  String? _selectedLand;
+  int? _plantedSticks;
   DateTime? _lastHarvestDate;
   DateTime? _expectedHarvestDate;
-  String? _selectedLocation;
-  double? _selectedLandSize;
-  int? _plantedSticks;
-  bool _isManualLocation = false;
-  final TextEditingController _manualLocationController = TextEditingController();
-  final TextEditingController _manualLandSizeController = TextEditingController();
-
   bool _isLoading = false;
   String _loadingMessage = '';
 
   // This should be fetched from your database
-  List<Map<String, dynamic>> _preCalculatedLocations = [
-    {'name': 'පුත්තලම', 'size': 0.5},
-    {'name': 'ආණමඩුව', 'size': 1.0},
-    {'name': 'කුරුණෑගල', 'size': 0.75},
+  List<Map<String, dynamic>> _measuredLands = [
+    {'name': 'පුත්තලම ඉඩම', 'location': 'පුත්තලම', 'size': 0.5},
+    {'name': 'ආණමඩුව කුඹුර', 'location': 'ආණමඩුව', 'size': 1.0},
+    {'name': 'කුරුණෑගල වත්ත', 'location': 'කුරුණෑගල', 'size': 0.75},
   ];
-
-  @override
-  void dispose() {
-    _manualLocationController.dispose();
-    _manualLandSizeController.dispose();
-    super.dispose();
-  }
 
   Future<void> _selectDate(BuildContext context, bool isLastHarvest) async {
     final DateTime? picked = await showDatePicker(
@@ -56,7 +46,7 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
   }
 
   Future<Map<String, dynamic>> _fetchWeatherData() async {
-    if (_selectedLocation == null || _lastHarvestDate == null || _expectedHarvestDate == null) {
+    if (_selectedLand == null || _lastHarvestDate == null || _expectedHarvestDate == null) {
       throw Exception('ස්ථානය සහ දින තෝරා ගත යුතුය');
     }
 
@@ -96,16 +86,19 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
       });
       await Future.delayed(Duration(seconds: 2));
 
+      final selectedLandData = _measuredLands.firstWhere((land) => land['name'] == _selectedLand);
+
       final predictionData = {
-        'Last Harvest Date': [DateFormat('yyyy/MM/dd').format(_lastHarvestDate!)],
-        'Expected Harvest Date': [DateFormat('yyyy/MM/dd').format(_expectedHarvestDate!)],
-        'Days Since Last Harvest': [_expectedHarvestDate!.difference(_lastHarvestDate!).inDays],
-        'Location': [_isManualLocation ? _manualLocationController.text : _selectedLocation],
-        'Land Size (acres)': [_isManualLocation ? double.parse(_manualLandSizeController.text) : _selectedLandSize],
-        'Planted Sticks': [_plantedSticks],
-        'Rainfall Seq (mm)': [weatherData['rainfall']],
-        'Min Temp Seq (°C)': [weatherData['min_temp']],
-        'Max Temp Seq (°C)': [weatherData['max_temp']],
+        'Land Name': _selectedLand,
+        'Location': selectedLandData['location'],
+        'Land Size (acres)': selectedLandData['size'],
+        'Planted Sticks': _plantedSticks,
+        'Last Harvest Date': DateFormat('yyyy/MM/dd').format(_lastHarvestDate!),
+        'Expected Harvest Date': DateFormat('yyyy/MM/dd').format(_expectedHarvestDate!),
+        'Days Until Harvest': _expectedHarvestDate!.difference(_lastHarvestDate!).inDays,
+        'Rainfall Seq (mm)': weatherData['rainfall'],
+        'Min Temp Seq (°C)': weatherData['min_temp'],
+        'Max Temp Seq (°C)': weatherData['max_temp'],
       };
 
       // TODO: Send predictionData to your backend or process it as needed
@@ -124,8 +117,8 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('අස්වැන්න පුරෝකථනය එකතු කරන්න'),
+      appBar: const BasicAppbar(
+        title: 'අස්වැන්න පුරෝකථනය',
       ),
       body: Stack(
         children: [
@@ -136,6 +129,55 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text(
+                    'ඉඩම තෝරන්න:',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(labelText: 'මැනපු ඉඩම්'),
+                    value: _selectedLand,
+                    items: _measuredLands.map((land) {
+                      return DropdownMenuItem<String>(
+                        value: land['name'] as String,
+                        child: Text('${land['name']} (${land['size']} අක්කර)'),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedLand = newValue;
+                      });
+                    },
+                    validator: (value) => value == null ? 'කරුණාකර ඉඩමක් තෝරන්න' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        // TODO: Navigate to the land measurement page
+                        Navigator.pop(context); // This is a placeholder, replace with actual navigation
+                      },
+                      child: Text('අලුත් ඉඩමක් මනින්න' , style: TextStyle(color: Colors.green[700])),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: 'රෝපණය කළ දඬු ගණන'),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'කරුණාකර රෝපණය කළ දඬු ගණන ඇතුළත් කරන්න';
+                      }
+                      if (int.tryParse(value) == null) {
+                        return 'කරුණාකර වලංගු අගයක් ඇතුළත් කරන්න';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      _plantedSticks = int.parse(value!);
+                    },
+                  ),
+                  const SizedBox(height: 16),
                   ListTile(
                     title: const Text('අවසන් අස්වනු දිනය'),
                     subtitle: Text(_lastHarvestDate == null
@@ -154,100 +196,27 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
                         ? null
                         : () => _selectDate(context, false),
                   ),
-                  SwitchListTile(
-                    title: const Text('අලුත් ස්ථානයක් එකතු කරන්න'),
-                    value: _isManualLocation,
-                    onChanged: (bool value) {
-                      setState(() {
-                        _isManualLocation = value;
-                        if (!value) {
-                          _selectedLocation = null;
-                          _selectedLandSize = null;
-                        }
-                      });
-                    },
-                  ),
-                  if (!_isManualLocation)
-                    DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(labelText: 'ස්ථානය'),
-                      value: _selectedLocation,
-                      items: _preCalculatedLocations.map((location) {
-                        return DropdownMenuItem<String>(
-                          value: location['name'] as String,
-                          child: Text('${location['name']} (${location['size']} අක්කර)'),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedLocation = newValue;
-                          _selectedLandSize = _preCalculatedLocations
-                              .firstWhere((loc) => loc['name'] == newValue)['size'] as double;
-                        });
-                      },
-                      validator: (value) => value == null ? 'කරුණාකර ස්ථානයක් තෝරන්න' : null,
-                    )
-                  else
-                    Column(
-                      children: [
-                        TextFormField(
-                          controller: _manualLocationController,
-                          decoration: const InputDecoration(labelText: 'ස්ථානය'),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'කරුණාකර ස්ථානය ඇතුළත් කරන්න';
-                            }
-                            return null;
-                          },
-                        ),
-                        TextFormField(
-                          controller: _manualLandSizeController,
-                          decoration: const InputDecoration(labelText: 'ඉඩම් ප්‍රමාණය (අක්කර)'),
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'කරුණාකර ඉඩම් ප්‍රමාණය ඇතුළත් කරන්න';
-                            }
-                            if (double.tryParse(value) == null) {
-                              return 'කරුණාකර වලංගු අගයක් ඇතුළත් කරන්න';
-                            }
-                            return null;
-                          },
-                        ),
-                      ],
-                    ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'රෝපණය කළ දඬු ගණන'),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'කරුණාකර රෝපණය කළ දඬු ගණන ඇතුළත් කරන්න';
-                      }
-                      if (int.tryParse(value) == null) {
-                        return 'කරුණාකර වලංගු අගයක් ඇතුළත් කරන්න';
-                      }
-                      return null;
-                    },
-                    onSaved: (value) {
-                      _plantedSticks = int.parse(value!);
-                    },
-                  ),
-                  const SizedBox(height: 24),
                   Center(
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _submitForm,
-                      child: const Text('ඉදිරිපත් කරන්න'),
+                      child: Text('ඉදිරිපත් කරන්න' , style: TextStyle(color: Colors.green[700])),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        // TODO: Navigate to the land measurement page
-                        Navigator.pop(context); // This is a placeholder, replace with actual navigation
-                      },
-                      child: const Text('ඉඩම් මැනීමට ආපසු යන්න'),
-                    ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'මෙම පුරෝකථනය තෝරාගත් ස්ථානයේ සහ දත්ත කාල සීමාවේ කාලගුණ තත්වයන් මත පදනම්ව අනුමාන දත්ත වේ.',
+                          style: TextStyle(color: Colors.blue , fontSize: 10),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
