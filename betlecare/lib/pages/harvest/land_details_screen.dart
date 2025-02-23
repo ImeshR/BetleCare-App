@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
+import '../../services/supabase_service.dart';
 import '../../widgets/appbar/app_bar.dart';
 
 class LandDetailsScreen extends StatefulWidget {
@@ -10,27 +12,58 @@ class LandDetailsScreen extends StatefulWidget {
 }
 
 class _LandDetailsScreenState extends State<LandDetailsScreen> {
-  List<Map<String, dynamic>> _lands = [
-    {'name': 'මහවැලි ඉඩම', 'size': '2.5 අක්කර', 'location': 'අනුරාධපුරය'},
-    {'name': 'කුඹුර', 'size': '1.75 අක්කර', 'location': 'පොලොන්නරුව'},
-    {'name': 'ගෙවත්ත', 'size': '20 පර්චස්', 'location': 'කුරුණෑගල'},
-    // Add more sample data as needed
-  ];
-
+  List<Map<String, dynamic>> _lands = [];
   List<Map<String, dynamic>> _filteredLands = [];
+  bool _isLoading = true;
+  late SupabaseService _supabaseService;
 
   @override
   void initState() {
-    _filteredLands = _lands;
     super.initState();
+    _initializeSupabaseService();
+  }
+
+  Future<void> _initializeSupabaseService() async {
+    _supabaseService = await SupabaseService.init();
+    _fetchLands();
+  }
+
+  Future<void> _fetchLands() async {
+    setState(() => _isLoading = true);
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final userId = userProvider.user?.id;
+
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+
+      final response = await _supabaseService.read('land_size',
+          column: 'user_id', value: userId);
+
+      setState(() {
+        _lands = response;
+        _filteredLands = _lands;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching lands: $e');
+      setState(() => _isLoading = false);
+    }
   }
 
   void _filterLands(String query) {
     setState(() {
       _filteredLands = _lands
           .where((land) =>
-      land['name'].toLowerCase().contains(query.toLowerCase()) ||
-          land['location'].toLowerCase().contains(query.toLowerCase()))
+              land['name']
+                  .toString()
+                  .toLowerCase()
+                  .contains(query.toLowerCase()) ||
+              land['location']
+                  .toString()
+                  .toLowerCase()
+                  .contains(query.toLowerCase()))
           .toList();
     });
   }
@@ -46,7 +79,7 @@ class _LandDetailsScreenState extends State<LandDetailsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('ස්ථානය: ${land['location']}'),
-              Text('ප්‍රමාණය: ${land['size']}'),
+              Text('ප්‍රමාණය: ${land['size']} අක්කර'),
             ],
           ),
           actions: [
@@ -69,68 +102,84 @@ class _LandDetailsScreenState extends State<LandDetailsScreen> {
     );
   }
 
-  void _deleteLand(Map<String, dynamic> land) {
-    setState(() {
-      _lands.remove(land);
-      _filteredLands = List.from(_lands);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${land['name']} ඉවත් කරන ලදී')),
-    );
+  Future<void> _deleteLand(Map<String, dynamic> land) async {
+    try {
+      await _supabaseService.delete('land_size', 'id', land['id']);
+
+      setState(() {
+        _lands.remove(land);
+        _filteredLands = List.from(_lands);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${land['name']} ඉවත් කරන ලදී')),
+      );
+    } catch (e) {
+      print('Error deleting land: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete land: ${e.toString()}')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: BasicAppbar(title: 'ඉඩම් විස්තර'),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              onChanged: _filterLands,
-              decoration: InputDecoration(
-                labelText: 'සොයන්න',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _filteredLands.length,
-              itemBuilder: (context, index) {
-                final land = _filteredLands[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: Colors.green,
-                      child: Icon(Icons.landscape, color: Colors.white),
-                    ),
-                    title: Text(land['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('${land['location']} | ${land['size']}'),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.info_outline),
-                      onPressed: () => _showLandDetails(context, land),
+      // appBar: BasicAppbar(title: 'ඉඩම් විස්තර'),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    onChanged: _filterLands,
+                    decoration: InputDecoration(
+                      labelText: 'සොයන්න',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
-                );
-              },
+                ),
+                Expanded(
+                  child: _filteredLands.isEmpty
+                      ? Center(
+                          child: Text(
+                            'දත්ත නොමැත',
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: _filteredLands.length,
+                          itemBuilder: (context, index) {
+                            final land = _filteredLands[index];
+                            return Card(
+                              margin: const EdgeInsets.symmetric(
+                                  vertical: 8, horizontal: 16),
+                              child: ListTile(
+                                leading: const CircleAvatar(
+                                  backgroundColor: Colors.green,
+                                  child: Icon(Icons.landscape,
+                                      color: Colors.white),
+                                ),
+                                title: Text(land['name'],
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold)),
+                                subtitle: Text(
+                                    '${land['location']} | ${land['size']} අක්කර'),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.info_outline),
+                                  onPressed: () =>
+                                      _showLandDetails(context, land),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Implement add new land functionality
-        },
-        child: const Icon(Icons.add),
-        backgroundColor: Colors.green,
-      ),
     );
   }
 }
-

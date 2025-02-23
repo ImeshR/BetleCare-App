@@ -1,11 +1,14 @@
-import 'package:betlecare/widgets/appbar/app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
+import 'package:betlecare/services/supabase_service.dart';
+import 'package:betlecare/widgets/appbar/app_bar.dart';
+import 'package:provider/provider.dart';
+import 'package:betlecare/providers/user_provider.dart';
 
 class LandMeasurementScreen extends StatefulWidget {
-  const LandMeasurementScreen({super.key});
+  const LandMeasurementScreen({Key? key}) : super(key: key);
 
   @override
   _LandMeasurementScreenState createState() => _LandMeasurementScreenState();
@@ -47,7 +50,9 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ස්ථාන සේවා අක්රිය කර ඇත. කරුණාකර සේවාවන් සක්රිය කරන්න')),
+        const SnackBar(
+            content:
+                Text('ස්ථාන සේවා අක්රිය කර ඇත. කරුණාකර සේවාවන් සක්රිය කරන්න')),
       );
       return;
     }
@@ -65,7 +70,9 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
 
     if (permission == LocationPermission.deniedForever) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ස්ථාන අවසර ස්ථිරවම ප්රතික්ෂේප කර ඇත, අපට අවසර ඉල්ලීමට නොහැක.')),
+        const SnackBar(
+            content: Text(
+                'ස්ථාන අවසර ස්ථිරවම ප්රතික්ෂේප කර ඇත, අපට අවසර ඉල්ලීමට නොහැක.')),
       );
       return;
     }
@@ -76,7 +83,9 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
     } catch (e) {
       print("වත්මන් ස්ථානය ලබා ගැනීමේ දෝෂයක්: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('වත්මන් ස්ථානය ලබා ගැනීමට අසමත් විය. කරුණාකර නැවත උත්සාහ කරන්න.')),
+        const SnackBar(
+            content: Text(
+                'වත්මන් ස්ථානය ලබා ගැනීමට අසමත් විය. කරුණාකර නැවත උත්සාහ කරන්න.')),
       );
     }
   }
@@ -150,7 +159,9 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
   void _calculateArea() {
     if (_polygonPoints.length < 3) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('වර්ගඵලය ගණනය කිරීමට ප්රමාණවත් ලක්ෂ නැත. කරුණාකර සම්පූර්ණ ඉඩම වටා ඇවිදින්න.')),
+        const SnackBar(
+            content: Text(
+                'වර්ගඵලය ගණනය කිරීමට ප්රමාණවත් ලක්ෂ නැත. කරුණාකර සම්පූර්ණ ඉඩම වටා ඇවිදින්න.')),
       );
       return;
     }
@@ -158,8 +169,8 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
     double area = 0;
     for (int i = 0; i < _polygonPoints.length; i++) {
       int j = (i + 1) % _polygonPoints.length;
-      area += (_polygonPoints[i].latitude * _polygonPoints[j].longitude) -
-          (_polygonPoints[j].latitude * _polygonPoints[i].longitude);
+      area += _polygonPoints[i].latitude * _polygonPoints[j].longitude -
+          _polygonPoints[j].latitude * _polygonPoints[i].longitude;
     }
     area = (area.abs() * 111319.9 * 111319.9) / 2;
     double areaInAcres = area * 0.000247105;
@@ -169,6 +180,63 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
     });
 
     _showSaveModal();
+  }
+
+  Future<void> _saveLandMeasurement() async {
+    if (_area == null || _polygonPoints.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('වලංගු මිනුමක් නොමැත. කරුණාකර නැවත මනින්න.')),
+      );
+      return;
+    }
+
+    try {
+      final supabaseService = await SupabaseService.init();
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final userId = userProvider.user?.id;
+
+      if (userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('පරිශීලක හඳුනාගත නොහැක. කරුණාකර නැවත පුරනය වන්න.')),
+        );
+        return;
+      }
+
+      final landData = {
+        'user_id': userId,
+        'name': _nameController.text,
+        'location': _locationController.text,
+        'area': _area,
+        'coordinates': _polygonPoints
+            .map((point) => [point.latitude, point.longitude])
+            .toList(),
+      };
+
+      final result = await supabaseService.create("land_size", landData);
+      print("Saved land measurement: $result");
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ඉඩම් මැනුම සාර්ථකව සුරකින ලදී')),
+      );
+
+      setState(() {
+        _nameController.clear();
+        _locationController.clear();
+        _polygonPoints.clear();
+        _polygons.clear();
+        _polylines.clear();
+        _area = null;
+      });
+
+      Navigator.of(context).pop();
+    } catch (e) {
+      print("Error saving land measurement: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ඉඩම් මැනුම සුරැකීමේ දෝෂයක්.')),
+      );
+    }
   }
 
   void _showSaveModal() {
@@ -203,22 +271,12 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
           ),
           actions: [
             TextButton(
-              child: const Text('අවලංගු කරන්න'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              child: const Text("අවලංගු කරන්න"),
+              onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
-              child: const Text('සුරකින්න'),
-              onPressed: () {
-                // TODO: Implement saving logic
-                print('ඉඩමේ නම: ${_nameController.text}');
-                print('ස්ථානය: ${_locationController.text}');
-                print('වර්ගඵලය: ${_area!.toStringAsFixed(2)} අක්කර');
-                Navigator.of(context).pop();
-                // Optionally, navigate back to the land details screen
-                // Navigator.of(context).pop();
-              },
+              child: const Text("සුරකින්න"),
+              onPressed: () => _saveLandMeasurement(),
             ),
           ],
         );
@@ -229,7 +287,7 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const BasicAppbar(),
+      // appBar: const BasicAppbar(),
       body: Stack(
         children: [
           GoogleMap(
@@ -253,7 +311,8 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
                     'ගණනය කළ වර්ගඵලය: ${_area!.toStringAsFixed(2)} අක්කර',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -267,7 +326,8 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
           children: [
             FloatingActionButton(
               onPressed: _isRecording ? _stopRecording : _startRecording,
-              backgroundColor: (_isRecording ? Colors.red[100]! : Colors.green[100]!),
+              backgroundColor:
+                  (_isRecording ? Colors.red[100]! : Colors.green[100]!),
               heroTag: 'recordToggle',
               child: Icon(_isRecording ? Icons.stop : Icons.play_arrow),
               tooltip: _isRecording ? 'නවත්වන්න' : 'ආරම්භ කරන්න',
@@ -279,7 +339,7 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
                 backgroundColor: Colors.orange[100]!,
                 heroTag: 'save',
                 child: const Icon(Icons.save),
-                tooltip: 'සුරකින්න',
+                tooltip: 'සුරකින',
               ),
           ],
         ),

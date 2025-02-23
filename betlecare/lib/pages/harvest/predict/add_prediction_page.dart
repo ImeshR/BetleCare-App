@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../widgets/appbar/app_bar.dart';
+import 'package:betlecare/services/index.dart';
 
 class AddPredictionPage extends StatefulWidget {
   const AddPredictionPage({Key? key}) : super(key: key);
@@ -16,15 +15,25 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
   int? _plantedSticks;
   DateTime? _lastHarvestDate;
   DateTime? _expectedHarvestDate;
+  double? _landSize;
+  String? _soilType;
   bool _isLoading = false;
   String _loadingMessage = '';
 
+  final TextEditingController _landSizeController = TextEditingController();
+
   // This should be fetched from your database
   List<Map<String, dynamic>> _measuredLands = [
-    {'name': 'පුත්තලම ඉඩම', 'location': 'පුත්තලම', 'size': 0.5},
-    {'name': 'ආණමඩුව කුඹුර', 'location': 'ආණමඩුව', 'size': 1.0},
-    {'name': 'කුරුණෑගල වත්ත', 'location': 'කුරුණෑගල', 'size': 0.75},
+    {'name': 'පුත්තලම ඉඩම', 'location': 'Puttalam', 'size': 0.5, 'latitude': 8.0362, 'longitude': 79.8395},
+    {'name': 'ආණමඩුව කුඹුර', 'location': 'Anamaduwa', 'size': 1.0, 'latitude': 7.8731, 'longitude': 80.7718},
+    {'name': 'කුරුණෑගල වත්ත', 'location': 'Kurunegala', 'size': 0.75, 'latitude': 7.4818, 'longitude': 80.3609},
   ];
+
+  @override
+  void dispose() {
+    _landSizeController.dispose();
+    super.dispose();
+  }
 
   Future<void> _selectDate(BuildContext context, bool isLastHarvest) async {
     final DateTime? picked = await showDatePicker(
@@ -50,15 +59,34 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
       throw Exception('ස්ථානය සහ දින තෝරා ගත යුතුය');
     }
 
-    // Simulating API call to your weather data service
-    await Future.delayed(Duration(seconds: 2));
+    final selectedLandData = _measuredLands.firstWhere((land) => land['name'] == _selectedLand);
+    final latitude = selectedLandData['latitude'] as double;
+    final longitude = selectedLandData['longitude'] as double;
 
-    // This is a mock response. Replace this with actual API call to your weather service
-    return {
-      'rainfall': [0.0, 0.0, 0.0, 10.3, 11.0, 15.2, 0.0],
-      'min_temp': [24.0, 24.3, 25.0, 24.0, 24.0, 24.9, 25.8],
-      'max_temp': [33.5, 34.4, 35.5, 33.5, 33.0, 34.0, 35.4],
-    };
+    try {
+      return await WeatherService.fetchWeatherData(
+        latitude,
+        longitude,
+        _lastHarvestDate!,
+        _expectedHarvestDate!,
+      );
+    } catch (e) {
+      print('Error fetching weather data: $e');
+      // Return mock data in case of an error
+      return {
+        'rainfall': [0.0, 0.0, 0.0, 10.3, 11.0, 15.2, 0.0],
+        'min_temp': [24.0, 24.3, 25.0, 24.0, 24.0, 24.9, 25.8],
+        'max_temp': [33.5, 34.4, 35.5, 33.5, 33.0, 34.0, 35.4],
+      };
+    }
+  }
+
+  String _analyzeSoilType() {
+    if (_selectedLand == null) {
+      return 'Unknown Soil Type';
+    }
+    final selectedLandData = _measuredLands.firstWhere((land) => land['name'] == _selectedLand);
+    return SoilService.analyzeSoilType(selectedLandData['location'] as String);
   }
 
   Future<void> _submitForm() async {
@@ -69,6 +97,7 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
         _isLoading = true;
         _loadingMessage = 'පස වර්ගය විශ්ලේෂණය කරමින්...';
       });
+      _soilType = _analyzeSoilType();
       await Future.delayed(Duration(seconds: 2));
 
       setState(() {
@@ -91,7 +120,8 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
       final predictionData = {
         'Land Name': _selectedLand,
         'Location': selectedLandData['location'],
-        'Land Size (acres)': selectedLandData['size'],
+        'Land Size (acres)': _landSize,
+        'Soil Type': _soilType,
         'Planted Sticks': _plantedSticks,
         'Last Harvest Date': DateFormat('yyyy/MM/dd').format(_lastHarvestDate!),
         'Expected Harvest Date': DateFormat('yyyy/MM/dd').format(_expectedHarvestDate!),
@@ -117,8 +147,8 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const BasicAppbar(
-        title: 'අස්වැන්න පුරෝකථනය',
+      appBar: AppBar(
+        title: const Text('අස්වැන්න පුරෝකථනය එකතු කරන්න'),
       ),
       body: Stack(
         children: [
@@ -146,6 +176,11 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
                     onChanged: (String? newValue) {
                       setState(() {
                         _selectedLand = newValue;
+                        if (newValue != null) {
+                          var selectedLand = _measuredLands.firstWhere((land) => land['name'] == newValue);
+                          _landSizeController.text = selectedLand['size'].toString();
+                          _landSize = selectedLand['size'];
+                        }
                       });
                     },
                     validator: (value) => value == null ? 'කරුණාකර ඉඩමක් තෝරන්න' : null,
@@ -157,10 +192,10 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
                         // TODO: Navigate to the land measurement page
                         Navigator.pop(context); // This is a placeholder, replace with actual navigation
                       },
-                      child: Text('අලුත් ඉඩමක් මනින්න' , style: TextStyle(color: Colors.green[700])),
+                      child: const Text('අලුත් ඉඩමක් මනින්න'),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 24),
                   TextFormField(
                     decoration: const InputDecoration(labelText: 'රෝපණය කළ දඬු ගණන'),
                     keyboardType: TextInputType.number,
@@ -177,7 +212,7 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
                       _plantedSticks = int.parse(value!);
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   ListTile(
                     title: const Text('අවසන් අස්වනු දිනය'),
                     subtitle: Text(_lastHarvestDate == null
@@ -196,27 +231,30 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
                         ? null
                         : () => _selectDate(context, false),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
+                  TextFormField(
+                    controller: _landSizeController,
+                    decoration: const InputDecoration(labelText: 'ඉඩම් ප්‍රමාණය (අක්කර)'),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'කරුණාකර ඉඩම් ප්‍රමාණය ඇතුළත් කරන්න';
+                      }
+                      if (double.tryParse(value) == null) {
+                        return 'කරුණාකර වලංගු අගයක් ඇතුළත් කරන්න';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      _landSize = double.parse(value!);
+                    },
+                  ),
+                  const SizedBox(height: 24),
                   Center(
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _submitForm,
-                      child: Text('ඉදිරිපත් කරන්න' , style: TextStyle(color: Colors.green[700])),
+                      child: const Text('ඉදිරිපත් කරන්න'),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.blue),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'මෙම පුරෝකථනය තෝරාගත් ස්ථානයේ සහ දත්ත කාල සීමාවේ කාලගුණ තත්වයන් මත පදනම්ව අනුමාන දත්ත වේ.',
-                          style: TextStyle(color: Colors.blue , fontSize: 10),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),

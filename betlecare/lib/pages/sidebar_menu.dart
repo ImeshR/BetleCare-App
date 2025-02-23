@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:line_icons/line_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
 import '../supabase_client.dart';
+import '../providers/user_provider.dart';
 
 class SidebarMenu extends StatelessWidget {
   final Function(int) onTabChange;
@@ -12,6 +14,7 @@ class SidebarMenu extends StatelessWidget {
     try {
       final supabase = await SupabaseClientManager.instance;
       await supabase.client.auth.signOut();
+      Provider.of<UserProvider>(context, listen: false).clearUser();
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -22,6 +25,10 @@ class SidebarMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final user = userProvider.user;
+    final userData = userProvider.userData;
+
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
@@ -33,21 +40,29 @@ class SidebarMenu extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 30,
-                    backgroundImage: AssetImage('assets/images/profile.png'),
+                    backgroundImage: user?.userMetadata?['avatar_url'] != null
+                        ? NetworkImage(user!.userMetadata!['avatar_url'])
+                        : const AssetImage('assets/images/profile.png')
+                            as ImageProvider,
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'Eshan',
-                    style: TextStyle(
+                  Text(
+                    (user?.userMetadata?['full_name'] ??
+                            user?.userMetadata?['first_name'] ??
+                            'Guest')
+                        .toString()
+                        .replaceFirstMapped(RegExp(r'^[a-z]'),
+                            (match) => match.group(0)!.toUpperCase()),
+                    style: const TextStyle(
                       color: Colors.black,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const Text(
-                    'eshan@example.com',
+                  Text(
+                    user?.email ?? 'No email',
                     style: TextStyle(
                       color: Colors.black54,
                       fontSize: 14,

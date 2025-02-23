@@ -1,12 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:line_icons/line_icons.dart';
 import 'package:badges/badges.dart' as badges;
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final user = userProvider.user;
+
+    // Print user data to console
+    print('User: ${user?.toJson()}');
+
+    // Get current time of the user in the local time zone
+    final currentHour = DateTime.now().hour;
+
+    // Determine the greeting based on the time of day
+    String greeting = '';
+    if (currentHour < 12) {
+      greeting = 'සුභ උදෑසනක්'; // Good morning
+    } else if (currentHour < 17) {
+      greeting = 'සුභ දවසක්'; // Good afternoon
+    } else {
+      greeting = 'සුභ සන්ධ්‍යාවක්'; // Good evening
+    }
+
     return Container(
       padding: const EdgeInsets.all(16.0),
       color: Colors.white,
@@ -23,7 +44,10 @@ class ProfileHeader extends StatelessWidget {
                     child: CircleAvatar(
                       radius: 24,
                       backgroundColor: Colors.grey[200],
-                      backgroundImage: const AssetImage('assets/images/profile.png'),
+                      backgroundImage: user?.userMetadata?['avatar_url'] != null
+                          ? NetworkImage(user!.userMetadata!['avatar_url'])
+                          : const AssetImage('assets/images/profile.png')
+                              as ImageProvider,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -35,7 +59,7 @@ class ProfileHeader extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            'සුභ උදෑසනක්',
+                            greeting,
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey[800],
@@ -51,9 +75,14 @@ class ProfileHeader extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       // Name
-                      const Text(
-                        'Eshan',
-                        style: TextStyle(
+                      Text(
+                        (user?.userMetadata?['full_name'] ??
+                                user?.userMetadata?['first_name'] ??
+                                'Guest')
+                            .toString()
+                            .replaceFirstMapped(RegExp(r'^[a-z]'),
+                                (match) => match.group(0)!.toUpperCase()),
+                        style: const TextStyle(
                           fontSize: 14,
                           color: Colors.black87,
                         ),
@@ -66,11 +95,6 @@ class ProfileHeader extends StatelessWidget {
             // Action buttons
             Row(
               children: [
-                // Search icon
-                IconButton(
-                  icon: const Icon(LineIcons.search, color: Colors.black87),
-                  onPressed: () {},
-                ),
                 badges.Badge(
                   position: badges.BadgePosition.topEnd(top: -10, end: 0),
                   badgeContent: const Text(
@@ -105,4 +129,3 @@ class ProfileHeader extends StatelessWidget {
     );
   }
 }
-

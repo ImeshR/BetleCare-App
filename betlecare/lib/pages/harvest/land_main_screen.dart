@@ -12,7 +12,7 @@ class LandMainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const BasicAppbar(),
+      // appBar: const BasicAppbar(),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -28,7 +28,8 @@ class LandMainScreen extends StatelessWidget {
                       gradient: LinearGradient(
                         colors: [Colors.blue.shade50, Colors.blue.shade100],
                       ),
-                      onTap: () => _navigateTo(context, const ManualLandMeasurementPage()),
+                      onTap: () => _navigateTo(
+                          context, const ManualLandMeasurementPage()),
                     ),
                     const SizedBox(height: 16),
                     _buildCard(
@@ -38,7 +39,8 @@ class LandMainScreen extends StatelessWidget {
                       gradient: LinearGradient(
                         colors: [Colors.purple.shade50, Colors.purple.shade100],
                       ),
-                      onTap: () => _navigateTo(context, const LandMeasurementScreen()),
+                      onTap: () =>
+                          _navigateTo(context, const LandMeasurementScreen()),
                     ),
                     const SizedBox(height: 16),
                     _buildCard(
@@ -48,7 +50,8 @@ class LandMainScreen extends StatelessWidget {
                       gradient: LinearGradient(
                         colors: [Colors.green.shade50, Colors.green.shade100],
                       ),
-                      onTap: () => _navigateTo(context, const LandDetailsScreen()),
+                      onTap: () =>
+                          _navigateTo(context, const LandDetailsScreen()),
                     ),
                   ],
                 ),
