@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:line_icons/line_icons.dart';
 import '../../services/weather_services2.dart';
-import '../../widgets/weather//location_dropdown.dart';
+import '../../widgets/weather/location_dropdown.dart';
 
 class WeatherScreen2 extends StatefulWidget {
   const WeatherScreen2({super.key});
@@ -62,7 +62,7 @@ class _WeatherScreen2State extends State<WeatherScreen2> {
                         forecast['weather'],
                         forecast['maxTemp'],
                         forecast['minTemp'],
-                        forecast['rainChance'],
+                        forecast['rainfall'],
                         forecast['humidity'],
                       )),
               ],
@@ -97,6 +97,13 @@ class _WeatherScreen2State extends State<WeatherScreen2> {
   }
 
   Widget _buildHeaderCard() {
+    // Display current location name if selected
+    String headerText = 'සති අන්ත කාලගුණ අනාවැකිය';
+    if (selectedLocation == 'වත්මන් ස්ථානය (Current Location)' && 
+        _weatherService.currentLocationName != 'වත්මන් ස්ථානය (Current Location)') {
+      headerText = '${_weatherService.currentLocationName} - සති අන්ත කාලගුණ අනාවැකිය';
+    }
+    
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -115,9 +122,9 @@ class _WeatherScreen2State extends State<WeatherScreen2> {
           ),
         ],
       ),
-      child: const Text(
-        'සති අන්ත කාලගුණ අනාවැකිය',
-        style: TextStyle(
+      child: Text(
+        headerText,
+        style: const TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: Colors.white,
@@ -126,7 +133,7 @@ class _WeatherScreen2State extends State<WeatherScreen2> {
     );
   }
 
-  Widget _buildDailyForecastCard(String day, String weather, int maxTemp, int minTemp, int rainChance, int humidity) {
+  Widget _buildDailyForecastCard(String day, String weather, int maxTemp, int minTemp, dynamic rainfall, int humidity) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -175,7 +182,7 @@ class _WeatherScreen2State extends State<WeatherScreen2> {
               _buildWeatherInfo(
                 icon: LineIcons.umbrella,
                 label: 'වර්ෂාව',
-                value: '$rainChance%',
+                value: '${rainfall.toStringAsFixed(1)} mm',
                 color: Colors.grey.shade600,
               ),
               _buildWeatherInfo(

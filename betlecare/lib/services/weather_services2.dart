@@ -1,6 +1,7 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 class WeatherService {
   final Map<String, Map<String, double>> locations = {
@@ -13,6 +14,9 @@ class WeatherService {
     'පානදුර (Panadura)': {'lat': 6.7130, 'lon': 79.9073},
   };
 
+  // Added locationName to store the actual location name when using current location
+  String currentLocationName = 'වත්මන් ස්ථානය (Current Location)';
+
   Future<Map<String, dynamic>?> fetchWeatherData(String location) async {
     try {
       Map<String, double> coordinates;
@@ -23,6 +27,9 @@ class WeatherService {
         coordinates = {'lat': position.latitude, 'lon': position.longitude};
         // Update the stored coordinates for current location
         locations[location] = coordinates;
+        
+        // Get the name of the current location using reverse geocoding
+        await _updateCurrentLocationName(position);
       } else {
         coordinates = locations[location]!;
       }
@@ -39,6 +46,30 @@ class WeatherService {
     } catch (e) {
       print('Error fetching weather data: $e');
       return null;
+    }
+  }
+  
+  // Method to get current location name using reverse geocoding
+  Future<void> _updateCurrentLocationName(Position position) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude
+      );
+      
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        // Update current location name with actual location
+        String locality = place.locality ?? '';
+        String subLocality = place.subLocality ?? '';
+        String name = locality.isNotEmpty ? locality : subLocality;
+        
+        if (name.isNotEmpty) {
+          currentLocationName = '$name (Current Location)';
+        }
+      }
+    } catch (e) {
+      print('Error getting location name: $e');
     }
   }
   
@@ -104,7 +135,7 @@ class WeatherService {
         'weather': getWeatherType(weatherData['daily']['weather_code'][i]),
         'maxTemp': weatherData['daily']['temperature_2m_max'][i].round(),
         'minTemp': weatherData['daily']['temperature_2m_min'][i].round(),
-        'rainChance': weatherData['daily']['precipitation_probability_max'][i] ?? 0,
+        'rainfall': weatherData['daily']['precipitation_sum'][i] ?? 0.0, // Explicitly treat as double
         'humidity': weatherData['daily']['relative_humidity_2m_max'][i].round(),
       });
     }
