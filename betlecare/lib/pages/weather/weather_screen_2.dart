@@ -1,8 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:line_icons/line_icons.dart';
+import '../../services/weather_services2.dart';
+import '../../widgets/weather//location_dropdown.dart';
 
-class WeatherScreen2 extends StatelessWidget {
+class WeatherScreen2 extends StatefulWidget {
   const WeatherScreen2({super.key});
+
+  @override
+  State<WeatherScreen2> createState() => _WeatherScreen2State();
+}
+
+class _WeatherScreen2State extends State<WeatherScreen2> {
+  final WeatherService _weatherService = WeatherService();
+  String selectedLocation = 'වත්මන් ස්ථානය (Current Location)';
+  Map<String, dynamic>? weatherData;
+  bool isLoading = false;
+  List<Map<String, dynamic>> dailyForecast = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchWeatherData();
+  }
+
+  Future<void> fetchWeatherData() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final data = await _weatherService.fetchWeatherData(selectedLocation);
+      setState(() {
+        weatherData = data;
+        if (data != null) {
+          dailyForecast = _weatherService.prepareDailyForecast(data);
+        }
+      });
+    } catch (e) {
+      print('Error in weather screen: $e');
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -10,23 +51,48 @@ class WeatherScreen2 extends StatelessWidget {
       color: const Color(0xFFE3F2FD),
       child: Column(
         children: [
-          _buildHeaderCard(),
+          _buildLocationDropdown(),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.all(16),
               children: [
-                _buildDailyForecastCard("සඳුදා", "sunny", 28, 22, 20, 65),
-                _buildDailyForecastCard("අඟහරුවාදා", "partly-cloudy", 27, 21, 40, 70),
-                _buildDailyForecastCard("බදාදා", "rainy", 25, 20, 80, 85),
-                _buildDailyForecastCard("බ්‍රහස්පතින්දා", "cloudy", 26, 21, 30, 75),
-                _buildDailyForecastCard("සිකුරාදා", "sunny", 29, 23, 10, 60),
-                _buildDailyForecastCard("සෙනසුරාදා", "partly-cloudy", 27, 22, 35, 70),
-                _buildDailyForecastCard("ඉරිදා", "sunny", 28, 23, 15, 65),
+                _buildHeaderCard(),
+                if (!isLoading && weatherData != null)
+                  ...dailyForecast.map((forecast) => _buildDailyForecastCard(
+                        forecast['day'],
+                        forecast['weather'],
+                        forecast['maxTemp'],
+                        forecast['minTemp'],
+                        forecast['rainChance'],
+                        forecast['humidity'],
+                      )),
               ],
             ),
           ),
+          if (isLoading)
+            const Center(
+              child: CircularProgressIndicator(),
+            ),
+          if (!isLoading && weatherData == null)
+            const Center(
+              child: Text('කාලගුණ තොරතුරු නොමැත - No weather data available'),
+            ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLocationDropdown() {
+    return LocationDropdown(
+      selectedLocation: selectedLocation,
+      locations: _weatherService.locations,
+      onLocationChanged: (value) {
+        if (value != null) {
+          setState(() {
+            selectedLocation = value;
+          });
+          fetchWeatherData();
+        }
+      },
     );
   }
 
@@ -49,25 +115,13 @@ class WeatherScreen2 extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          const Text(
-            'සති අන්ත කාලගුණ අනාවැකිය',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'ඉදිරි දින 7 සඳහා කාලගුණ තත්වය',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.blue.shade50,
-            ),
-          ),
-        ],
+      child: const Text(
+        'සති අන්ත කාලගුණ අනාවැකිය',
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
       ),
     );
   }
