@@ -13,6 +13,7 @@ class WeatherScreen2 extends StatefulWidget {
 class _WeatherScreen2State extends State<WeatherScreen2> {
   final WeatherService _weatherService = WeatherService();
   String selectedLocation = 'වත්මන් ස්ථානය (Current Location)';
+  String locationDisplayName = 'වත්මන් ස්ථානය';
   Map<String, dynamic>? weatherData;
   bool isLoading = false;
   List<Map<String, dynamic>> dailyForecast = [];
@@ -30,6 +31,31 @@ class _WeatherScreen2State extends State<WeatherScreen2> {
 
     try {
       final data = await _weatherService.fetchWeatherData(selectedLocation);
+      
+      // Update location display name
+      if (selectedLocation == 'වත්මන් ස්ථානය (Current Location)') {
+        // Check if a current location name is available from the service
+        if (_weatherService.currentLocationName != 'වත්මන් ස්ථානය (Current Location)') {
+          // Extract the actual location name from the service's formatted string
+          String fullName = _weatherService.currentLocationName;
+          // The format is typically "LocationName (Current Location)"
+          if (fullName.contains('(')) {
+            locationDisplayName = fullName.substring(0, fullName.indexOf('(')).trim();
+          } else {
+            locationDisplayName = fullName;
+          }
+        } else {
+          locationDisplayName = 'වත්මන් ස්ථානය';
+        }
+      } else {
+        // For other locations, extract the Sinhala name without the English part
+        if (selectedLocation.contains('(')) {
+          locationDisplayName = selectedLocation.substring(0, selectedLocation.indexOf('(')).trim();
+        } else {
+          locationDisplayName = selectedLocation;
+        }
+      }
+      
       setState(() {
         weatherData = data;
         if (data != null) {
@@ -52,6 +78,7 @@ class _WeatherScreen2State extends State<WeatherScreen2> {
       child: Column(
         children: [
           _buildLocationDropdown(),
+          _buildSelectedLocationDisplay(),
           Expanded(
             child: ListView(
               children: [
@@ -81,6 +108,30 @@ class _WeatherScreen2State extends State<WeatherScreen2> {
     );
   }
 
+  Widget _buildSelectedLocationDisplay() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.location_on, color: Colors.red.shade700, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            locationDisplayName,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLocationDropdown() {
     return LocationDropdown(
       selectedLocation: selectedLocation,
@@ -97,13 +148,6 @@ class _WeatherScreen2State extends State<WeatherScreen2> {
   }
 
   Widget _buildHeaderCard() {
-    // Display current location name if selected
-    String headerText = 'සති අන්ත කාලගුණ අනාවැකිය';
-    if (selectedLocation == 'වත්මන් ස්ථානය (Current Location)' && 
-        _weatherService.currentLocationName != 'වත්මන් ස්ථානය (Current Location)') {
-      headerText = '${_weatherService.currentLocationName} - සති අන්ත කාලගුණ අනාවැකිය';
-    }
-    
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -122,13 +166,18 @@ class _WeatherScreen2State extends State<WeatherScreen2> {
           ),
         ],
       ),
-      child: Text(
-        headerText,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'සති අන්ත කාලගුණ අනාවැකිය',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ],
       ),
     );
   }
