@@ -316,7 +316,8 @@ class _BedDetailScreenState extends State<BedDetailScreen> {
           _buildDetailItem(Icons.timer, 'වයස', '${bed.ageInDays} දින'),
           _buildDetailItem(Icons.straighten, 'ප්‍රමාණය', '${bed.areaSize} m²'),
           _buildDetailItem(Icons.grass, 'පැළ ගණන', bed.plantCount.toString()),
-          _buildDetailItem(Icons.location_on, 'ස්ථානය', bed.location),
+          _buildDetailItem(Icons.location_city, 'ප්‍රදේශය', bed.district), // New field for district
+          _buildDetailItem(Icons.home, 'ලිපිනය', bed.address), // Changed from location to address
           _buildDetailItem(Icons.grid_view, 'සමාන පඳුරු ගණන', bed.sameBedCount.toString()),
         ],
       ),

@@ -1,7 +1,8 @@
 class BetelBed {
   final String id;
   final String name;
-  final String location;
+  final String address; // Changed from location to address
+  final String district; // New field for district/pradeshaya
   final String imageUrl;
   final DateTime plantedDate;
   final String betelType;
@@ -15,7 +16,8 @@ class BetelBed {
   BetelBed({
     required this.id,
     required this.name,
-    required this.location,
+    required this.address, // Changed from location to address
+    required this.district, // New field
     required this.imageUrl,
     required this.plantedDate,
     required this.betelType,

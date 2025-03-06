@@ -15,34 +15,40 @@ class EditBedScreen extends StatefulWidget {
 class _EditBedScreenState extends State<EditBedScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  late TextEditingController _locationController;
+  late TextEditingController _addressController; // Changed from locationController
   late TextEditingController _areaSizeController;
   late TextEditingController _plantCountController;
   late TextEditingController _sameBedCountController;
   late DateTime _plantedDate;
   File? _imageFile;
   String? _existingImagePath;
+  
   final List<String> _betelTypes = ['රතු බුලත්', 'කොළ බුලත්', 'සුදු බුලත්', 'මිශ්‍ර බුලත්', 'හයිබ්‍රිඩ් බුලත්'];
   String? _selectedBetelType;
+  
+  // New district dropdown
+  final List<String> _districts = ['පුත්තලම (Puttalam)', 'අනමඩුව (Anamaduwa)', 'කුරුණෑගල (Kurunegala)'];
+  String? _selectedDistrict;
   
   @override
   void initState() {
     super.initState();
     // Initialize controllers with existing data
     _nameController = TextEditingController(text: widget.bed.name);
-    _locationController = TextEditingController(text: widget.bed.location);
+    _addressController = TextEditingController(text: widget.bed.address); // Changed from location to address
     _areaSizeController = TextEditingController(text: widget.bed.areaSize.toString());
     _plantCountController = TextEditingController(text: widget.bed.plantCount.toString());
     _sameBedCountController = TextEditingController(text: widget.bed.sameBedCount.toString());
     _plantedDate = widget.bed.plantedDate;
     _selectedBetelType = widget.bed.betelType;
+    _selectedDistrict = widget.bed.district; // Initialize district
     _existingImagePath = widget.bed.imageUrl;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _locationController.dispose();
+    _addressController.dispose(); // Changed from locationController
     _areaSizeController.dispose();
     _plantCountController.dispose();
     _sameBedCountController.dispose();
@@ -99,6 +105,13 @@ class _EditBedScreenState extends State<EditBedScreen> {
     if (_formKey.currentState!.validate()) {
       // If using existing image or new image is selected, form is valid
       if (_imageFile != null || _existingImagePath != null) {
+        // Check if district is selected
+        if (_selectedDistrict == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('කරුණාකර ප්‍රදේශය තෝරන්න')),
+          );
+          return false;
+        }
         return true;
       } else {
         // No image selected
@@ -168,7 +181,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
                         : _existingImagePath != null
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: Image.asset(
+                                child: Image.network( // Changed from Image.asset to Image.network
                                   _existingImagePath!,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) {
@@ -233,19 +246,49 @@ class _EditBedScreenState extends State<EditBedScreen> {
                 ),
                 const SizedBox(height: 16),
                 
-                // Location Field
-                TextFormField(
-                  controller: _locationController,
+                // District Dropdown (New field)
+                DropdownButtonFormField<String>(
+                  value: _selectedDistrict,
                   decoration: InputDecoration(
-                    labelText: 'ස්ථානය',
+                    labelText: 'ප්‍රදේශය',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    prefixIcon: const Icon(Icons.location_on),
+                    prefixIcon: const Icon(Icons.location_city),
+                  ),
+                  items: _districts.map((String district) {
+                    return DropdownMenuItem<String>(
+                      value: district,
+                      child: Text(district),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedDistrict = newValue;
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'කරුණාකර ප්‍රදේශය තෝරන්න';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                
+                // Address Field (Changed from Location)
+                TextFormField(
+                  controller: _addressController,
+                  decoration: InputDecoration(
+                    labelText: 'ලිපිනය',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    prefixIcon: const Icon(Icons.home),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'කරුණාකර ස්ථානය ඇතුළත් කරන්න';
+                      return 'කරුණාකර ලිපිනය ඇතුළත් කරන්න';
                     }
                     return null;
                   },

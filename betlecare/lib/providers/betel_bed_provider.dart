@@ -63,7 +63,8 @@ class BetelBedProvider extends ChangeNotifier {
         _beds[bedIndex] = BetelBed(
           id: updatedBed.id,
           name: updatedBed.name,
-          location: updatedBed.location,
+          address: updatedBed.address, // Changed from location to address
+          district: updatedBed.district, // Added district field
           imageUrl: updatedBed.imageUrl,
           plantedDate: updatedBed.plantedDate,
           betelType: updatedBed.betelType,
@@ -99,7 +100,8 @@ class BetelBedProvider extends ChangeNotifier {
         _beds[bedIndex] = BetelBed(
           id: updatedBed.id,
           name: updatedBed.name,
-          location: updatedBed.location,
+          address: updatedBed.address, // Changed from location to address
+          district: updatedBed.district, // Added district field
           imageUrl: updatedBed.imageUrl,
           plantedDate: updatedBed.plantedDate,
           betelType: updatedBed.betelType,
@@ -134,7 +136,8 @@ class BetelBedProvider extends ChangeNotifier {
         _beds[bedIndex] = BetelBed(
           id: updatedBed.id,
           name: updatedBed.name,
-          location: updatedBed.location,
+          address: updatedBed.address, // Changed from location to address
+          district: updatedBed.district, // Added district field
           imageUrl: updatedBed.imageUrl,
           plantedDate: updatedBed.plantedDate,
           betelType: updatedBed.betelType,

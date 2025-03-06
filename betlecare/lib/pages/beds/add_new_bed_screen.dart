@@ -14,21 +14,27 @@ class AddNewBedScreen extends StatefulWidget {
 class _AddNewBedScreenState extends State<AddNewBedScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _locationController = TextEditingController();
+  final _addressController = TextEditingController(); // Changed from locationController
   final _areaSizeController = TextEditingController();
   final _plantCountController = TextEditingController();
   final _sameBedCountController = TextEditingController();
   DateTime _plantedDate = DateTime.now();
   File? _imageFile;
+  
   final List<String> _betelTypes = ['රතු බුලත්', 'කොළ බුලත්', 'සුදු බුලත්', 'මිශ්‍ර බුලත්', 'හයිබ්‍රිඩ් බුලත්'];
   String? _selectedBetelType;
+  
+  // New district dropdown
+  final List<String> _districts = ['පුත්තලම (Puttalam)', 'අනමඩුව (Anamaduwa)', 'කුරුණෑගල (Kurunegala)'];
+  String? _selectedDistrict;
+  
   bool _isLoading = false;
   final _betelBedService = BetelBedService();
 
   @override
   void dispose() {
     _nameController.dispose();
-    _locationController.dispose();
+    _addressController.dispose(); // Changed from locationController
     _areaSizeController.dispose();
     _plantCountController.dispose();
     _sameBedCountController.dispose();
@@ -120,6 +126,14 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
         return false;
       }
       
+      // Check if district is selected
+      if (_selectedDistrict == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('කරුණාකර ප්‍රදේශය තෝරන්න')),
+        );
+        return false;
+      }
+      
       return true;
     }
     return false;
@@ -136,7 +150,8 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
         final bed = BetelBed(
           id: '', // Will be assigned by Supabase
           name: _nameController.text,
-          location: _locationController.text,
+          address: _addressController.text, // Changed from location to address
+          district: _selectedDistrict!, // New field
           imageUrl: '', // Will be assigned after upload
           plantedDate: _plantedDate,
           betelType: _selectedBetelType!,
@@ -305,11 +320,41 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                       ),
                       const SizedBox(height: 16),
                       
-                      // Location Field
-                      TextFormField(
-                        controller: _locationController,
+                      // District Dropdown (New field)
+                      DropdownButtonFormField<String>(
+                        value: _selectedDistrict,
                         decoration: InputDecoration(
-                          labelText: 'ස්ථානය',
+                          labelText: 'ප්‍රදේශය',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          prefixIcon: const Icon(Icons.location_city),
+                        ),
+                        items: _districts.map((String district) {
+                          return DropdownMenuItem<String>(
+                            value: district,
+                            child: Text(district),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedDistrict = newValue;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'කරුණාකර ප්‍රදේශය තෝරන්න';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Address Field (Changed from Location)
+                      TextFormField(
+                        controller: _addressController,
+                        decoration: InputDecoration(
+                          labelText: 'ලිපිනය',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -317,7 +362,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'කරුණාකර ස්ථානය ඇතුළත් කරන්න';
+                            return 'කරුණාකර ලිපිනය ඇතුළත් කරන්න';
                           }
                           return null;
                         },
