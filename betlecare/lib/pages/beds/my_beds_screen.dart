@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:betlecare/models/betel_bed_model.dart';
-import 'package:betlecare/data/betel_bed_sample_data.dart';
 import 'package:betlecare/pages/beds/bed_detail_screen.dart';
 import 'package:betlecare/pages/beds/add_new_bed_screen.dart';
+import 'package:betlecare/services/betel_bed_service.dart';
 
 class MyBedsScreen extends StatefulWidget {
   const MyBedsScreen({super.key});
@@ -12,13 +12,27 @@ class MyBedsScreen extends StatefulWidget {
 }
 
 class _MyBedsScreenState extends State<MyBedsScreen> {
-  late List<BetelBed> beds;
+  late Future<List<BetelBed>> _bedsFuture;
+  final _betelBedService = BetelBedService();
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // Load sample data
-    beds = BetelBedSampleData.getSampleBeds();
+    _loadBeds();
+  }
+
+  Future<void> _loadBeds() async {
+    setState(() {
+      _isLoading = true;
+      _bedsFuture = _betelBedService.getBetelBeds();
+    });
+    
+    await _bedsFuture;
+    
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
@@ -32,6 +46,12 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
         backgroundColor: Colors.green.shade700,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadBeds,
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -40,13 +60,43 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
           
           // Beds List
           Expanded(
-            child: beds.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: beds.length,
-                    itemBuilder: (context, index) {
-                      return _buildBedCard(beds[index]);
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : FutureBuilder<List<BetelBed>>(
+                    future: _bedsFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+                              const SizedBox(height: 16),
+                              Text(
+                                'දත්ත ලබා ගැනීමේ දෝෂයකි',
+                                style: TextStyle(color: Colors.red[700]),
+                              ),
+                              TextButton(
+                                onPressed: _loadBeds,
+                                child: const Text('නැවත උත්සාහ කරන්න'),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return _buildEmptyState();
+                      }
+                      
+                      final beds = snapshot.data!;
+                      return ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: beds.length,
+                        itemBuilder: (context, index) {
+                          return _buildBedCard(beds[index]);
+                        },
+                      );
                     },
                   ),
           ),
@@ -57,13 +107,18 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
 
   Widget _buildAddNewBedButton() {
     return InkWell(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => const AddNewBedScreen(),
           ),
         );
+        
+        if (result == true) {
+          // Refresh the list if a new bed was added
+          _loadBeds();
+        }
       },
       child: Container(
         margin: const EdgeInsets.all(16),
@@ -256,9 +311,10 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(context);
-                  // Show add fertilize record dialog/screen
+                  // Show dialog to add fertilize record
+                  _showAddFertilizeDialog(bed);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green.shade700,
@@ -272,6 +328,129 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAddFertilizeDialog(BetelBed bed) {
+    final dateController = TextEditingController(
+      text: '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}',
+    );
+    final typeController = TextEditingController();
+    final quantityController = TextEditingController();
+    final notesController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('නව පොහොර යෙදීමක් එක් කරන්න'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: dateController,
+                decoration: const InputDecoration(
+                  labelText: 'දිනය (YYYY-MM-DD)',
+                ),
+                readOnly: true,
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now(),
+                  );
+                  
+                  if (date != null) {
+                    dateController.text = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                  }
+                },
+              ),
+              TextField(
+                controller: typeController,
+                decoration: const InputDecoration(
+                  labelText: 'පොහොර වර්ගය',
+                ),
+              ),
+              TextField(
+                controller: quantityController,
+                decoration: const InputDecoration(
+                  labelText: 'ප්‍රමාණය (kg)',
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: notesController,
+                decoration: const InputDecoration(
+                  labelText: 'සටහන්',
+                ),
+                maxLines: 2,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('අවලංගු කරන්න'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                // Validate inputs
+                if (typeController.text.isEmpty || quantityController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('කරුණාකර අවශ්‍ය තොරතුරු පුරවන්න')),
+                  );
+                  return;
+                }
+                
+                final quantity = double.tryParse(quantityController.text);
+                if (quantity == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('වලංගු ප්‍රමාණයක් ඇතුළත් කරන්න')),
+                  );
+                  return;
+                }
+                
+                // Parse date
+                final date = DateTime.parse(dateController.text);
+                
+                // Create record
+                final record = FertilizeRecord(
+                  date: date,
+                  fertilizerType: typeController.text,
+                  quantity: quantity,
+                  notes: notesController.text,
+                );
+                
+                // Save to Supabase
+                await _betelBedService.addFertilizeRecord(bed.id, record);
+                
+                // Close dialog
+                Navigator.pop(context);
+                
+                // Show success message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('පොහොර යෙදීම සාර්ථකව එකතු කරන ලදී')),
+                );
+                
+                // Reload beds
+                _loadBeds();
+              } catch (e) {
+                // Show error message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('දෝෂයකි: ${e.toString()}')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade700,
+            ),
+            child: const Text('සුරකින්න'),
+          ),
+        ],
       ),
     );
   }
@@ -354,9 +533,10 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(context);
-                  // Show add harvest record dialog/screen
+                  // Show dialog to add harvest record
+                  _showAddHarvestDialog(bed);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green.shade700,
@@ -370,6 +550,163 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAddHarvestDialog(BetelBed bed) {
+    final dateController = TextEditingController(
+      text: '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}',
+    );
+    final leavesController = TextEditingController();
+    final weightController = TextEditingController();
+    final revenueController = TextEditingController();
+    final qualityController = TextEditingController(text: 'A');
+    final notesController = TextEditingController();
+    
+    final qualities = ['A', 'B', 'C', 'D'];
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('නව අස්වැන්නක් එක් කරන්න'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: dateController,
+                decoration: const InputDecoration(
+                  labelText: 'දිනය (YYYY-MM-DD)',
+                ),
+                readOnly: true,
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now(),
+                  );
+                  
+                  if (date != null) {
+                    dateController.text = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                  }
+                },
+              ),
+              TextField(
+                controller: leavesController,
+                decoration: const InputDecoration(
+                  labelText: 'කොළ ගණන',
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: weightController,
+                decoration: const InputDecoration(
+                  labelText: 'බර (kg)',
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: revenueController,
+                decoration: const InputDecoration(
+                  labelText: 'ආදායම (රු.)',
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              DropdownButtonFormField<String>(
+                value: qualityController.text,
+                decoration: const InputDecoration(
+                  labelText: 'තත්ත්වය',
+                ),
+                items: qualities.map((quality) {
+                  return DropdownMenuItem<String>(
+                    value: quality,
+                    child: Text(quality),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  qualityController.text = value!;
+                },
+              ),
+              TextField(
+                controller: notesController,
+                decoration: const InputDecoration(
+                  labelText: 'සටහන්',
+                ),
+                maxLines: 2,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('අවලංගු කරන්න'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                // Validate inputs
+                if (leavesController.text.isEmpty || 
+                    weightController.text.isEmpty || 
+                    revenueController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('කරුණාකර අවශ්‍ය තොරතුරු පුරවන්න')),
+                  );
+                  return;
+                }
+                
+                final leaves = int.tryParse(leavesController.text);
+                final weight = double.tryParse(weightController.text);
+                final revenue = double.tryParse(revenueController.text);
+                
+                if (leaves == null || weight == null || revenue == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('වලංගු අගයන් ඇතුළත් කරන්න')),
+                  );
+                  return;
+                }
+                
+                // Parse date
+                final date = DateTime.parse(dateController.text);
+                
+                // Create record
+                final record = HarvestRecord(
+                  date: date,
+                  leavesCount: leaves,
+                  weight: weight,
+                  revenueEarned: revenue,
+                  quality: qualityController.text,
+                  notes: notesController.text,
+                );
+                
+                // Save to Supabase
+                await _betelBedService.addHarvestRecord(bed.id, record);
+                
+                // Close dialog
+                Navigator.pop(context);
+                
+                // Show success message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('අස්වැන්න සාර්ථකව එකතු කරන ලදී')),
+                );
+                
+                // Reload beds
+                _loadBeds();
+              } catch (e) {
+                // Show error message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('දෝෂයකි: ${e.toString()}')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade700,
+            ),
+            child: const Text('සුරකින්න'),
+          ),
+        ],
       ),
     );
   }
@@ -430,7 +767,7 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
                   ),
-                  child: Image.asset(
+                  child: Image.network(
                     bed.imageUrl,
                     height: 120,
                     width: double.infinity,
@@ -441,6 +778,21 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
                         color: Colors.grey.shade200,
                         child: const Center(
                           child: Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
+                        ),
+                      );
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        height: 120,
+                        color: Colors.grey.shade200,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded / 
+                                    loadingProgress.expectedTotalBytes!
+                                : null,
+                          ),
                         ),
                       );
                     },
@@ -574,6 +926,7 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
                         label: 'තවත්',
                         onTap: () {
                           // Show more options
+                          _showStatusUpdateDialog(bed);
                         },
                       ),
                     ],
@@ -583,6 +936,96 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+  
+  void _showStatusUpdateDialog(BetelBed bed) {
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text('${bed.name} - තත්ත්වය යාවත්කාලීන කරන්න'),
+        children: [
+          _buildStatusOption(
+            bed: bed,
+            status: BetelBedStatus.healthy,
+            title: 'හොඳ තත්ත්වයේ පවතී',
+            icon: Icons.check_circle,
+            color: Colors.green,
+          ),
+          _buildStatusOption(
+            bed: bed,
+            status: BetelBedStatus.needsWatering,
+            title: 'ජලය යෙදීම අවශ්‍යයි',
+            icon: Icons.water_drop,
+            color: Colors.blue,
+          ),
+          _buildStatusOption(
+            bed: bed,
+            status: BetelBedStatus.needsFertilizing,
+            title: 'පොහොර යෙදීම අවශ්‍යයි',
+            icon: Icons.grass,
+            color: Colors.orange,
+          ),
+          _buildStatusOption(
+            bed: bed,
+            status: BetelBedStatus.readyToHarvest,
+            title: 'අස්වනු නෙලීමට සූදානම්',
+            icon: Icons.shopping_basket,
+            color: Colors.green.shade700,
+          ),
+          _buildStatusOption(
+            bed: bed,
+            status: BetelBedStatus.diseased,
+            title: 'රෝගී තත්වයේ පවතී',
+            icon: Icons.sick,
+            color: Colors.red,
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildStatusOption({
+    required BetelBed bed,
+    required BetelBedStatus status,
+    required String title,
+    required IconData icon,
+    required Color color,
+  }) {
+    return SimpleDialogOption(
+      onPressed: () async {
+        try {
+          Navigator.pop(context);
+          
+          // Show loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('තත්ත්වය යාවත්කාලීන කරමින්...')),
+          );
+          
+          // Update status
+          await _betelBedService.updateBedStatus(bed.id, status);
+          
+          // Reload beds
+          _loadBeds();
+          
+          // Show success
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('තත්ත්වය සාර්ථකව යාවත්කාලීන කරන ලදී')),
+          );
+        } catch (e) {
+          // Show error
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('දෝෂයකි: ${e.toString()}')),
+          );
+        }
+      },
+      child: Row(
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: 16),
+          Text(title),
+        ],
       ),
     );
   }
