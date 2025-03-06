@@ -1,79 +1,146 @@
 import 'package:flutter/material.dart';
 import 'package:betlecare/models/betel_bed_model.dart';
-import 'package:betlecare/data/betel_bed_sample_data.dart';
 import 'package:betlecare/pages/beds/my_beds_screen.dart';
+import 'package:betlecare/services/betel_bed_service.dart';
+import 'package:provider/provider.dart';
+import 'package:betlecare/providers/betel_bed_provider.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final betelBedProvider = Provider.of<BetelBedProvider>(context, listen: false);
+    
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    
+    try {
+      await betelBedProvider.loadBeds();
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Welcome Card
-                _buildWelcomeCard(context),
-                const SizedBox(height: 16),
-                
-                // Section Title
-                Text(
-                  'ප්‍රධාන කාර්යයන්',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                
-                // My Beds Card - Main feature card
-                _buildFeatureCard(
-                  context: context,
-                  title: 'මගේ බුලත් පඳුරු',
-                  description: 'ඔබගේ බුලත් පඳුරු කළමනාකරණය කරන්න',
-                  iconData: Icons.spa,
-                  color: Colors.green.shade200,
-                  imagePath: 'assets/images/betel_leaf.png',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const MyBedsScreen(),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+                        const SizedBox(height: 16),
+                        Text(
+                          'දත්ත ලබා ගැනීමේ දෝෂයකි',
+                          style: TextStyle(color: Colors.red[700]),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _error!,
+                          style: TextStyle(color: Colors.grey[600]),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadData,
+                          child: const Text('නැවත උත්සාහ කරන්න'),
+                        ),
+                      ],
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _loadData,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Welcome Card
+                            _buildWelcomeCard(context),
+                            const SizedBox(height: 16),
+                            
+                            // Section Title
+                            Text(
+                              'ප්‍රධාන කාර්යයන්',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            
+                            // My Beds Card - Main feature card
+                            _buildFeatureCard(
+                              context: context,
+                              title: 'මගේ බුලත් පඳුරු',
+                              description: 'ඔබගේ බුලත් පඳුරු කළමනාකරණය කරන්න',
+                              iconData: Icons.spa,
+                              color: Colors.green.shade200,
+                              imagePath: 'assets/images/betel_leaf.png',
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const MyBedsScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            
+                            // Tips and Advice Card
+                            _buildFeatureCard(
+                              context: context,
+                              title: 'උපදෙස් සහ ඉඟි',
+                              description: 'බුලත් වගාව පිළිබඳ විශේෂඥ උපදෙස්',
+                              iconData: Icons.lightbulb,
+                              color: Colors.purple.shade200,
+                              imagePath: 'assets/images/tips.png',
+                              onTap: () {
+                                // Navigate to tips screen
+                              },
+                            ),
+                            
+                            const SizedBox(height: 16),
+                            // Quick Stats Section
+                            _buildQuickStatsSection(context),
+                            
+                            // Add more space at the bottom
+                            const SizedBox(height: 24),
+                          ],
+                        ),
                       ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
-                
-     
-                // Tips and Advice Card
-                _buildFeatureCard(
-                  context: context,
-                  title: 'උපදෙස් සහ ඉඟි',
-                  description: 'බුලත් වගාව පිළිබඳ විශේෂඥ උපදෙස්',
-                  iconData: Icons.lightbulb,
-                  color: Colors.purple.shade200,
-                  imagePath: 'assets/images/tips.png',
-                  onTap: () {
-                    // Navigate to tips screen
-                  },
-                ),
-                
-                const SizedBox(height: 16),
-                // Quick Stats Section
-                _buildQuickStatsSection(context),
-                
-                // Add more space at the bottom
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
-        ),
+                    ),
+                  ),
       ),
     );
   }
@@ -246,18 +313,13 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildQuickStatsSection(BuildContext context) {
-    // Get sample data for quick stats
-    final beds = BetelBedSampleData.getSampleBeds();
+    // Get data from provider
+    final betelBedProvider = Provider.of<BetelBedProvider>(context);
     
     // Calculate stats
-    final totalBeds = beds.length;
-    final bedsNeedingAttention = beds.where((bed) => 
-      bed.status == BetelBedStatus.needsFertilizing || 
-      bed.status == BetelBedStatus.needsWatering || 
-      bed.status == BetelBedStatus.readyToHarvest
-    ).length;
-    
-    final totalPlants = beds.fold(0, (sum, bed) => sum + bed.plantCount);
+    final totalBeds = betelBedProvider.totalBeds;
+    final bedsNeedingAttention = betelBedProvider.bedsNeedingAttention;
+    final totalPlants = betelBedProvider.totalPlants;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

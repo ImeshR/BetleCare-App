@@ -858,13 +858,33 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
+                  
+                  // Display district and address (modified from original location)
                   Row(
                     children: [
-                      Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                      Icon(Icons.location_city, size: 16, color: Colors.grey[600]),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          bed.location,
+                          bed.district,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.home, size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          bed.address,
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
@@ -1013,7 +1033,7 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('තත්ත්වය සාර්ථකව යාවත්කාලීන කරන ලදී')),
           );
-        } catch (e) {
+       } catch (e) {
           // Show error
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('දෝෂයකි: ${e.toString()}')),

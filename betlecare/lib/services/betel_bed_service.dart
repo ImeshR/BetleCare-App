@@ -56,7 +56,8 @@ class BetelBedService {
         return BetelBed(
           id: bed['id'],
           name: bed['name'],
-          location: bed['location'],
+          address: bed['address'], // Changed from location to address
+          district: bed['district'], // New field
           imageUrl: bed['image_url'],
           plantedDate: DateTime.parse(bed['planted_date']),
           betelType: bed['betel_type'],
@@ -105,7 +106,8 @@ class BetelBedService {
       final bedData = {
         'user_id': user.id,
         'name': bed.name,
-        'location': bed.location,
+        'address': bed.address, // Changed from location to address
+        'district': bed.district, // New field
         'image_url': imageUrl,
         'planted_date': bed.plantedDate.toIso8601String(),
         'betel_type': bed.betelType,
@@ -122,7 +124,8 @@ class BetelBedService {
       return BetelBed(
         id: response['id'],
         name: response['name'],
-        location: response['location'],
+        address: response['address'], // Changed from location to address
+        district: response['district'], // New field
         imageUrl: response['image_url'],
         plantedDate: DateTime.parse(response['planted_date']),
         betelType: response['betel_type'],
