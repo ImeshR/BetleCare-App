@@ -47,6 +47,8 @@ class BetelBed {
         return "මෑතදී අස්වැන්න නෙලා ඇත";
       case BetelBedStatus.healthy:
         return "හොඳ තත්වයේ පවතී";
+      case BetelBedStatus.diseased:
+        return "රෝගී තත්වයේ පවතී";
       default:
         return "සාමාන්‍ය";
     }
@@ -81,12 +83,14 @@ class BetelBed {
 }
 
 class FertilizeRecord {
+  final String? id; // ID from Supabase
   final DateTime date;
   final String fertilizerType;
   final double quantity; // in kg or appropriate unit
   final String notes;
 
   FertilizeRecord({
+    this.id,
     required this.date,
     required this.fertilizerType,
     required this.quantity,
@@ -95,6 +99,7 @@ class FertilizeRecord {
 }
 
 class HarvestRecord {
+  final String? id; // ID from Supabase
   final DateTime date;
   final int leavesCount;
   final double weight; // in kg
@@ -103,6 +108,7 @@ class HarvestRecord {
   final String notes;
 
   HarvestRecord({
+    this.id,
     required this.date,
     required this.leavesCount,
     required this.weight,
