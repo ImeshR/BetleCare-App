@@ -513,6 +513,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
+                              color: Colors.white
                             ),
                           ),
                         ),

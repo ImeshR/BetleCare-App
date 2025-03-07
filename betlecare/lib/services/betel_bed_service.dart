@@ -56,8 +56,8 @@ class BetelBedService {
         return BetelBed(
           id: bed['id'],
           name: bed['name'],
-          address: bed['address'], // Changed from location to address
-          district: bed['district'], // New field
+          address: bed['address'],
+          district: bed['district'],
           imageUrl: bed['image_url'],
           plantedDate: DateTime.parse(bed['planted_date']),
           betelType: bed['betel_type'],
@@ -106,8 +106,8 @@ class BetelBedService {
       final bedData = {
         'user_id': user.id,
         'name': bed.name,
-        'address': bed.address, // Changed from location to address
-        'district': bed.district, // New field
+        'address': bed.address,
+        'district': bed.district,
         'image_url': imageUrl,
         'planted_date': bed.plantedDate.toIso8601String(),
         'betel_type': bed.betelType,
@@ -124,8 +124,8 @@ class BetelBedService {
       return BetelBed(
         id: response['id'],
         name: response['name'],
-        address: response['address'], // Changed from location to address
-        district: response['district'], // New field
+        address: response['address'],
+        district: response['district'],
         imageUrl: response['image_url'],
         plantedDate: DateTime.parse(response['planted_date']),
         betelType: response['betel_type'],
@@ -141,6 +141,130 @@ class BetelBedService {
       );
     } catch (e) {
       print('Error adding betel bed: $e');
+      rethrow;
+    }
+  }
+  
+  // Update an existing betel bed
+  Future<void> updateBed(BetelBed bed) async {
+    try {
+      final supabase = await SupabaseClientManager.instance;
+      
+      // Prepare the update data - REMOVED updated_at field
+      final updateData = {
+        'name': bed.name,
+        'address': bed.address,
+        'district': bed.district,
+        'planted_date': bed.plantedDate.toIso8601String(),
+        'betel_type': bed.betelType,
+        'area_size': bed.areaSize,
+        'plant_count': bed.plantCount,
+        'same_bed_count': bed.sameBedCount,
+      };
+      
+      // Update the bed record
+      await supabase.client
+          .from('betel_beds')
+          .update(updateData)
+          .eq('id', bed.id);
+    } catch (e) {
+      print('Error updating betel bed: $e');
+      rethrow;
+    }
+  }
+  
+  // Update an existing betel bed with a new image
+  Future<BetelBed> updateBedWithImage(BetelBed bed, File imageFile) async {
+    try {
+      final supabase = await SupabaseClientManager.instance;
+      
+      // First, get the existing bed to find the current image URL
+      final existingBed = await supabase.client
+          .from('betel_beds')
+          .select('image_url')
+          .eq('id', bed.id)
+          .single();
+      
+      final existingImageUrl = existingBed['image_url'] as String;
+      
+      // Delete the old image if it exists
+      if (existingImageUrl.isNotEmpty) {
+        try {
+          final uri = Uri.parse(existingImageUrl);
+          final path = uri.path;
+          final filePath = path.startsWith('/') ? path.substring(1) : path;
+          
+          if (filePath.startsWith('storage/')) {
+            final storagePath = filePath.replaceFirst('storage/', '');
+            final parts = storagePath.split('/');
+            if (parts.length >= 2) {
+              final bucket = parts[0];
+              final fileKey = parts.sublist(1).join('/');
+              await supabase.client.storage.from(bucket).remove([fileKey]);
+            }
+          }
+        } catch (e) {
+          print('Error deleting old image: $e');
+          // Continue even if old image deletion fails
+        }
+      }
+      
+      // Upload the new image
+      final fileExt = path.extension(imageFile.path);
+      final fileName = '${const Uuid().v4()}$fileExt';
+      final filePath = 'betel_beds/$fileName';
+      
+      await supabase.client.storage.from('images').upload(
+        filePath,
+        imageFile,
+        fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+      );
+      
+      // Get the public URL for the uploaded image
+      final newImageUrl = supabase.client.storage.from('images').getPublicUrl(filePath);
+      
+      // Prepare the update data - REMOVED updated_at field
+      final updateData = {
+        'name': bed.name,
+        'address': bed.address,
+        'district': bed.district,
+        'image_url': newImageUrl,
+        'planted_date': bed.plantedDate.toIso8601String(),
+        'betel_type': bed.betelType,
+        'area_size': bed.areaSize,
+        'plant_count': bed.plantCount,
+        'same_bed_count': bed.sameBedCount,
+      };
+      
+      // Update the bed record
+      final response = await supabase.client
+          .from('betel_beds')
+          .update(updateData)
+          .eq('id', bed.id)
+          .select()
+          .single();
+      
+      // Return the updated bed
+      return BetelBed(
+        id: response['id'],
+        name: response['name'],
+        address: response['address'],
+        district: response['district'],
+        imageUrl: response['image_url'],
+        plantedDate: DateTime.parse(response['planted_date']),
+        betelType: response['betel_type'],
+        areaSize: response['area_size'].toDouble(),
+        plantCount: response['plant_count'],
+        sameBedCount: response['same_bed_count'],
+        fertilizeHistory: bed.fertilizeHistory, // Keep the existing history
+        harvestHistory: bed.harvestHistory, // Keep the existing history
+        status: BetelBedStatus.values.firstWhere(
+          (e) => e.toString() == 'BetelBedStatus.${response['status']}',
+          orElse: () => bed.status,
+        ),
+      );
+    } catch (e) {
+      print('Error updating betel bed with image: $e');
       rethrow;
     }
   }

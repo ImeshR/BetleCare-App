@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:betlecare/models/betel_bed_model.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:betlecare/services/betel_bed_service.dart';
+import 'package:provider/provider.dart';
+import 'package:betlecare/providers/betel_bed_provider.dart';
 
 class EditBedScreen extends StatefulWidget {
   final BetelBed bed;
@@ -15,18 +18,20 @@ class EditBedScreen extends StatefulWidget {
 class _EditBedScreenState extends State<EditBedScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  late TextEditingController _addressController; // Changed from locationController
+  late TextEditingController _addressController;
   late TextEditingController _areaSizeController;
   late TextEditingController _plantCountController;
   late TextEditingController _sameBedCountController;
   late DateTime _plantedDate;
   File? _imageFile;
   String? _existingImagePath;
+  bool _isLoading = false;
+  
+  final _betelBedService = BetelBedService();
   
   final List<String> _betelTypes = ['රතු බුලත්', 'කොළ බුලත්', 'සුදු බුලත්', 'මිශ්‍ර බුලත්', 'හයිබ්‍රිඩ් බුලත්'];
   String? _selectedBetelType;
   
-  // New district dropdown
   final List<String> _districts = ['පුත්තලම (Puttalam)', 'අනමඩුව (Anamaduwa)', 'කුරුණෑගල (Kurunegala)'];
   String? _selectedDistrict;
   
@@ -35,20 +40,20 @@ class _EditBedScreenState extends State<EditBedScreen> {
     super.initState();
     // Initialize controllers with existing data
     _nameController = TextEditingController(text: widget.bed.name);
-    _addressController = TextEditingController(text: widget.bed.address); // Changed from location to address
+    _addressController = TextEditingController(text: widget.bed.address);
     _areaSizeController = TextEditingController(text: widget.bed.areaSize.toString());
     _plantCountController = TextEditingController(text: widget.bed.plantCount.toString());
     _sameBedCountController = TextEditingController(text: widget.bed.sameBedCount.toString());
     _plantedDate = widget.bed.plantedDate;
     _selectedBetelType = widget.bed.betelType;
-    _selectedDistrict = widget.bed.district; // Initialize district
+    _selectedDistrict = widget.bed.district;
     _existingImagePath = widget.bed.imageUrl;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _addressController.dispose(); // Changed from locationController
+    _addressController.dispose();
     _areaSizeController.dispose();
     _plantCountController.dispose();
     _sameBedCountController.dispose();
@@ -66,7 +71,6 @@ class _EditBedScreenState extends State<EditBedScreen> {
         });
       }
     } catch (e) {
-      // Handle error
       print('Error picking image: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('රූපය තේරීමේ දෝෂයකි')),
@@ -112,6 +116,15 @@ class _EditBedScreenState extends State<EditBedScreen> {
           );
           return false;
         }
+        
+        // Check if betel type is selected
+        if (_selectedBetelType == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('කරුණාකර බුලත් වර්ගය තෝරන්න')),
+          );
+          return false;
+        }
+        
         return true;
       } else {
         // No image selected
@@ -124,16 +137,79 @@ class _EditBedScreenState extends State<EditBedScreen> {
     return false;
   }
 
-  void _updateBed() {
+  Future<void> _updateBed() async {
     if (_validateForm()) {
-      // Here you would normally update the database
-      // For now, just show success and go back
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('බුලත් පඳුර සාර්ථකව යාවත්කාලීන කරන ලදී')),
-      );
-      
-      Navigator.pop(context);
+      try {
+        setState(() {
+          _isLoading = true;
+        });
+        
+        // Create an updated BetelBed object
+        final updatedBed = BetelBed(
+          id: widget.bed.id,
+          name: _nameController.text,
+          address: _addressController.text,
+          district: _selectedDistrict!,
+          imageUrl: _existingImagePath ?? '',  // Will be updated if new image is uploaded
+          plantedDate: _plantedDate,
+          betelType: _selectedBetelType!,
+          areaSize: double.parse(_areaSizeController.text),
+          plantCount: int.parse(_plantCountController.text),
+          sameBedCount: int.parse(_sameBedCountController.text),
+          fertilizeHistory: widget.bed.fertilizeHistory,
+          harvestHistory: widget.bed.harvestHistory,
+          status: widget.bed.status,
+        );
+        
+        // Update the bed data in the database
+        if (_imageFile != null) {
+          // If there's a new image, upload it first and get the new URL
+          // This is a theoretical implementation - your actual service might work differently
+          final updatedBedWithImage = await _betelBedService.updateBedWithImage(updatedBed, _imageFile!);
+          
+          // Update the provider if used
+          await _updateProvider();
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('බුලත් පඳුර සාර්ථකව යාවත්කාලීන කරන ලදී')),
+          );
+          
+          // Return true to indicate successful update
+          Navigator.pop(context, true);
+        } else {
+          // No new image, just update the bed data
+          await _betelBedService.updateBed(updatedBed);
+          
+          // Update the provider if used
+          await _updateProvider();
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('බුලත් පඳුර සාර්ථකව යාවත්කාලීන කරන ලදී')),
+          );
+          
+          // Return true to indicate successful update
+          Navigator.pop(context, true);
+        }
+      } catch (e) {
+        print('Error updating bed: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('යාවත්කාලීන කිරීමේ දෝෂයකි: ${e.toString()}')),
+        );
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+  
+  Future<void> _updateProvider() async {
+    try {
+      // If you're using a provider to manage state, update it
+      final betelBedProvider = Provider.of<BetelBedProvider>(context, listen: false);
+      await betelBedProvider.loadBeds();
+    } catch (e) {
+      print('Error updating provider: $e');
     }
   }
 
@@ -148,306 +224,320 @@ class _EditBedScreenState extends State<EditBedScreen> {
         backgroundColor: Colors.green.shade700,
         foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Image selection
-                InkWell(
-                  onTap: _pickImage,
-                  child: Container(
-                    height: 200,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.grey.shade300,
-                        width: 1,
-                      ),
-                    ),
-                    child: _imageFile != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.file(
-                              _imageFile!,
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        : _existingImagePath != null
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Image selection
+                    InkWell(
+                      onTap: _pickImage,
+                      child: Container(
+                        height: 200,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.grey.shade300,
+                            width: 1,
+                          ),
+                        ),
+                        child: _imageFile != null
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: Image.network( // Changed from Image.asset to Image.network
-                                  _existingImagePath!,
+                                child: Image.file(
+                                  _imageFile!,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Center(
-                                      child: Icon(
-                                        Icons.broken_image,
+                                ),
+                              )
+                            : _existingImagePath != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.network(
+                                      _existingImagePath!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Center(
+                                          child: Icon(
+                                            Icons.broken_image,
+                                            size: 48,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  )
+                                : Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.add_photo_alternate,
                                         size: 48,
                                         color: Colors.grey.shade600,
                                       ),
-                                    );
-                                  },
-                                ),
-                              )
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.add_photo_alternate,
-                                    size: 48,
-                                    color: Colors.grey.shade600,
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'රූපයක් තෝරන්න',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey.shade700,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'රූපයක් තෝරන්න',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey.shade700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                // Form Fields
-                const Text(
-                  'මූලික තොරතුරු',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Name Field
-                TextFormField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: 'පඳුරේ නම',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: const Icon(Icons.spa),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'කරුණාකර පඳුරේ නම ඇතුළත් කරන්න';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                
-                // District Dropdown (New field)
-                DropdownButtonFormField<String>(
-                  value: _selectedDistrict,
-                  decoration: InputDecoration(
-                    labelText: 'ප්‍රදේශය',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: const Icon(Icons.location_city),
-                  ),
-                  items: _districts.map((String district) {
-                    return DropdownMenuItem<String>(
-                      value: district,
-                      child: Text(district),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _selectedDistrict = newValue;
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'කරුණාකර ප්‍රදේශය තෝරන්න';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                
-                // Address Field (Changed from Location)
-                TextFormField(
-                  controller: _addressController,
-                  decoration: InputDecoration(
-                    labelText: 'ලිපිනය',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: const Icon(Icons.home),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'කරුණාකර ලිපිනය ඇතුළත් කරන්න';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                
-                // Betel Type Dropdown
-                DropdownButtonFormField<String>(
-                  value: _selectedBetelType,
-                  decoration: InputDecoration(
-                    labelText: 'බුලත් වර්ගය',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: const Icon(Icons.grass),
-                  ),
-                  items: _betelTypes.map((String type) {
-                    return DropdownMenuItem<String>(
-                      value: type,
-                      child: Text(type),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _selectedBetelType = newValue;
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'කරුණාකර බුලත් වර්ගය තෝරන්න';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                
-                // Date Picker
-                InkWell(
-                  onTap: () => _selectDate(context),
-                  child: InputDecorator(
-                    decoration: InputDecoration(
-                      labelText: 'වගා කළ දිනය',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      prefixIcon: const Icon(Icons.calendar_today),
-                    ),
-                    child: Text(
-                      '${_plantedDate.year}-${_plantedDate.month.toString().padLeft(2, '0')}-${_plantedDate.day.toString().padLeft(2, '0')}',
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                // Additional Details
-                const Text(
-                  'අමතර තොරතුරු',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Area Size Field
-                TextFormField(
-                  controller: _areaSizeController,
-                  decoration: InputDecoration(
-                    labelText: 'ප්‍රමාණය (m²)',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: const Icon(Icons.straighten),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'කරුණාකර ප්‍රමාණය ඇතුළත් කරන්න';
-                    }
-                    if (double.tryParse(value) == null) {
-                      return 'කරුණාකර වලංගු අගයක් ඇතුළත් කරන්න';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                
-                // Plant Count Field
-                TextFormField(
-                  controller: _plantCountController,
-                  decoration: InputDecoration(
-                    labelText: 'පැළ ගණන',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: const Icon(Icons.eco),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'කරුණාකර පැළ ගණන ඇතුළත් කරන්න';
-                    }
-                    if (int.tryParse(value) == null) {
-                      return 'කරුණාකර වලංගු අගයක් ඇතුළත් කරන්න';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                
-                // Similar Bed Count Field
-                TextFormField(
-                  controller: _sameBedCountController,
-                  decoration: InputDecoration(
-                    labelText: 'සමාන පඳුරු ගණන',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: const Icon(Icons.content_copy),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'කරුණාකර සමාන පඳුරු ගණන ඇතුළත් කරන්න';
-                    }
-                    if (int.tryParse(value) == null) {
-                      return 'කරුණාකර වලංගු අගයක් ඇතුළත් කරන්න';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 32),
-                
-                // Update Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _updateBed,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade700,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
-                      'යාවත්කාලීන කරන්න',
+                    const SizedBox(height: 24),
+                    
+                    // Form Fields
+                    const Text(
+                      'මූලික තොරතුරු',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    
+                    // Name Field
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: 'පඳුරේ නම',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        prefixIcon: const Icon(Icons.spa),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'කරුණාකර පඳුරේ නම ඇතුළත් කරන්න';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // District Dropdown
+                    DropdownButtonFormField<String>(
+                      value: _selectedDistrict,
+                      decoration: InputDecoration(
+                        labelText: 'ප්‍රදේශය',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        prefixIcon: const Icon(Icons.location_city),
+                      ),
+                      items: _districts.map((String district) {
+                        return DropdownMenuItem<String>(
+                          value: district,
+                          child: Text(district),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedDistrict = newValue;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'කරුණාකර ප්‍රදේශය තෝරන්න';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Address Field
+                    TextFormField(
+                      controller: _addressController,
+                      decoration: InputDecoration(
+                        labelText: 'ලිපිනය',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        prefixIcon: const Icon(Icons.home),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'කරුණාකර ලිපිනය ඇතුළත් කරන්න';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Betel Type Dropdown
+                    DropdownButtonFormField<String>(
+                      value: _selectedBetelType,
+                      decoration: InputDecoration(
+                        labelText: 'බුලත් වර්ගය',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        prefixIcon: const Icon(Icons.grass),
+                      ),
+                      items: _betelTypes.map((String type) {
+                        return DropdownMenuItem<String>(
+                          value: type,
+                          child: Text(type),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedBetelType = newValue;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'කරුණාකර බුලත් වර්ගය තෝරන්න';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Date Picker
+                    InkWell(
+                      onTap: () => _selectDate(context),
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: 'වගා කළ දිනය',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          prefixIcon: const Icon(Icons.calendar_today),
+                        ),
+                        child: Text(
+                          '${_plantedDate.year}-${_plantedDate.month.toString().padLeft(2, '0')}-${_plantedDate.day.toString().padLeft(2, '0')}',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Additional Details
+                    const Text(
+                      'අමතර තොරතුරු',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Area Size Field
+                    TextFormField(
+                      controller: _areaSizeController,
+                      decoration: InputDecoration(
+                        labelText: 'ප්‍රමාණය (m²)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        prefixIcon: const Icon(Icons.straighten),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'කරුණාකර ප්‍රමාණය ඇතුළත් කරන්න';
+                        }
+                        if (double.tryParse(value) == null) {
+                          return 'කරුණාකර වලංගු අගයක් ඇතුළත් කරන්න';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Plant Count Field
+                    TextFormField(
+                      controller: _plantCountController,
+                      decoration: InputDecoration(
+                        labelText: 'පැළ ගණන',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        prefixIcon: const Icon(Icons.eco),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'කරුණාකර පැළ ගණන ඇතුළත් කරන්න';
+                        }
+                        if (int.tryParse(value) == null) {
+                          return 'කරුණාකර වලංගු අගයක් ඇතුළත් කරන්න';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Similar Bed Count Field
+                    TextFormField(
+                      controller: _sameBedCountController,
+                      decoration: InputDecoration(
+                        labelText: 'සමාන පඳුරු ගණන',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        prefixIcon: const Icon(Icons.content_copy),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'කරුණාකර සමාන පඳුරු ගණන ඇතුළත් කරන්න';
+                        }
+                        if (int.tryParse(value) == null) {
+                          return 'කරුණාකර වලංගු අගයක් ඇතුළත් කරන්න';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 32),
+                    
+                    // Update Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _updateBed,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green.shade700,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text(
+                                'යාවත්කාලීන කරන්න',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
-                const SizedBox(height: 24),
-              ],
+              ),
             ),
           ),
-        ),
+          // Overlay loading indicator
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.3),
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+        ],
       ),
     );
   }

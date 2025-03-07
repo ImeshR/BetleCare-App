@@ -1,14 +1,14 @@
 class BetelBed {
   final String id;
   final String name;
-  final String address; // Changed from location to address
-  final String district; // New field for district/pradeshaya
+  final String address;  
+  final String district;  
   final String imageUrl;
   final DateTime plantedDate;
   final String betelType;
-  final double areaSize; // in square meters
+  final double areaSize;  
   final int plantCount;
-  final int sameBedCount; // how many similar beds in same location
+  final int sameBedCount;  
   final List<FertilizeRecord> fertilizeHistory;
   final List<HarvestRecord> harvestHistory;
   final BetelBedStatus status;
@@ -16,8 +16,8 @@ class BetelBed {
   BetelBed({
     required this.id,
     required this.name,
-    required this.address, // Changed from location to address
-    required this.district, // New field
+    required this.address,  
+    required this.district,  
     required this.imageUrl,
     required this.plantedDate,
     required this.betelType,
