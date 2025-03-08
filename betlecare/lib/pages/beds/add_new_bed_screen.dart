@@ -3,6 +3,7 @@ import 'package:betlecare/models/betel_bed_model.dart';
 import 'package:betlecare/services/betel_bed_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import '../../widgets/bottom_nav_bar.dart';
 
 class AddNewBedScreen extends StatefulWidget {
   const AddNewBedScreen({super.key});
@@ -524,6 +525,14 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                 ),
               ),
             ),
+      bottomNavigationBar: BottomNavBar(
+        selectedIndex: 2,
+        onTabChange: (index) {
+          if (index != 2) {
+            Navigator.pop(context);
+          }
+        },
+      ),
     );
   }
 }

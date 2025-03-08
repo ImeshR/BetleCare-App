@@ -1,3 +1,4 @@
+import 'package:betlecare/widgets/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:betlecare/models/betel_bed_model.dart';
 import 'package:image_picker/image_picker.dart';
@@ -539,6 +540,15 @@ class _EditBedScreenState extends State<EditBedScreen> {
             ),
         ],
       ),
+          bottomNavigationBar: BottomNavBar(
+        selectedIndex: 2,
+        onTabChange: (index) {
+          if (index != 2) {
+            Navigator.pop(context);
+          }
+        },
+      ),
+    
     );
   }
 }

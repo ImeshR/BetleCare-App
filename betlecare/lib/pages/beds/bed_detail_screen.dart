@@ -1,3 +1,4 @@
+import 'package:betlecare/widgets/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:betlecare/models/betel_bed_model.dart';
 import 'package:betlecare/pages/beds/edit_bed_screen.dart';
@@ -63,6 +64,15 @@ class _BedDetailScreenState extends State<BedDetailScreen> {
         backgroundColor: Colors.green.shade700,
         child: const Icon(Icons.add),
       ),
+         bottomNavigationBar: BottomNavBar(
+        selectedIndex: 2,
+        onTabChange: (index) {
+          if (index != 2) {
+            Navigator.pop(context);
+          }
+        },
+      ),
+    
     );
   }
 

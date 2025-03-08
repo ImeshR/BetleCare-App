@@ -5,6 +5,8 @@ import 'package:betlecare/pages/beds/add_new_bed_screen.dart';
 import 'package:betlecare/services/betel_bed_service.dart';
 import 'package:betlecare/services/wateringService.dart';
 import 'package:betlecare/widgets/weather/WateringRecommendationWidget.dart';
+import 'package:lottie/lottie.dart';
+import '../../widgets/bottom_nav_bar.dart';
 
 class MyBedsScreen extends StatefulWidget {
   const MyBedsScreen({super.key});
@@ -59,12 +61,36 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
               child: _buildAddNewBedButton(),
             ),
             _isLoading
-                ? const SliverFillRemaining(
-                    child: Center(child: CircularProgressIndicator()),
+                ? SliverFillRemaining(
+                    child: Container(
+                      color: Colors.white,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Lottie.network(
+                              "https://lottie.host/08fd21f4-4d0f-4ddd-a7a6-9434caa397b6/lykm1jOaUY.json",
+                              fit: BoxFit.cover,
+                              width: 150,
+                              height: 70,
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        ),
+                      ),
+                    ),
                   )
                 : _buildSliverBedsList(),
           ],
         ),
+      ),
+      bottomNavigationBar: BottomNavBar(
+        selectedIndex: 2,
+        onTabChange: (index) {
+          if (index != 2) {
+            Navigator.pop(context);
+          }
+        },
       ),
     );
   }
@@ -109,8 +135,24 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
         future: _bedsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
+            return SliverFillRemaining(
+              child: Container(
+                color: Colors.white,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Lottie.network(
+                        "https://lottie.host/08fd21f4-4d0f-4ddd-a7a6-9434caa397b6/lykm1jOaUY.json",
+                        fit: BoxFit.cover,
+                        width: 150,
+                        height: 70,
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              ),
             );
           } else if (snapshot.hasError) {
             return SliverFillRemaining(
@@ -382,9 +424,6 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
       ],
     );
   }
-
-
-
 
   Widget _buildBedStat({
     required IconData icon,
