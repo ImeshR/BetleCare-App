@@ -17,10 +17,8 @@ class WateringRecommendationWidget extends StatefulWidget {
 class _WateringRecommendationWidgetState extends State<WateringRecommendationWidget> {
   final _wateringService = WateringService();
   bool _isLoading = true;
-  String _recommendation = '';
-  int _waterAmount = 0;
-  double _confidence = 0.0;
   String _error = '';
+  Map<String, dynamic>? _recommendation;
 
   @override
   void initState() {
@@ -31,16 +29,14 @@ class _WateringRecommendationWidgetState extends State<WateringRecommendationWid
   Future<void> _fetchWateringRecommendation() async {
     setState(() {
       _isLoading = true;
+      _error = '';
     });
 
     try {
       final result = await _wateringService.getWateringRecommendation(widget.bed);
       
       setState(() {
-        _recommendation = result['watering_recommendation'] ?? '';
-        _waterAmount = result['water_amount'] ?? 0;
-        _confidence = result['confidence'] ?? 0.0;
-        _error = result['error'] ?? '';
+        _recommendation = result;
         _isLoading = false;
       });
     } catch (e) {
@@ -48,80 +44,121 @@ class _WateringRecommendationWidgetState extends State<WateringRecommendationWid
         _error = e.toString();
         _isLoading = false;
       });
+      print('Error fetching watering recommendation: $e');
+    }
+  }
+  
+  Color _getRecommendationColor(String recommendation) {
+    if (recommendation.contains("No watering")) {
+      return Colors.green;
+    } else if (recommendation.contains("once")) {
+      return Colors.blue;
+    } else {
+      return Colors.indigo;
+    }
+  }
+  
+  IconData _getRecommendationIcon(String recommendation) {
+    if (recommendation.contains("No watering")) {
+      return Icons.check_circle;
+    } else if (recommendation.contains("once")) {
+      return Icons.water_drop;
+    } else {
+      return Icons.water;
+    }
+  }
+  
+  String _getLocalizedRecommendation(String recommendation, int waterAmount) {
+    if (recommendation.contains("No watering")) {
+      return 'ජලය යෙදීම අවශ්‍ය නැත';
+    } else if (recommendation.contains("once")) {
+      return 'ජලය යෙදීම අවශ්‍යයි (${waterAmount}L)';
+    } else {
+      return 'දෙවරක් ජලය යෙදීම අවශ්‍යයි (${waterAmount}L)';
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const SizedBox(
-        width: double.infinity,
-        height: 40,
-        child: Center(
-          child: SizedBox(
-            width: 20, 
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        ),
-      );
-    }
-
-    if (_error.isNotEmpty) {
       return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Center(
-          child: Text(
-            'ජල නිර්දේශය ලබාගැනීමට නොහැකි විය',
-            style: TextStyle(color: Colors.red[700], fontSize: 13),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: const Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 12),
+              Text('ජල නිර්දේශ ලබා ගැනෙයි...'),
+            ],
           ),
         ),
       );
     }
 
-    // Determine color and icon based on recommendation
-    Color color;
-    IconData icon;
-    String localizedText;
-
-    if (_recommendation.contains('No watering')) {
-      color = Colors.green;
-      icon = Icons.check_circle;
-      localizedText = 'ජලය යෙදීම අවශ්‍ය නැත';
-    } else if (_recommendation.contains('once')) {
-      color = Colors.blue;
-      icon = Icons.water_drop;
-      localizedText = 'අද ජලය යෙදීම අවශ්‍යයි (${_waterAmount}L)';
-    } else {
-      color = Colors.indigo;
-      icon = Icons.water;
-      localizedText = 'අද දෙවරක් ජලය යෙදීම අවශ්‍යයි (${_waterAmount}L)';
+    if (_error.isNotEmpty || _recommendation == null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.red.shade100,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'ජල නිර්දේශය ලබාගැනීමට නොහැකි විය',
+                style: TextStyle(color: Colors.red.shade700, fontSize: 13),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
-    // Return a full-width elevated button-like container with the recommendation
+    final recommendation = _recommendation!['watering_recommendation'] ?? '';
+    final waterAmount = _recommendation!['water_amount'] ?? 0;
+    final color = _getRecommendationColor(recommendation);
+    final icon = _getRecommendationIcon(recommendation);
+    final text = _getLocalizedRecommendation(recommendation, waterAmount);
+
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 10),
-      child: ElevatedButton.icon(
-        onPressed: () {
-          // Show more details if needed
-        },
-        icon: Icon(icon, size: 20),
-        label: Text(localizedText),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          textStyle: const TextStyle(
-            fontWeight: FontWeight.bold, 
-            fontSize: 14,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-        ),
+        ],
       ),
     );
   }

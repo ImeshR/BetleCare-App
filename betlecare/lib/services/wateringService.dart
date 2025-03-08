@@ -6,9 +6,15 @@ import 'package:betlecare/services/weather_services2.dart';
 class WateringService {
   static final WateringService _instance = WateringService._internal();
   final WeatherService _weatherService = WeatherService();
-// In watering_service.dart
-// In your watering_service.dart
-final String baseUrl = 'http://10.0.2.2:5000/api/watering';
+  
+  // API endpoint for the watering recommendation service
+  final String baseUrl = 'http://10.0.2.2:5000/api/watering';
+  
+  // ========== DEVELOPMENT TOGGLE ==========
+  // Set to TRUE to use hardcoded data (no API calls)
+  // Set to FALSE to use real API data
+  final bool _useHardcodedData = false;
+  // =======================================
   
   factory WateringService() {
     return _instance;
@@ -49,6 +55,17 @@ final String baseUrl = 'http://10.0.2.2:5000/api/watering';
   
   // Get watering recommendation for a betel bed
   Future<Map<String, dynamic>> getWateringRecommendation(BetelBed bed) async {
+    // If using hardcoded data, return mock data immediately
+    if (_useHardcodedData) {
+      // Calculate crop stage for more realistic hardcoded recommendations
+      final cropStage = _calculateCropStage(bed.plantedDate);
+      
+      // Return hardcoded data with a small delay to simulate network request
+      await Future.delayed(const Duration(milliseconds: 500));
+      return _getHardcodedWateringRecommendation(bed.district, cropStage);
+    }
+    
+    // ========== ACTUAL API CALL CODE (will only run if _useHardcodedData = false) ==========
     try {
       // First, get weather data for the bed's location
       final String locationKey = _getLocationKeyFromDistrict(bed.district);
@@ -124,5 +141,67 @@ final String baseUrl = 'http://10.0.2.2:5000/api/watering';
     };
     
     return districtMap[district] ?? 'වත්මන් ස්ථානය (Current Location)';
+  }
+  
+  // ========== HARDCODED DATA FOR DEVELOPMENT ==========
+  // This method returns mock watering recommendations based on district and crop stage
+  Map<String, dynamic> _getHardcodedWateringRecommendation(String district, int cropStage) {
+    // Simulate different recommendations based on district and crop stage
+    String recommendation;
+    int waterAmount;
+    double confidence;
+    
+    // Kurunegala districts tend to be drier
+    if (district.contains('Kurunegala') || district.contains('කුරුණෑගල')) {
+      if (cropStage <= 3) {
+        // Young plants need more water
+        recommendation = 'Water twice today';
+        waterAmount = 8;
+        confidence = 85.0;
+      } else {
+        recommendation = 'Water once today';
+        waterAmount = 5;
+        confidence = 75.0;
+      }
+    } 
+    // Puttalam districts are typically hot and dry
+    else if (district.contains('Puttalam') || district.contains('පුත්තලම')) {
+      if (cropStage < 7) {
+        recommendation = 'Water twice today';
+        waterAmount = 8;
+        confidence = 90.0;
+      } else {
+        recommendation = 'Water once today';
+        waterAmount = 5;
+        confidence = 80.0;
+      }
+    }
+    // Other districts (more moderate climate)
+    else {
+      // For mature plants, less water is needed
+      if (cropStage >= 7) {
+        recommendation = 'No watering needed';
+        waterAmount = 0;
+        confidence = 65.0;
+      } else {
+        recommendation = 'Water once today';
+        waterAmount = 4;
+        confidence = 70.0;
+      }
+    }
+    
+    // Return mock API response that matches the structure of the real backend response
+    return {
+      'location': _mapDistrictToBackendLocation(district),
+      'watering_recommendation': recommendation,
+      'water_amount': waterAmount,
+      'confidence': confidence,
+      'consecutive_dry_days': 3,  // Hardcoded value for testing
+      'probabilities': {
+        'No watering': recommendation == 'No watering needed' ? 65.0 : 10.0,
+        'Water once': recommendation == 'Water once today' ? 70.0 : 25.0,
+        'Water twice': recommendation == 'Water twice today' ? 85.0 : 15.0,
+      }
+    };
   }
 }
