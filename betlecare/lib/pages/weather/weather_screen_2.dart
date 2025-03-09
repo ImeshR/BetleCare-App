@@ -16,11 +16,14 @@ class WeatherScreen2 extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 _buildDailyForecastCard("සඳුදා", "sunny", 28, 22, 20, 65),
-                _buildDailyForecastCard("අඟහරුවාදා", "partly-cloudy", 27, 21, 40, 70),
+                _buildDailyForecastCard(
+                    "අඟහරුවාදා", "partly-cloudy", 27, 21, 40, 70),
                 _buildDailyForecastCard("බදාදා", "rainy", 25, 20, 80, 85),
-                _buildDailyForecastCard("බ්‍රහස්පතින්දා", "cloudy", 26, 21, 30, 75),
+                _buildDailyForecastCard(
+                    "බ්‍රහස්පතින්දා", "cloudy", 26, 21, 30, 75),
                 _buildDailyForecastCard("සිකුරාදා", "sunny", 29, 23, 10, 60),
-                _buildDailyForecastCard("සෙනසුරාදා", "partly-cloudy", 27, 22, 35, 70),
+                _buildDailyForecastCard(
+                    "සෙනසුරාදා", "partly-cloudy", 27, 22, 35, 70),
                 _buildDailyForecastCard("ඉරිදා", "sunny", 28, 23, 15, 65),
               ],
             ),
@@ -72,7 +75,8 @@ class WeatherScreen2 extends StatelessWidget {
     );
   }
 
-  Widget _buildDailyForecastCard(String day, String weather, int maxTemp, int minTemp, int rainChance, int humidity) {
+  Widget _buildDailyForecastCard(String day, String weather, int maxTemp,
+      int minTemp, int rainChance, int humidity) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),

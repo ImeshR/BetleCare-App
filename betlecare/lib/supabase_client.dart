@@ -10,10 +10,8 @@ class SupabaseClientManager {
   static Future<SupabaseClientManager> get instance async {
     if (_instance == null) {
       await Supabase.initialize(
-
         url: dotenv.env['SUPABASE_URL']!,
         anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-
       );
       _instance = SupabaseClientManager._();
       _instance!._supabaseClient = Supabase.instance.client;
@@ -23,4 +21,3 @@ class SupabaseClientManager {
 
   SupabaseClient get client => _supabaseClient;
 }
-

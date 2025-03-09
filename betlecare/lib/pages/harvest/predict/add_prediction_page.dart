@@ -24,9 +24,27 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
 
   // This should be fetched from your database
   List<Map<String, dynamic>> _measuredLands = [
-    {'name': 'පුත්තලම ඉඩම', 'location': 'Puttalam', 'size': 0.5, 'latitude': 8.0362, 'longitude': 79.8395},
-    {'name': 'ආණමඩුව කුඹුර', 'location': 'Anamaduwa', 'size': 1.0, 'latitude': 7.8731, 'longitude': 80.7718},
-    {'name': 'කුරුණෑගල වත්ත', 'location': 'Kurunegala', 'size': 0.75, 'latitude': 7.4818, 'longitude': 80.3609},
+    {
+      'name': 'පුත්තලම ඉඩම',
+      'location': 'Puttalam',
+      'size': 0.5,
+      'latitude': 8.0362,
+      'longitude': 79.8395
+    },
+    {
+      'name': 'ආණමඩුව කුඹුර',
+      'location': 'Anamaduwa',
+      'size': 1.0,
+      'latitude': 7.8731,
+      'longitude': 80.7718
+    },
+    {
+      'name': 'කුරුණෑගල වත්ත',
+      'location': 'Kurunegala',
+      'size': 0.75,
+      'latitude': 7.4818,
+      'longitude': 80.3609
+    },
   ];
 
   @override
@@ -38,9 +56,13 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
   Future<void> _selectDate(BuildContext context, bool isLastHarvest) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isLastHarvest ? _lastHarvestDate ?? DateTime.now() : _lastHarvestDate!.add(Duration(days: 7)),
+      initialDate: isLastHarvest
+          ? _lastHarvestDate ?? DateTime.now()
+          : _lastHarvestDate!.add(Duration(days: 7)),
       firstDate: isLastHarvest ? DateTime(2000) : _lastHarvestDate!,
-      lastDate: isLastHarvest ? DateTime.now() : _lastHarvestDate!.add(Duration(days: 7)),
+      lastDate: isLastHarvest
+          ? DateTime.now()
+          : _lastHarvestDate!.add(Duration(days: 7)),
     );
     if (picked != null) {
       setState(() {
@@ -55,11 +77,14 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
   }
 
   Future<Map<String, dynamic>> _fetchWeatherData() async {
-    if (_selectedLand == null || _lastHarvestDate == null || _expectedHarvestDate == null) {
+    if (_selectedLand == null ||
+        _lastHarvestDate == null ||
+        _expectedHarvestDate == null) {
       throw Exception('ස්ථානය සහ දින තෝරා ගත යුතුය');
     }
 
-    final selectedLandData = _measuredLands.firstWhere((land) => land['name'] == _selectedLand);
+    final selectedLandData =
+        _measuredLands.firstWhere((land) => land['name'] == _selectedLand);
     final latitude = selectedLandData['latitude'] as double;
     final longitude = selectedLandData['longitude'] as double;
 
@@ -85,7 +110,8 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
     if (_selectedLand == null) {
       return 'Unknown Soil Type';
     }
-    final selectedLandData = _measuredLands.firstWhere((land) => land['name'] == _selectedLand);
+    final selectedLandData =
+        _measuredLands.firstWhere((land) => land['name'] == _selectedLand);
     return SoilService.analyzeSoilType(selectedLandData['location'] as String);
   }
 
@@ -115,7 +141,8 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
       });
       await Future.delayed(Duration(seconds: 2));
 
-      final selectedLandData = _measuredLands.firstWhere((land) => land['name'] == _selectedLand);
+      final selectedLandData =
+          _measuredLands.firstWhere((land) => land['name'] == _selectedLand);
 
       final predictionData = {
         'Land Name': _selectedLand,
@@ -124,8 +151,10 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
         'Soil Type': _soilType,
         'Planted Sticks': _plantedSticks,
         'Last Harvest Date': DateFormat('yyyy/MM/dd').format(_lastHarvestDate!),
-        'Expected Harvest Date': DateFormat('yyyy/MM/dd').format(_expectedHarvestDate!),
-        'Days Until Harvest': _expectedHarvestDate!.difference(_lastHarvestDate!).inDays,
+        'Expected Harvest Date':
+            DateFormat('yyyy/MM/dd').format(_expectedHarvestDate!),
+        'Days Until Harvest':
+            _expectedHarvestDate!.difference(_lastHarvestDate!).inDays,
         'Rainfall Seq (mm)': weatherData['rainfall'],
         'Min Temp Seq (°C)': weatherData['min_temp'],
         'Max Temp Seq (°C)': weatherData['max_temp'],
@@ -147,9 +176,6 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('අස්වැන්න පුරෝකථනය එකතු කරන්න'),
-      ),
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -177,27 +203,32 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
                       setState(() {
                         _selectedLand = newValue;
                         if (newValue != null) {
-                          var selectedLand = _measuredLands.firstWhere((land) => land['name'] == newValue);
-                          _landSizeController.text = selectedLand['size'].toString();
+                          var selectedLand = _measuredLands
+                              .firstWhere((land) => land['name'] == newValue);
+                          _landSizeController.text =
+                              selectedLand['size'].toString();
                           _landSize = selectedLand['size'];
                         }
                       });
                     },
-                    validator: (value) => value == null ? 'කරුණාකර ඉඩමක් තෝරන්න' : null,
+                    validator: (value) =>
+                        value == null ? 'කරුණාකර ඉඩමක් තෝරන්න' : null,
                   ),
                   const SizedBox(height: 16),
                   Center(
                     child: TextButton(
                       onPressed: () {
                         // TODO: Navigate to the land measurement page
-                        Navigator.pop(context); // This is a placeholder, replace with actual navigation
+                        Navigator.pop(
+                            context); // This is a placeholder, replace with actual navigation
                       },
                       child: const Text('අලුත් ඉඩමක් මනින්න'),
                     ),
                   ),
                   const SizedBox(height: 24),
                   TextFormField(
-                    decoration: const InputDecoration(labelText: 'රෝපණය කළ දඬු ගණන'),
+                    decoration:
+                        const InputDecoration(labelText: 'රෝපණය කළ දඬු ගණන'),
                     keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -225,7 +256,8 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
                     title: const Text('අපේක්ෂිත අස්වනු දිනය'),
                     subtitle: Text(_expectedHarvestDate == null
                         ? 'තෝරා නැත'
-                        : DateFormat('yyyy/MM/dd').format(_expectedHarvestDate!)),
+                        : DateFormat('yyyy/MM/dd')
+                            .format(_expectedHarvestDate!)),
                     trailing: const Icon(Icons.calendar_today),
                     onTap: _lastHarvestDate == null
                         ? null
@@ -234,7 +266,8 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
                   const SizedBox(height: 24),
                   TextFormField(
                     controller: _landSizeController,
-                    decoration: const InputDecoration(labelText: 'ඉඩම් ප්‍රමාණය (අක්කර)'),
+                    decoration: const InputDecoration(
+                        labelText: 'ඉඩම් ප්‍රමාණය (අක්කර)'),
                     keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -282,4 +315,3 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
     );
   }
 }
-
