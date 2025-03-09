@@ -1,24 +1,23 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:betlecare/models/betel_bed_model.dart';
 import 'package:betlecare/services/betel_bed_service.dart';
 
-class BetelBedProvider extends ChangeNotifier {
-  final BetelBedService _betelBedService = BetelBedService();
-  
+class BetelBedProvider with ChangeNotifier {
+  final _betelBedService = BetelBedService();
   List<BetelBed> _beds = [];
   bool _isLoading = false;
   String? _error;
-  
+
   List<BetelBed> get beds => _beds;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  
+
   Future<void> loadBeds() async {
     try {
       _isLoading = true;
       _error = null;
       notifyListeners();
-      
+
       _beds = await _betelBedService.getBetelBeds();
       
       _isLoading = false;
@@ -29,24 +28,25 @@ class BetelBedProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
-  Future<BetelBed> addBed(BetelBed bed, dynamic imageFile) async {
+
+  Future<void> deleteBed(String bedId) async {
     try {
       _isLoading = true;
       notifyListeners();
+
+      // Call the service to delete the bed
+      await _betelBedService.deleteBed(bedId);
       
-      final newBed = await _betelBedService.addBetelBed(bed, imageFile);
-      _beds.insert(0, newBed); // Add at the beginning of the list
+      // Remove the bed from the local list
+      _beds.removeWhere((bed) => bed.id == bedId);
       
       _isLoading = false;
       notifyListeners();
-      
-      return newBed;
     } catch (e) {
       _isLoading = false;
       _error = e.toString();
       notifyListeners();
-      rethrow;
+      rethrow; // Rethrow to allow proper error handling in UI
     }
   }
   
@@ -171,26 +171,9 @@ class BetelBedProvider extends ChangeNotifier {
   int get totalPlants => _beds.fold(0, (sum, bed) => sum + bed.plantCount);
   
   // Delete a bed
-  Future<void> deleteBed(String bedId) async {
-    try {
-      _isLoading = true;
-      notifyListeners();
-      
-      await _betelBedService.deleteBed(bedId);
-      
-      // Remove from the local list
-      _beds.removeWhere((bed) => bed.id == bedId);
-      
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      _isLoading = false;
-      _error = e.toString();
-      notifyListeners();
-      rethrow;
-    }
-  }
-  
+
+// Delete a bed - Improved to avoid widget ancestor error
+
   // Clear error
   void clearError() {
     _error = null;

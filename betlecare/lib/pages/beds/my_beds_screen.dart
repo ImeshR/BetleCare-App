@@ -217,45 +217,53 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
     );
   }
 
-  Widget _buildBedCard(BetelBed bed) {
-    final statusColor = _getStatusColor(bed.status);
-    
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: statusColor.withOpacity(0.3)),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => Navigator.push(
+// Modified method in MyBedsScreen to properly handle navigation to BedDetailScreen with result
+Widget _buildBedCard(BetelBed bed) {
+  final statusColor = _getStatusColor(bed.status);
+  
+  return Card(
+    elevation: 3,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: BorderSide(color: statusColor.withOpacity(0.3)),
+    ),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () async {
+        final result = await Navigator.push(
           context, 
           MaterialPageRoute(builder: (context) => BedDetailScreen(bed: bed))
-        ).then((_) => _loadBeds()), // Refresh after returning
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildBedCardHeader(bed, statusColor),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildBedCardTitle(bed),
-                  const SizedBox(height: 8),
-                  _buildBedCardLocation(bed),
-                  const SizedBox(height: 16),
-                  _buildBedCardStats(bed),
-                  const Divider(height: 32),
-                  _buildBedCardActions(bed),
-                ],
-              ),
+        );
+        
+        // If result is true (bed was updated or deleted), refresh the list
+        if (result == true) {
+          _loadBeds();
+        }
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildBedCardHeader(bed, statusColor),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildBedCardTitle(bed),
+                const SizedBox(height: 8),
+                _buildBedCardLocation(bed),
+                const SizedBox(height: 16),
+                _buildBedCardStats(bed),
+                const Divider(height: 32),
+                _buildBedCardActions(bed),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildBedCardHeader(BetelBed bed, Color statusColor) {
     return Stack(

@@ -857,30 +857,44 @@ void _showFormDialog({
 void _showDeleteConfirmation() {
   showDialog(
     context: context,
-    builder: (context) => AlertDialog(
+    builder: (dialogContext) => AlertDialog(
       title: const Text('පඳුර මකන්නද?'),
       content: const Text('මෙම බුලත් පඳුර සහ එයට අදාළ සියලුම දත්ත මකා දැමෙනු ඇත. මෙය ආපසු හැරවිය නොහැක.'),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(dialogContext),
           child: const Text('අවලංගු කරන්න'),
         ),
         TextButton(
           onPressed: () async {
             try {
-              Navigator.pop(context);
+              // First close the dialog
+              Navigator.pop(dialogContext);
+              
+              // Then show loading indicator
               setState(() => _isLoading = true);
               
+              // Get the provider and delete the bed
               final betelBedProvider = Provider.of<BetelBedProvider>(context, listen: false);
               await betelBedProvider.deleteBed(bed.id);
               
-              setState(() => _isLoading = false);
-              _showSuccessSnackBar('බුලත් පඳුර සාර්ථකව මකා දමන ලදී');
+              // Show success message and pop with successful deletion result
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('බුලත් පඳුර සාර්ථකව මකා දමන ලදී'))
+              );
               
-              Navigator.pop(context);
+              // Important: Pop the current screen AFTER deletion is complete
+              // and pass true to indicate a refresh is needed
+              if (mounted) {
+                Navigator.of(context).pop(true);
+              }
             } catch (e) {
-              setState(() => _isLoading = false);
-              _showErrorSnackBar('දෝෂයකි: ${e.toString()}');
+              if (mounted) {
+                setState(() => _isLoading = false);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('දෝෂයකි: ${e.toString()}'))
+                );
+              }
             }
           },
           style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
