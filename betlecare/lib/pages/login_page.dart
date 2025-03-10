@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 import '../supabase_client.dart';
 import '../styles/auth_styles.dart';
 
@@ -38,7 +40,7 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (response.user != null) {
-        Navigator.of(context).pushReplacementNamed('/main');
+        await _handleSuccessfulSignIn(response.user);
       } else {
         setState(() {
           _errorMessage = 'Login failed. Please check your credentials.';
@@ -60,8 +62,15 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _nativeGoogleSignIn() async {
-    const clientId = '973570141465-qnd5vbsrnr98aca90lru6gsimbg21ngb.apps.googleusercontent.com';
-    const webClientId = '973570141465-0f8s4rehfv4lvtgpit6ebop0m98unlvq.apps.googleusercontent.com';
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    const clientId =
+        '973570141465-qnd5vbsrnr98aca90lru6gsimbg21ngb.apps.googleusercontent.com';
+    const webClientId =
+        '973570141465-0f8s4rehfv4lvtgpit6ebop0m98unlvq.apps.googleusercontent.com';
     final GoogleSignIn googleSignIn = GoogleSignIn(
       clientId: clientId,
       serverClientId: webClientId,
@@ -89,7 +98,7 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (response.user != null) {
-        Navigator.of(context).pushReplacementNamed('/main');
+        await _handleSuccessfulSignIn(response.user);
       } else {
         setState(() {
           _errorMessage = 'Google sign-in failed. Please try again.';
@@ -97,7 +106,8 @@ class _LoginPageState extends State<LoginPage> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'An error occurred during Google sign-in: ${e.toString()}';
+        _errorMessage =
+            'An error occurred during Google sign-in: ${e.toString()}';
       });
       print('Error during Google sign-in: $e');
     } finally {
@@ -105,6 +115,37 @@ class _LoginPageState extends State<LoginPage> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _handleSuccessfulSignIn(User? user) async {
+    if (user == null) {
+      setState(() {
+        _errorMessage = 'Login failed. User information is missing.';
+      });
+      return;
+    }
+
+    final supabase = await SupabaseClientManager.instance;
+
+    // Set user in UserProvider
+    Provider.of<UserProvider>(context, listen: false).setUser(user);
+
+    try {
+      // Fetch additional user data
+      final userData = await supabase.client
+          .from('users')
+          .select()
+          .eq('id', user.id)
+          .single();
+
+      Provider.of<UserProvider>(context, listen: false).setUserData(userData);
+    } catch (e) {
+      print('Error fetching user data: $e');
+      // If fetching user data fails, we still want to proceed with login
+      // You might want to handle this error differently based on your app's requirements
+    }
+
+    Navigator.of(context).pushReplacementNamed('/main');
   }
 
   @override

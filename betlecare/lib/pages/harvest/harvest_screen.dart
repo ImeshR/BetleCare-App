@@ -1,3 +1,4 @@
+import 'package:betlecare/pages/harvest/predict/add_prediction_page.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/profile_header.dart';
@@ -14,7 +15,7 @@ class HarvestScreen extends StatelessWidget {
         child: Column(
           children: [
             _buildCard(
-              title: 'ඵලදාව පිළිබඳ\nඅනාවැකි',
+              title: 'අස්වැන්න පිළිබඳ\nපුරෝකථනය',
               color: Colors.green.shade100,
               imagePath: 'assets/images/eshan/LM1.png',
               gradient: LinearGradient(
@@ -27,7 +28,7 @@ class HarvestScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ChildPageWrapper(child: LandMainScreen()),
+                    builder: (context) => const ChildPageWrapper(child: AddPredictionPage()),
                   ),
                 );
               },

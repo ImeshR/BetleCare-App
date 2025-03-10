@@ -1,7 +1,10 @@
 import 'package:betlecare/pages/market/a_market_screen.dart';
 import 'package:betlecare/pages/sidebar_menu.dart';
+import 'package:betlecare/providers/user_provider.dart';
+import 'package:betlecare/providers/betel_bed_provider.dart'; // Added import for BetelBedProvider
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:betlecare/pages/harvest/harvest_screen.dart';
 import 'package:betlecare/pages/home_screen.dart';
@@ -12,17 +15,30 @@ import 'package:betlecare/widgets/profile_header.dart';
 import 'package:betlecare/pages/login_page.dart';
 import 'package:betlecare/pages/signup_page.dart';
 import 'package:betlecare/supabase_client.dart';
- 
 import 'package:line_icons/line_icons.dart';
 import 'package:betlecare/pages/weather/weather_screen.dart';
- 
 
- 
 void main() async {
   await dotenv.load(fileName: '.env');
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseClientManager.instance;
-  runApp(const MyApp());
+
+  final userProvider = UserProvider();
+  await userProvider.initializeUser();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(
+          value: userProvider,
+        ),
+        ChangeNotifierProvider(
+          create: (context) => BetelBedProvider(), // Added BetelBedProvider
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -89,6 +105,15 @@ class _MainPageState extends State<MainPage> {
     const ProfileScreen(),
     const WeatherScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Preload betel bed data when the app starts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<BetelBedProvider>(context, listen: false).loadBeds();
+    });
+  }
 
   void _onTabChange(int index) {
     setState(() {

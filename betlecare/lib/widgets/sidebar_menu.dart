@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:line_icons/line_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
 import '../supabase_client.dart';
+import '../providers/user_provider.dart';
 
 class SidebarMenu extends StatelessWidget {
   const SidebarMenu({Key? key}) : super(key: key);
@@ -10,6 +12,10 @@ class SidebarMenu extends StatelessWidget {
     try {
       final supabase = await SupabaseClientManager.instance;
       await supabase.client.auth.signOut();
+
+      // Clear the user data from the provider
+      Provider.of<UserProvider>(context, listen: false).clearUser();
+
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -20,36 +26,42 @@ class SidebarMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final user = userProvider.user;
+    final userData = userProvider.userData;
+
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
             decoration: BoxDecoration(
-              color: Colors.green[100], // Updated primary color
+              color: Colors.green[100],
             ),
             child: Container(
-              color: Colors.green[100], // Ensure background color applies
+              color: Colors.green[100],
               padding: const EdgeInsets.all(8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 30,
-                    backgroundImage: AssetImage('assets/images/profile.png'),
+                    backgroundImage: user?.userMetadata?['avatar_url'] != null
+                        ? NetworkImage(user!.userMetadata!['avatar_url'])
+                        : const AssetImage('assets/images/profile.png') as ImageProvider,
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'Eshan',
-                    style: TextStyle(
+                  Text(
+                    user?.userMetadata?['full_name'] ?? userData?['full_name'] ?? 'Guest',
+                    style: const TextStyle(
                       color: Colors.black,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const Text(
-                    'eshan@example.com',
-                    style: TextStyle(
+                  Text(
+                    user?.email ?? 'No email',
+                    style: const TextStyle(
                       color: Colors.black54,
                       fontSize: 14,
                     ),
@@ -63,7 +75,7 @@ class SidebarMenu extends StatelessWidget {
             title: const Text('Profile'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, '/profile'); // Navigate to Profile
+              Navigator.pushNamed(context, '/profile');
             },
           ),
           ListTile(
@@ -71,7 +83,7 @@ class SidebarMenu extends StatelessWidget {
             title: const Text('Settings'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, '/settings'); // Navigate to Settings
+              Navigator.pushNamed(context, '/settings');
             },
           ),
           ListTile(
@@ -87,3 +99,4 @@ class SidebarMenu extends StatelessWidget {
     );
   }
 }
+

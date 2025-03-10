@@ -12,7 +12,7 @@ class LandMainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const BasicAppbar(),
+      // appBar: const BasicAppbar(),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -22,36 +22,36 @@ class LandMainScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     _buildCard(
-                      context: context,
                       title: 'සිතියම මත පදනම්\n වූ ඉඩම් මැනීම',
                       color: Colors.blue.shade100,
                       imagePath: 'assets/images/eshan/LM5.png',
                       gradient: LinearGradient(
                         colors: [Colors.blue.shade50, Colors.blue.shade100],
                       ),
-                      onTap: () => _navigateTo(context, const ManualLandMeasurementPage()),
+                      onTap: () => _navigateTo(
+                          context, const ManualLandMeasurementPage()),
                     ),
                     const SizedBox(height: 16),
                     _buildCard(
-                      context: context,
                       title: 'GPS මත පදනම්\n වූ ඉඩම් මැනීම',
                       color: Colors.purple.shade100,
                       imagePath: 'assets/images/eshan/LM6.png',
                       gradient: LinearGradient(
                         colors: [Colors.purple.shade50, Colors.purple.shade100],
                       ),
-                      onTap: () => _navigateTo(context, const LandMeasurementScreen()),
+                      onTap: () =>
+                          _navigateTo(context, const LandMeasurementScreen()),
                     ),
                     const SizedBox(height: 16),
                     _buildCard(
-                      context: context,
                       title: 'ඉඩම් විස්තර',
                       color: Colors.green.shade100,
                       imagePath: 'assets/images/eshan/LM7.png',
                       gradient: LinearGradient(
                         colors: [Colors.green.shade50, Colors.green.shade100],
                       ),
-                      onTap: () => _navigateTo(context, const LandDetailsScreen()),
+                      onTap: () =>
+                          _navigateTo(context, const LandDetailsScreen()),
                     ),
                   ],
                 ),
@@ -73,16 +73,15 @@ class LandMainScreen extends StatelessWidget {
   }
 
   Widget _buildCard({
-    required BuildContext context,
     required String title,
     required Color color,
     required String imagePath,
     required Gradient gradient,
-    required VoidCallback onTap,
+    required Function()? onTap,
   }) {
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 120, maxHeight: 180),
+      height: 180,
       decoration: BoxDecoration(
         gradient: gradient,
         borderRadius: BorderRadius.circular(16),
@@ -100,26 +99,33 @@ class LandMainScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
-                Expanded(
-                  flex: 2,
-                  child: Image.asset(
-                    imagePath,
-                    fit: BoxFit.contain,
+                SizedBox(
+                  width: 160,
+                  height: 160,
+                  child: Center(
+                    child: Image.asset(
+                      imagePath,
+                      width: 160,
+                      height: 160,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
-                  flex: 3,
-                  child: Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.grey[800],
-                      fontWeight: FontWeight.w600,
-                      height: 1.3,
+                  child: Center(
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.grey[800],
+                        fontWeight: FontWeight.w600,
+                        height: 1.5,
+                      ),
                     ),
                   ),
                 ),
@@ -131,4 +137,3 @@ class LandMainScreen extends StatelessWidget {
     );
   }
 }
-
