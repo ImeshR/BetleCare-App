@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:betlecare/services/index.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/user_provider.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AddPredictionPage extends StatefulWidget {
   const AddPredictionPage({Key? key}) : super(key: key);
@@ -22,30 +27,47 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
 
   final TextEditingController _landSizeController = TextEditingController();
 
-  // This should be fetched from your database
-  List<Map<String, dynamic>> _measuredLands = [
-    {
-      'name': 'පුත්තලම ඉඩම',
-      'location': 'Puttalam',
-      'size': 0.5,
-      'latitude': 8.0362,
-      'longitude': 79.8395
-    },
-    {
-      'name': 'ආණමඩුව කුඹුර',
-      'location': 'Anamaduwa',
-      'size': 1.0,
-      'latitude': 7.8731,
-      'longitude': 80.7718
-    },
-    {
-      'name': 'කුරුණෑගල වත්ත',
-      'location': 'Kurunegala',
-      'size': 0.75,
-      'latitude': 7.4818,
-      'longitude': 80.3609
-    },
-  ];
+  // Replace hardcoded lands with fetched data from Supabase
+  List<Map<String, dynamic>> _lands = [];
+  late SupabaseService _supabaseService;
+
+  // Add these variables to the _AddPredictionPageState class
+  Map<String, dynamic>? _predictionResults;
+  bool _showResults = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeSupabaseService();
+  }
+
+  Future<void> _initializeSupabaseService() async {
+    _supabaseService = await SupabaseService.init();
+    _fetchLands();
+  }
+
+  Future<void> _fetchLands() async {
+    setState(() => _isLoading = true);
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final userId = userProvider.user?.id;
+
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+
+      final response = await _supabaseService.read('land_size',
+          column: 'user_id', value: userId);
+
+      setState(() {
+        _lands = response;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching lands: $e');
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -62,7 +84,8 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
       firstDate: isLastHarvest ? DateTime(2000) : _lastHarvestDate!,
       lastDate: isLastHarvest
           ? DateTime.now()
-          : _lastHarvestDate!.add(Duration(days: 7)),
+          : _lastHarvestDate!.add(
+              Duration(days: 365)), // Allow up to a year for expected harvest
     );
     if (picked != null) {
       setState(() {
@@ -83,25 +106,30 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
       throw Exception('ස්ථානය සහ දින තෝරා ගත යුතුය');
     }
 
+    // Find the selected land from the fetched lands
     final selectedLandData =
-        _measuredLands.firstWhere((land) => land['name'] == _selectedLand);
-    final latitude = selectedLandData['latitude'] as double;
-    final longitude = selectedLandData['longitude'] as double;
+        _lands.firstWhere((land) => land['name'] == _selectedLand);
+
+    // Note: You'll need to ensure your land_size table has latitude and longitude columns
+    // If not, you might need to modify this part or add a default location
+    final latitude = selectedLandData['latitude'] as double? ?? 7.8731;
+    final longitude = selectedLandData['longitude'] as double? ?? 80.7718;
 
     try {
-      return await WeatherService.fetchWeatherData(
+      var weatherData = await WeatherService.fetchWeatherData(
         latitude,
         longitude,
         _lastHarvestDate!,
         _expectedHarvestDate!,
       );
+      print('Weather Data: $weatherData');
+      return weatherData;
     } catch (e) {
       print('Error fetching weather data: $e');
-      // Return mock data in case of an error
       return {
-        'rainfall': [0.0, 0.0, 0.0, 10.3, 11.0, 15.2, 0.0],
-        'min_temp': [24.0, 24.3, 25.0, 24.0, 24.0, 24.9, 25.8],
-        'max_temp': [33.5, 34.4, 35.5, 33.5, 33.0, 34.0, 35.4],
+        'rainfall': 0,
+        'min_temp': 0,
+        'max_temp': 0,
       };
     }
   }
@@ -111,25 +139,28 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
       return 'Unknown Soil Type';
     }
     final selectedLandData =
-        _measuredLands.firstWhere((land) => land['name'] == _selectedLand);
-    return SoilService.analyzeSoilType(selectedLandData['location'] as String);
+        _lands.firstWhere((land) => land['name'] == _selectedLand);
+    return SoilService.analyzeSoilType(
+        selectedLandData['location'] as String? ?? 'Unknown');
   }
 
+  // Replace the _submitForm method with this updated version
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
       setState(() {
         _isLoading = true;
+        _showResults = false;
         _loadingMessage = 'පස වර්ගය විශ්ලේෂණය කරමින්...';
       });
       _soilType = _analyzeSoilType();
-      await Future.delayed(Duration(seconds: 2));
+      await Future.delayed(Duration(seconds: 1));
 
       setState(() {
         _loadingMessage = 'දින කාලය ගණනය කරමින්...';
       });
-      await Future.delayed(Duration(seconds: 2));
+      await Future.delayed(Duration(seconds: 1));
 
       setState(() {
         _loadingMessage = 'කාලගුණ දත්ත රැස් කරමින්...';
@@ -139,38 +170,185 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
       setState(() {
         _loadingMessage = 'අස්වැන්න පුරෝකථනය කරමින්...';
       });
-      await Future.delayed(Duration(seconds: 2));
 
       final selectedLandData =
-          _measuredLands.firstWhere((land) => land['name'] == _selectedLand);
+          _lands.firstWhere((land) => land['name'] == _selectedLand);
 
-      final predictionData = {
-        'Land Name': _selectedLand,
-        'Location': selectedLandData['location'],
-        'Land Size (acres)': _landSize,
-        'Soil Type': _soilType,
-        'Planted Sticks': _plantedSticks,
-        'Last Harvest Date': DateFormat('yyyy/MM/dd').format(_lastHarvestDate!),
-        'Expected Harvest Date':
-            DateFormat('yyyy/MM/dd').format(_expectedHarvestDate!),
-        'Days Until Harvest':
-            _expectedHarvestDate!.difference(_lastHarvestDate!).inDays,
-        'Rainfall Seq (mm)': weatherData['rainfall'],
-        'Min Temp Seq (°C)': weatherData['min_temp'],
-        'Max Temp Seq (°C)': weatherData['max_temp'],
+      // Calculate days since last harvest
+      final daysSinceLastHarvest =
+          _expectedHarvestDate!.difference(_lastHarvestDate!).inDays;
+
+      // Format dates for API
+      final lastHarvestFormatted =
+          DateFormat('MM/dd/yyyy').format(_lastHarvestDate!);
+      final expectedHarvestFormatted =
+          DateFormat('MM/dd/yyyy').format(_expectedHarvestDate!);
+
+      // Prepare request body for prediction API
+      final requestBody = {
+        "Last Harvest Date": [lastHarvestFormatted],
+        "Expected Harvest Date": [expectedHarvestFormatted],
+        "Days Since Last Harvest": [daysSinceLastHarvest],
+        "Location": [selectedLandData['location'] ?? "Unknown"],
+        "Soil Type": [_soilType ?? "Unknown Soil Type"],
+        "Rainfall Seq (mm)": [
+          weatherData['rainfall'] ??
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+        ],
+        "Min Temp Seq (°C)": [
+          weatherData['min_temp'] ??
+              [
+                25.0,
+                25.0,
+                25.0,
+                25.0,
+                25.0,
+                25.0,
+                25.0,
+                25.0,
+                25.0,
+                25.0,
+                25.0,
+                25.0,
+                25.0,
+                25.0,
+                25.0
+              ]
+        ],
+        "Max Temp Seq (°C)": [
+          weatherData['max_temp'] ??
+              [
+                35.0,
+                35.0,
+                35.0,
+                35.0,
+                35.0,
+                35.0,
+                35.0,
+                35.0,
+                35.0,
+                35.0,
+                35.0,
+                35.0,
+                35.0,
+                35.0,
+                35.0
+              ]
+        ],
+        "Land Size (acres)": [
+          double.tryParse(_landSize?.toString() ?? "0.0") ?? 0.0
+        ],
+        "Planted Sticks": [_plantedSticks ?? 0]
       };
 
-      // TODO: Send predictionData to your backend or process it as needed
-      print(predictionData);
+      print('Request Body: $requestBody');
 
-      setState(() {
-        _isLoading = false;
-      });
+      try {
+        // Get the API URL from environment variables
+        final apiUrl = dotenv.env['HARVEST_PREDICT']!;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('පුරෝකථන දත්ත සාර්ථකව යවන ලදී')),
-      );
+        // Make the API call
+        final response = await http.post(
+          Uri.parse(apiUrl),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(requestBody),
+        );
+
+        if (response.statusCode == 200) {
+          final responseData = jsonDecode(response.body);
+          setState(() {
+            _predictionResults = responseData;
+            _showResults = true;
+          });
+
+          print('Prediction Results: $_predictionResults');
+        } else {
+          print('API Error: ${response.statusCode} - ${response.body}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    'පුරෝකථන සේවාව සම්බන්ධ වීමේ දෝෂයක්: ${response.statusCode}')),
+          );
+        }
+      } catch (e) {
+        print('Error calling prediction API: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('පුරෝකථන සේවාව සම්බන්ධ වීමේ දෝෂයක්: $e')),
+        );
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  // Add this method to build the results UI
+  Widget _buildResultsCard() {
+    if (!_showResults || _predictionResults == null) {
+      return SizedBox.shrink();
+    }
+
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 16),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'අස්වැන්න පුරෝකථනය',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Divider(),
+            SizedBox(height: 8),
+            _buildResultRow('පීදුනු කොළ (P)', _predictionResults!['P']),
+            _buildResultRow('කෙටි කොළ (KT)', _predictionResults!['KT']),
+            _buildResultRow('රෑන් කෙටි කොළ (RKT)', _predictionResults!['RKT']),
+            SizedBox(height: 8),
+            Text(
+              'මුළු අස්වැන්න: ${(_predictionResults!['P'] + _predictionResults!['KT'] + _predictionResults!['RKT']).toStringAsFixed(0)}',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper method to build each result row
+  Widget _buildResultRow(String label, dynamic value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label),
+          Text(
+            value.toString(),
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -190,30 +368,36 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(labelText: 'මැනපු ඉඩම්'),
-                    value: _selectedLand,
-                    items: _measuredLands.map((land) {
-                      return DropdownMenuItem<String>(
-                        value: land['name'] as String,
-                        child: Text('${land['name']} (${land['size']} අක්කර)'),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedLand = newValue;
-                        if (newValue != null) {
-                          var selectedLand = _measuredLands
-                              .firstWhere((land) => land['name'] == newValue);
-                          _landSizeController.text =
-                              selectedLand['size'].toString();
-                          _landSize = selectedLand['size'];
-                        }
-                      });
-                    },
-                    validator: (value) =>
-                        value == null ? 'කරුණාකර ඉඩමක් තෝරන්න' : null,
-                  ),
+                  _isLoading && _lands.isEmpty
+                      ? Center(child: CircularProgressIndicator())
+                      : DropdownButtonFormField<String>(
+                          decoration:
+                              const InputDecoration(labelText: 'මැනපු ඉඩම්'),
+                          value: _selectedLand,
+                          items: _lands.map((land) {
+                            return DropdownMenuItem<String>(
+                              value: land['name'] as String,
+                              child: Text(
+                                  '${land['name']} (${land['area'].toStringAsFixed(2)} අක්කර)'),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedLand = newValue;
+                              if (newValue != null) {
+                                var selectedLand = _lands.firstWhere(
+                                    (land) => land['name'] == newValue);
+                                _landSizeController.text = double.tryParse(
+                                            selectedLand['area'].toString())
+                                        ?.toStringAsFixed(2) ??
+                                    '0.00';
+                                _landSize = selectedLand['area'];
+                              }
+                            });
+                          },
+                          validator: (value) =>
+                              value == null ? 'කරුණාකර ඉඩමක් තෝරන්න' : null,
+                        ),
                   const SizedBox(height: 16),
                   Center(
                     child: TextButton(
@@ -266,6 +450,7 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
                   const SizedBox(height: 24),
                   TextFormField(
                     controller: _landSizeController,
+                    enabled: false,
                     decoration: const InputDecoration(
                         labelText: 'ඉඩම් ප්‍රමාණය (අක්කර)'),
                     keyboardType: TextInputType.number,
@@ -283,6 +468,8 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
                     },
                   ),
                   const SizedBox(height: 24),
+                  _buildResultsCard(),
+                  const SizedBox(height: 16),
                   Center(
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _submitForm,
