@@ -208,7 +208,7 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
         'user_id': userId,
         'name': _nameController.text,
         'location': _locationController.text,
-        'area': _area,
+        'area': _area!.toStringAsFixed(2),
         'coordinates': _polygonPoints
             .map((point) => [point.latitude, point.longitude])
             .toList(),

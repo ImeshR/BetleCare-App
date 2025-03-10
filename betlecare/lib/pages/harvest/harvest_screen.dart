@@ -28,7 +28,8 @@ class HarvestScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ChildPageWrapper(child: AddPredictionPage()),
+                    builder: (context) =>
+                        const ChildPageWrapper(child: AddPredictionPage()),
                   ),
                 );
               },
@@ -48,7 +49,8 @@ class HarvestScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ChildPageWrapper(child: LandMainScreen()),
+                    builder: (context) =>
+                        const ChildPageWrapper(child: LandMainScreen()),
                   ),
                 );
               },
@@ -68,7 +70,8 @@ class HarvestScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ChildPageWrapper(child: LandMainScreen()),
+                    builder: (context) =>
+                        const ChildPageWrapper(child: LandMainScreen()),
                   ),
                 );
               },
@@ -88,7 +91,8 @@ class HarvestScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ChildPageWrapper(child: LandMainScreen()),
+                    builder: (context) =>
+                        const ChildPageWrapper(child: LandMainScreen()),
                   ),
                 );
               },
@@ -137,7 +141,8 @@ class HarvestScreen extends StatelessWidget {
                       imagePath, // Use the image path
                       width: 160, // Set the image width
                       height: 160, // Set the image height
-                      fit: BoxFit.contain, // Ensure the image fits without distortion
+                      fit: BoxFit
+                          .contain, // Ensure the image fits without distortion
                     ),
                   ),
                 ),
@@ -146,7 +151,8 @@ class HarvestScreen extends StatelessWidget {
                   child: Center(
                     child: Text(
                       title,
-                      textAlign: TextAlign.center, // Ensure text alignment is centered
+                      textAlign:
+                          TextAlign.center, // Ensure text alignment is centered
                       style: TextStyle(
                         fontSize: 20,
                         color: Colors.grey[800],

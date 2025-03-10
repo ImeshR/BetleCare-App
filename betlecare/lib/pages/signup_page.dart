@@ -77,7 +77,8 @@ class _SignupPageState extends State<SignupPage> {
       backgroundColor: AuthStyles.backgroundColor,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
-        child: Center(  // Center widget added
+        child: Center(
+          // Center widget added
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -116,7 +117,9 @@ class _SignupPageState extends State<SignupPage> {
                 decoration: AuthStyles.inputDecoration('මුරපදය').copyWith(
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: AuthStyles.primaryColor,
                     ),
                     onPressed: () {
@@ -131,10 +134,13 @@ class _SignupPageState extends State<SignupPage> {
               const SizedBox(height: 16),
               TextField(
                 controller: _confirmPasswordController,
-                decoration: AuthStyles.inputDecoration('මුරපදය තහවුරු කරන්න').copyWith(
+                decoration:
+                    AuthStyles.inputDecoration('මුරපදය තහවුරු කරන්න').copyWith(
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                      _obscureConfirmPassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: AuthStyles.primaryColor,
                     ),
                     onPressed: () {
@@ -169,4 +175,3 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 }
-

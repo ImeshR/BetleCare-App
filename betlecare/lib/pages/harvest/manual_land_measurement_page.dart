@@ -138,6 +138,107 @@ class _ManualLandMeasurementPageState extends State<ManualLandMeasurementPage> {
     _mapController?.animateCamera(CameraUpdate.newLatLng(_currentLocation!));
   }
 
+  void _showSaveModal() {
+    if (_area == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('කරුණාකර පළමුව වර්ගඵලය ගණනය කරන්න.')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('ඉඩම් මැනුම් සුරකින්න'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'ඉඩමේ නම'),
+                ),
+                TextField(
+                  controller: _locationController,
+                  decoration: const InputDecoration(labelText: 'ස්ථානය'),
+                ),
+                const SizedBox(height: 16),
+                Text('වර්ගඵලය: ${_area!.toStringAsFixed(2)} අක්කර'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: const Text("අවලංගු කරන්න"),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: const Text("සුරකින්න"),
+              onPressed: () => _saveLandMeasurement(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _saveLandMeasurement() async {
+    if (_area == null || _polygonPoints.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('වලංගු මිනුමක් නොමැත. කරුණාකර නැවත මනින්න.')),
+      );
+      return;
+    }
+
+    try {
+      final supabaseService = await SupabaseService.init();
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final userId = userProvider.user?.id;
+
+      if (userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('පරිශීලක හඳුනාගත නොහැක. කරුණාකර නැවත පුරනය වන්න.')),
+        );
+        return;
+      }
+
+      final landData = {
+        'user_id': userId,
+        'name': _nameController.text,
+        'location': _locationController.text,
+        'area': _area,
+        'coordinates': _polygonPoints
+            .map((point) => [point.latitude, point.longitude])
+            .toList(),
+      };
+
+      print("Saving land measurement: $landData");
+
+      final result = await supabaseService.create("land_size", landData);
+      print("Saved land measurement: $result");
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ඉඩම් මැනුම සාර්ථකව සුරකින ලදී')),
+      );
+
+      setState(() {
+        _nameController.clear();
+        _locationController.clear();
+        _resetMeasurement();
+      });
+
+      Navigator.of(context).pop();
+    } catch (e) {
+      print("Error saving land measurement: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ඉඩම් මැනුම සුරැකීමේ දෝෂයක්.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<UserProvider>(
@@ -195,6 +296,14 @@ class _ManualLandMeasurementPageState extends State<ManualLandMeasurementPage> {
                   heroTag: 'reset',
                   child: const Icon(Icons.refresh),
                   tooltip: 'නැවත සකසන්න',
+                ),
+                const SizedBox(height: 16),
+                FloatingActionButton(
+                  onPressed: _showSaveModal,
+                  backgroundColor: Colors.orange[100],
+                  heroTag: 'save',
+                  child: const Icon(Icons.save),
+                  tooltip: 'සුරකින්න',
                 ),
               ],
             ),

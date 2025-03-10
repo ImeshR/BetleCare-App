@@ -14,7 +14,8 @@ class AuthStyles {
         borderRadius: BorderRadius.circular(8.0),
       ),
       enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: primaryColor.withOpacity(0.5), width: 1.0),
+        borderSide:
+            BorderSide(color: primaryColor.withOpacity(0.5), width: 1.0),
         borderRadius: BorderRadius.circular(8.0),
       ),
       filled: true,
@@ -23,7 +24,8 @@ class AuthStyles {
   }
 
   static ButtonStyle elevatedButtonStyle = ElevatedButton.styleFrom(
-    foregroundColor: Colors.white, backgroundColor: primaryColor,
+    foregroundColor: Colors.white,
+    backgroundColor: primaryColor,
     padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(8),
@@ -35,4 +37,3 @@ class AuthStyles {
     fontWeight: FontWeight.bold,
   );
 }
-
