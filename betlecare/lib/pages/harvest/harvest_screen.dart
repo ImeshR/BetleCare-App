@@ -1,4 +1,5 @@
 import 'package:betlecare/pages/harvest/predict/add_prediction_page.dart';
+import 'package:betlecare/pages/harvest/predict/yiled_main_page.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/profile_header.dart';
@@ -57,13 +58,13 @@ class HarvestScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _buildCard(
-              title: 'කොළ ප්‍රමාණ\nපරිවර්තනය',
-              color: Colors.blue.shade100,
-              imagePath: 'assets/images/eshan/LM3.png',
+              title: 'අස්වැන්න පිළිබඳ \nසාරාංශය හා පෙර \nපුරෝකථනයන්',
+              color: Colors.amber.shade100,
+              imagePath: 'assets/images/eshan/LM4.png',
               gradient: LinearGradient(
                 colors: [
-                  Colors.blue.shade50,
-                  Colors.blue.shade100,
+                  Colors.amber.shade50,
+                  Colors.amber.shade100,
                 ],
               ),
               onTap: () {
@@ -71,20 +72,20 @@ class HarvestScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        const ChildPageWrapper(child: LandMainScreen()),
+                        const ChildPageWrapper(child: YieldMainPage()),
                   ),
                 );
               },
             ),
             const SizedBox(height: 16),
             _buildCard(
-              title: 'අස්වැන්න පිළිබඳ \nසාරාංශය',
-              color: Colors.amber.shade100,
-              imagePath: 'assets/images/eshan/LM4.png',
+              title: 'කොළ ප්‍රමාණ\nපරිවර්තනය',
+              color: Colors.blue.shade100,
+              imagePath: 'assets/images/eshan/LM3.png',
               gradient: LinearGradient(
                 colors: [
-                  Colors.amber.shade50,
-                  Colors.amber.shade100,
+                  Colors.blue.shade50,
+                  Colors.blue.shade100,
                 ],
               ),
               onTap: () {

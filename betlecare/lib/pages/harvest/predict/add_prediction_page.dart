@@ -1,3 +1,4 @@
+import 'package:betlecare/pages/harvest/predict/yiled_main_page.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:betlecare/services/index.dart';
@@ -140,11 +141,78 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
     }
     final selectedLandData =
         _lands.firstWhere((land) => land['name'] == _selectedLand);
+
+    print('Selected Land Data: $selectedLandData');
+
     return SoilService.analyzeSoilType(
         selectedLandData['location'] as String? ?? 'Unknown');
   }
 
-  // Replace the _submitForm method with this updated version
+  //save prediction to database
+  Future<void> _savePredictionToDatabase() async {
+    if (_predictionResults == null || _selectedLand == null) {
+      return;
+    }
+
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final userId = userProvider.user?.id;
+
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+
+      // Find the selected land data
+      final selectedLandData =
+          _lands.firstWhere((land) => land['name'] == _selectedLand);
+
+      // Format dates for API
+      final lastHarvestFormatted =
+          DateFormat('MM/dd/yyyy').format(_lastHarvestDate!);
+      final expectedHarvestFormatted =
+          DateFormat('MM/dd/yyyy').format(_expectedHarvestDate!);
+
+      _soilType = _analyzeSoilType();
+
+      // Create the harvest history record
+      final harvestHistoryData = {
+        'user_id': userId,
+        'land_name': selectedLandData['name'],
+        'land_location': selectedLandData['location'],
+        'land_size': selectedLandData['area'],
+        'last_harvest_date': lastHarvestFormatted,
+        'expected_harvest_date': expectedHarvestFormatted,
+        'planted_sticks': _plantedSticks,
+        'soil_type': _soilType,
+        'predicted_p': _predictionResults!['P'],
+        'predicted_kt': _predictionResults!['KT'],
+        'predicted_rkt': _predictionResults!['RKT'],
+        'total_predicted': _predictionResults!['P'] +
+            _predictionResults!['KT'] +
+            _predictionResults!['RKT'],
+        'created_at': DateTime.now().toIso8601String(),
+      };
+
+      print('Harvest History Data: $harvestHistoryData');
+
+      // Save to Supabase
+      final response = await _supabaseService.create(
+          'harvest_predict_history', harvestHistoryData);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('පුරෝකථනය සාර්ථකව සුරකින ලදී')),
+      );
+
+      print('Saved prediction to database: $response');
+    } catch (e) {
+      print('Error saving prediction to database: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('පුරෝකථනය සුරැකීමේ දෝෂයක්: $e')),
+      );
+    }
+  }
+
+  // Updated _submitForm method to save prediction to database
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
@@ -280,6 +348,9 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
           });
 
           print('Prediction Results: $_predictionResults');
+
+          // Save prediction to database
+          await _savePredictionToDatabase();
         } else {
           print('API Error: ${response.statusCode} - ${response.body}');
           ScaffoldMessenger.of(context).showSnackBar(
@@ -403,8 +474,10 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
                     child: TextButton(
                       onPressed: () {
                         // TODO: Navigate to the land measurement page
-                        Navigator.pop(
-                            context); // This is a placeholder, replace with actual navigation
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => YieldMainPage()));
                       },
                       child: const Text('අලුත් ඉඩමක් මනින්න'),
                     ),
@@ -412,11 +485,11 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
                   const SizedBox(height: 24),
                   TextFormField(
                     decoration:
-                        const InputDecoration(labelText: 'රෝපණය කළ දඬු ගණන'),
+                        const InputDecoration(labelText: 'රෝපණය කළ ඉණි ගණන'),
                     keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'කරුණාකර රෝපණය කළ දඬු ගණන ඇතුළත් කරන්න';
+                        return 'කරුණාකර රෝපණය කළ ඉණි ගණන ඇතුළත් කරන්න';
                       }
                       if (int.tryParse(value) == null) {
                         return 'කරුණාකර වලංගු අගයක් ඇතුළත් කරන්න';
@@ -474,6 +547,16 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _submitForm,
                       child: const Text('ඉදිරිපත් කරන්න'),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        // TODO: Navigate to the harvest history page
+                        // Navigator.push(context, MaterialPageRoute(builder: (context) => HarvestHistoryPage()));
+                      },
+                      child: const Text('පෙර පුරෝකථන බලන්න'),
                     ),
                   ),
                 ],
