@@ -7,7 +7,7 @@ import 'package:betlecare/services/wateringService.dart';
 import 'package:betlecare/widgets/weather/WateringRecommendationWidget.dart';
 import 'package:lottie/lottie.dart';
 import '../../widgets/bottom_nav_bar.dart';
-
+import 'package:betlecare/widgets/weather/FertilizingRecommendationWidget.dart';
 class MyBedsScreen extends StatefulWidget {
   const MyBedsScreen({super.key});
 
@@ -399,39 +399,47 @@ Widget _buildBedCard(BetelBed bed) {
     );
   }
 
-  Widget _buildBedCardActions(BetelBed bed) {
-    return Column(
-      children: [
-        // Watering recommendation widget
-        SizedBox(
-          width: double.infinity,
-          child: WateringRecommendationWidget(bed: bed),
-        ),
-        const SizedBox(height: 16),
-        // Action buttons
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildActionButton(
-              icon: Icons.water_drop,
-              label: 'පොහොර',
-              onTap: () => _showFertilizeHistory(bed),
-            ),
-            _buildActionButton(
-              icon: Icons.shopping_basket,
-              label: 'අස්වනු',
-              onTap: () => _showHarvestHistory(bed),
-            ),
-            _buildActionButton(
-              icon: Icons.more_horiz,
-              label: 'තවත්',
-              onTap: () => _showStatusUpdateDialog(bed),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+Widget _buildBedCardActions(BetelBed bed) {
+  return Column(
+    children: [
+      // Watering recommendation widget
+      SizedBox(
+        width: double.infinity,
+        child: WateringRecommendationWidget(bed: bed),
+      ),
+      const SizedBox(height: 8), // Add a small gap
+      
+      // Fertilizing recommendation widget - Add this new part
+      SizedBox(
+        width: double.infinity,
+        child: FertilizingRecommendationWidget(bed: bed),
+      ),
+      const SizedBox(height: 16),
+      
+      // Action buttons
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildActionButton(
+            icon: Icons.water_drop,
+            label: 'පොහොර',
+            onTap: () => _showFertilizeHistory(bed),
+          ),
+          _buildActionButton(
+            icon: Icons.shopping_basket,
+            label: 'අස්වනු',
+            onTap: () => _showHarvestHistory(bed),
+          ),
+          _buildActionButton(
+            icon: Icons.more_horiz,
+            label: 'තවත්',
+            onTap: () => _showStatusUpdateDialog(bed),
+          ),
+        ],
+      ),
+    ],
+  );
+}
 
   Widget _buildBedStat({
     required IconData icon,
