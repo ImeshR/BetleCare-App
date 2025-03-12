@@ -16,6 +16,7 @@ import 'package:betlecare/pages/signup_page.dart';
 import 'package:betlecare/supabase_client.dart';
 import 'package:line_icons/line_icons.dart';
 import 'package:betlecare/pages/weather/weather_screen.dart';
+import 'package:betlecare/pages/disease/disease_management_home.dart';
 
 void main() async {
   await dotenv.load(fileName: '.env');
@@ -94,7 +95,7 @@ class _MainPageState extends State<MainPage> {
     const HarvestScreen(),
     const MarketsScreen(),
     const HomeScreen(),
-    const ProfileScreen(),
+    const DiseaseManagementScreen(),
     const WeatherScreen(),
   ];
 
