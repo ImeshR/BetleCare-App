@@ -78,7 +78,7 @@ class _PreviousPredictionsPageState extends State<PreviousPredictionsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('පෙර පුරෝකථනයන්'),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.blue,
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _predictionsFuture,
