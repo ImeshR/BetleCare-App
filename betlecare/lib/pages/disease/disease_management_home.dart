@@ -1,44 +1,67 @@
 import 'package:flutter/material.dart';
+import '../../widgets/bottom_nav_bar.dart';
+import '../../widgets/profile_header.dart';
+import 'disease_detection.dart';
+import 'pestpage.dart';
 
 class DiseaseManagementScreen extends StatelessWidget {
   const DiseaseManagementScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Disease Management'),
-        backgroundColor: Colors.green,
-      ),
-      body: Padding(
+    return SingleChildScrollView(
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             _buildCard(
               title: 'රෝග හඳුනාගැනීම',
               color: Colors.red.shade100,
-              imagePath:
-                  '../../../assets/images/disease/Disease Detection.png', // Added image
+              imagePath: 'assets/images/disease/DD1.png',
+              gradient: LinearGradient(
+                colors: [
+                  Colors.red.shade50,
+                  Colors.red.shade100,
+                ],
+              ),
               onTap: () {
-                // Navigate to Disease Detection Page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ChildPageWrapper(
+                        child: DiseasePhotoManagementPage()),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 16),
             _buildCard(
-              title: 'Treatment Plans',
+              title: 'ප්‍රතිකාර සැලසුම්',
               color: Colors.blue.shade100,
-              icon: Icons.medical_services,
+              imagePath: '',
+              gradient: LinearGradient(
+                colors: [
+                  Colors.blue.shade50,
+                  Colors.blue.shade100,
+                ],
+              ),
               onTap: () {
-                // Navigate to Treatment Plans Page
+                // Navigation will be added later
               },
             ),
             const SizedBox(height: 16),
             _buildCard(
-              title: 'Disease Spread Map',
+              title: 'රෝග ව්‍යාප්ති\nසිතියම',
               color: Colors.green.shade100,
-              icon: Icons.map,
+              imagePath: 'assets/images/disease/DD1.png',
+              gradient: LinearGradient(
+                colors: [
+                  Colors.green.shade50,
+                  Colors.green.shade100,
+                ],
+              ),
               onTap: () {
-                // Navigate to Disease Spread Map Page
+                // Navigation will be added later
               },
             ),
           ],
@@ -50,45 +73,88 @@ class DiseaseManagementScreen extends StatelessWidget {
   Widget _buildCard({
     required String title,
     required Color color,
-    IconData? icon,
-    String? imagePath, // Added image path parameter
-    required VoidCallback onTap,
+    required String imagePath,
+    required Gradient gradient,
+    required Function()? onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        height: 100,
-        decoration: BoxDecoration(
-          color: color,
+    return Container(
+      width: double.infinity,
+      height: 180,
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 5,
-              offset: const Offset(0, 2),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 160,
+                  height: 160,
+                  child: Center(
+                    child: Image.asset(
+                      imagePath,
+                      width: 160,
+                      height: 160,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.grey[800],
+                        fontWeight: FontWeight.w600,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (imagePath != null)
-              Image.asset(
-                imagePath,
-                width: 50, // Adjust size as needed
-                height: 50,
-                fit: BoxFit.contain,
-              )
-            else if (icon != null)
-              Icon(icon, size: 40, color: Colors.black54),
-            const SizedBox(width: 16),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
+      ),
+    );
+  }
+}
+
+class ChildPageWrapper extends StatelessWidget {
+  final Widget child;
+
+  const ChildPageWrapper({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: [
+          const ProfileHeader(),
+          Expanded(child: child),
+        ],
+      ),
+      bottomNavigationBar: BottomNavBar(
+        selectedIndex: 3,
+        onTabChange: (index) {
+          Navigator.pop(context);
+        },
       ),
     );
   }
