@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'dart:io' show Platform;
 
 class FertilizingService {
   static final FertilizingService _instance = FertilizingService._internal();
@@ -10,7 +11,7 @@ class FertilizingService {
   
   FertilizingService._internal();
   
-  // Direct URLs to the API endpoints
+  // Direct URLs to the API endpoints - use IP address that works for your network setup
   final String todayUrl = 'http://192.168.43.160:5000/api/fertilizing/today';
   final String planUrl = 'http://192.168.43.160:5000/api/fertilizing/plan';
   
@@ -37,7 +38,17 @@ class FertilizingService {
       print('🌱 Response status: ${response.statusCode}');
       
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        var data = jsonDecode(response.body);
+        
+        // Update the recommendation based on time if necessary (fallback in case server doesn't do it)
+        bool isAfterSixPm = data['is_after_six_pm'] ?? _isAfterSixPm();
+        
+        if (isAfterSixPm && data['suitable_for_fertilizing'] == true) {
+          data['suitable_for_fertilizing'] = false;
+          data['recommendation'] = "Too late for fertilizing today, check tomorrow's forecast";
+        }
+        
+        return data;
       } else {
         var errorData = jsonDecode(response.body);
         throw Exception(errorData['error'] ?? 'Failed to check fertilizing suitability: ${response.statusCode}');
@@ -71,7 +82,14 @@ class FertilizingService {
       print('🌱 Response status: ${response.statusCode}');
       
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        var data = jsonDecode(response.body);
+        
+        // If the server doesn't provide the is_after_six_pm flag, add it here
+        if (!data.containsKey('is_after_six_pm')) {
+          data['is_after_six_pm'] = _isAfterSixPm();
+        }
+        
+        return data;
       } else {
         var errorData = jsonDecode(response.body);
         throw Exception(errorData['error'] ?? 'Failed to get fertilizer plan: ${response.statusCode}');
@@ -116,5 +134,11 @@ class FertilizingService {
     // Default to PUTTALAM if no match is found
     print('🌱 Warning: Could not match location "$location" to a valid district. Defaulting to PUTTALAM.');
     return 'PUTTALAM';
+  }
+  
+  // Helper method to check if current time is after 6 PM
+  bool _isAfterSixPm() {
+    final now = DateTime.now();
+    return now.hour >= 18;
   }
 }

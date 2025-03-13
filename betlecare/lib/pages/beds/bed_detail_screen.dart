@@ -6,7 +6,7 @@ import 'package:betlecare/services/betel_bed_service.dart';
 import 'package:provider/provider.dart';
 import 'package:betlecare/providers/betel_bed_provider.dart';
 import 'package:betlecare/widgets/weather/weeklyWateringRecomendation.dart';
-
+import 'package:betlecare/widgets/weather/WeeklyFertilizingRecommendationWidget.dart';
 class BedDetailScreen extends StatefulWidget {
   final BetelBed bed;
   const BedDetailScreen({super.key, required this.bed});
@@ -76,50 +76,46 @@ class _BedDetailScreenState extends State<BedDetailScreen> {
     );
   }
 
-  Widget _buildRecommendationsSection() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.tips_and_updates, size: 20, color: Colors.grey[700]),
-              const SizedBox(width: 8),
-              const Text(
-                ' නිර්දේශ',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          // Weekly watering recommendation widget
-          WeeklyWateringRecommendationWidget(bed: bed),
-          
-          const SizedBox(height: 16),
-          
-          // Future placeholder for fertilizing recommendations
-          _buildPlaceholderCard(
-            title: 'පොහොර නිර්දේශ',
-            icon: Icons.water_drop,
-            color: Colors.green.shade700,
-            message: 'ඉදිරියේදී පොහොර නිර්දේශ ලබා ගත හැකි වනු ඇත',
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Future placeholder for disease protection recommendations
-          _buildPlaceholderCard(
-            title: 'රෝග ආරක්ෂණ නිර්දේශ',
-            icon: Icons.healing,
-            color: Colors.orange.shade700,
-            message: 'ඉදිරියේදී රෝග ආරක්ෂණ නිර්දේශ ලබා ගත හැකි වනු ඇත',
-          ),
-        ],
-      ),
-    );
-  }
+Widget _buildRecommendationsSection() {
+  return Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.tips_and_updates, size: 20, color: Colors.grey[700]),
+            const SizedBox(width: 8),
+            const Text(
+              ' නිර්දේශ',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        // Weekly watering recommendation widget
+        WeeklyWateringRecommendationWidget(bed: bed),
+        
+        const SizedBox(height: 16),
+        
+        // Fertilizing recommendation widget - replaced placeholder with actual widget
+        WeeklyFertilizingRecommendationWidget(bed: bed),
+        
+        const SizedBox(height: 16),
+        
+        // Future placeholder for disease protection recommendations
+        _buildPlaceholderCard(
+          title: 'රෝග ආරක්ෂණ නිර්දේශ',
+          icon: Icons.healing,
+          color: Colors.orange.shade700,
+          message: 'ඉදිරියේදී රෝග ආරක්ෂණ නිර්දේශ ලබා ගත හැකි වනු ඇත',
+        ),
+      ],
+    ),
+  );
+}
+
 
   Widget _buildPlaceholderCard({
     required String title,

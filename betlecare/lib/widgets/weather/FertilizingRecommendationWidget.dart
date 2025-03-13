@@ -24,17 +24,25 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
   Map<String, dynamic>? _todayRecommendation;
   Map<String, dynamic>? _fertilizePlan;
   String _errorMessage = '';
+  bool _isAfterSixPm = false;
   
   @override
   void initState() {
     super.initState();
+    _checkTime();
     _loadRecommendations();
+  }
+  
+  void _checkTime() {
+    final now = DateTime.now();
+    _isAfterSixPm = now.hour >= 18;
   }
   
   Future<void> _loadRecommendations() async {
     setState(() {
       _isLoading = true;
       _errorMessage = '';
+      _checkTime(); // Update time check on refresh
     });
     
     try {
@@ -90,6 +98,12 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
       setState(() {
         _todayRecommendation = todayRecommendation;
         _fertilizePlan = fertilizePlan;
+        
+        // Get the is_after_six_pm value from the API response or use local check
+        _isAfterSixPm = fertilizePlan['is_after_six_pm'] ?? 
+                         todayRecommendation['is_after_six_pm'] ?? 
+                         _isAfterSixPm;
+        
         _isLoading = false;
       });
     } catch (e) {
@@ -207,29 +221,56 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
   }
   
   Widget _buildRecommendationCard() {
+    // Get values from API responses with fallbacks
     final isSuitable = _todayRecommendation!['suitable_for_fertilizing'] as bool;
-    final color = isSuitable ? Colors.green.shade700 : Colors.orange.shade700;
-    final icon = isSuitable ? Icons.check_circle : Icons.cancel;
-    final statusText = isSuitable ? 'පොහොර යෙදීමට සුදුසුයි' : 'පොහොර යෙදීමට සුදුසු නැත';
+    final isAfterSixPm = _isAfterSixPm;
+    
+    // If it's after 6 PM, adjust the recommendation as needed
+    final effectiveIsSuitable = isAfterSixPm ? false : isSuitable;
+    
+    final color = effectiveIsSuitable ? Colors.green.shade700 : Colors.orange.shade700;
+    final icon = effectiveIsSuitable ? Icons.check_circle : Icons.cancel;
+    
+    // Get recommendation text based on time and suitability
+    String statusText;
+    if (isAfterSixPm) {
+      statusText = 'අද පොහොර යෙදීමට ප්‍රමාද වැඩිය';  // It's too late for fertilizing today
+    } else {
+      statusText = effectiveIsSuitable 
+          ? 'පොහොර යෙදීමට සුදුසුයි' 
+          : 'පොහොර යෙදීමට සුදුසු නැත';
+    }
     
     // Get next recommended date and fertilizer type from plan if available
     String nextDate = '';
     String nextFertilizer = '';
     bool hasRecommendation = false;
+    bool isFirstTime = false;
+    String firstTimeMessage = '';
     
-    if (_fertilizePlan != null && 
-        _fertilizePlan!['recommendation'] != null && 
-        _fertilizePlan!['recommendation']['recommended_date'] != null &&
-        _fertilizePlan!['recommendation']['next_fertilizer'] != null) {
+    if (_fertilizePlan != null && _fertilizePlan!['recommendation'] != null) {
+      final recommendation = _fertilizePlan!['recommendation'];
       
-      nextDate = _fertilizePlan!['recommendation']['recommended_date'];
-      nextFertilizer = _fertilizePlan!['recommendation']['next_fertilizer'];
-      hasRecommendation = true;
+      // Check if this is the first time (no history)
+      isFirstTime = recommendation['is_first_time'] ?? false;
+      
+      if (isFirstTime) {
+        // Use appropriate first-time message based on time
+        firstTimeMessage = isAfterSixPm 
+            ? 'පොහොර යෙදීම හෙටින් ආරම්භ කරන්න'  // Start fertilizing from tomorrow
+            : 'පොහොර යෙදීම අදින් ආරම්භ කරන්න';   // Start fertilizing from today
+      } 
+      else if (recommendation['recommended_date'] != null && recommendation['next_fertilizer'] != null) {
+        // Not first time, show next date and fertilizer type
+        nextDate = recommendation['recommended_date'];
+        nextFertilizer = recommendation['next_fertilizer'];
+        hasRecommendation = true;
+      }
     }
     
     return Card(
       margin: EdgeInsets.zero,
-      color: isSuitable ? Colors.green.shade50 : Colors.orange.shade50,
+      color: effectiveIsSuitable ? Colors.green.shade50 : Colors.orange.shade50,
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -250,7 +291,17 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
                 ),
               ],
             ),
-            if (hasRecommendation) ...[
+            if (isFirstTime) ...[
+              const SizedBox(height: 8),
+              Text(
+                firstTimeMessage,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ] else if (hasRecommendation) ...[
               const SizedBox(height: 8),
               Text(
                 'මීළඟ යෙදීම: $nextDate',
@@ -267,21 +318,7 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
                 ),
               ),
             ],
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  onPressed: _loadRecommendations,
-                  icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('යාවත්කාලීන', style: TextStyle(fontSize: 12)),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
-              ],
-            ),
+            // Refresh button removed
           ],
         ),
       ),
