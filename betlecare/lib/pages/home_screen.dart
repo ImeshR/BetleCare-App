@@ -101,8 +101,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             // My Beds Card - Main feature card
                             _buildFeatureCard(
                               context: context,
-                              title: 'මගේ බුලත් පඳුරු',
-                              description: 'ඔබගේ බුලත් පඳුරු කළමනාකරණය කරන්න',
+                              title: 'මගේ බුලත් වගාවන්',
+                              description: 'ඔබගේ බුලත් වගාවන් කළමනාකරණය කරන්න',
                               iconData: Icons.spa,
                               color: Colors.green.shade200,
                               imagePath: 'assets/images/betel_leaf.png',
@@ -214,7 +214,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 16),
           const Text(
-            'ඔබගේ බුලත් පඳුරු ඵලදායී ලෙස කළමනාකරණය කරන්න',
+            'ඔබගේ බුලත් වගාවන් ඵලදායී ලෙස කළමනාකරණය කරන්න',
             style: TextStyle(
               fontSize: 16,
               color: Colors.white,
@@ -337,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Expanded(
               child: _buildStatCard(
-                title: 'මුළු පඳුරු',
+                title: 'මුළු වගාවන්',
                 value: totalBeds.toString(),
                 iconData: Icons.spa,
                 color: Colors.green,

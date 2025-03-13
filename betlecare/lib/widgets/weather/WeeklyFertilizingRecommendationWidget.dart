@@ -270,10 +270,10 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
             ? 'පොහොර යෙදීම හෙටින් ආරම්භ කරන්න'  // Start fertilizing from tomorrow
             : 'පොහොර යෙදීම අදින් ආරම්භ කරන්න';   // Start fertilizing from today
       } 
-      else if (recommendation['recommended_date'] != null && recommendation['next_fertilizer'] != null) {
+      else if (recommendation['recommended_date'] != null && recommendation['next_fertilizer_sinhala'] != null) {
         // Not first time, show next date and fertilizer type
         nextDate = recommendation['recommended_date'];
-        nextFertilizer = recommendation['next_fertilizer'];
+        nextFertilizer = recommendation['next_fertilizer_sinhala'];
         hasRecommendation = true;
         
         // Get the message from recommendation
@@ -412,7 +412,7 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
                 itemBuilder: (context, index) {
                   final day = suitableDays[index];
                   final date = day['date'].toString();
-                  final dayName = day['day_name'].toString();
+                  final dayName = day['day_name_sinhala'].toString();
                   final isBestDay = day['is_best_day'] == true;
                   
                   return Padding(
@@ -460,6 +460,10 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
       ),
     );
   }
+  
+
+
+
   
   Widget _buildInfoSection({
     required String title,

@@ -47,7 +47,7 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('මගේ බුලත් පඳුරු', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('මගේ බුලත් වගාවන්', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.green.shade700,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -203,7 +203,7 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
           Icon(Icons.spa_outlined, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'තවම බුලත් පඳුරු නැත',
+            'තවම බුලත් වගාවන් නැත',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
@@ -647,64 +647,94 @@ Widget _buildBedCardActions(BetelBed bed) {
     );
   }
 
-  void _showAddFertilizeDialog(BetelBed bed) {
-    final dateController = TextEditingController(text: _getTodayFormatted());
-    final typeController = TextEditingController();
-    final quantityController = TextEditingController();
-    final notesController = TextEditingController();
-    
-    _showFormDialog(
-      title: 'නව පොහොර යෙදීමක් එක් කරන්න',
-      fields: [
-        _buildDateField(dateController),
-        TextField(controller: typeController, decoration: const InputDecoration(labelText: 'පොහොර වර්ගය')),
-        TextField(
-          controller: quantityController,
-          decoration: const InputDecoration(labelText: 'ප්‍රමාණය (kg)'),
-          keyboardType: TextInputType.number,
-        ),
-        TextField(
-          controller: notesController,
-          decoration: const InputDecoration(labelText: 'සටහන්'),
-          maxLines: 2,
-        ),
-      ],
-      onSave: () async {
-        try {
-          if (typeController.text.isEmpty || quantityController.text.isEmpty) {
-            _showErrorSnackBar('කරුණාකර අවශ්‍ය තොරතුරු පුරවන්න');
-            return;
-          }
-          
-          final quantity = double.tryParse(quantityController.text);
-          if (quantity == null) {
-            _showErrorSnackBar('වලංගු ප්‍රමාණයක් ඇතුළත් කරන්න');
-            return;
-          }
-          
-          final date = DateTime.parse(dateController.text);
-          
-          final record = FertilizeRecord(
-            date: date,
-            fertilizerType: typeController.text,
-            quantity: quantity,
-            notes: notesController.text,
+void _showAddFertilizeDialog(BetelBed bed) {
+  final dateController = TextEditingController(text: _getTodayFormatted());
+  // Remove the typeController as we'll use the dropdown value directly
+  final quantityController = TextEditingController();
+  final notesController = TextEditingController();
+  
+  // Define fertilizer types mapping (Sinhala to English)
+  final Map<String, String> fertilizerTypes = {
+    'ග්ලිරිසීඩියා කොල': 'Gliricidia leaves',
+    'ගොම පොහොර': 'Cow dung',
+    'NPK 10 අනුපාතයට': 'Balanced NPK (10-10-10)',
+    'කුකුල් පොහොර': 'Poultry manure',
+    'කොම්පෝස්ට්': 'Compost',
+  };
+  
+  // Initial selection
+  String selectedFertilizerSinhala = 'ග්ලිරිසීඩියා කොල'; // Default selection
+  
+  _showFormDialog(
+    title: 'නව පොහොර යෙදීමක් එක් කරන්න',
+    fields: [
+      _buildDateField(dateController),
+      // Replace TextField with DropdownButtonFormField
+      DropdownButtonFormField<String>(
+        value: selectedFertilizerSinhala,
+        decoration: const InputDecoration(labelText: 'පොහොර වර්ගය'),
+        items: fertilizerTypes.keys.map((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value),
           );
-          
-          await _betelBedService.addFertilizeRecord(bed.id, record);
-          
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('පොහොර යෙදීම සාර්ථකව එකතු කරන ලදී')),
-          );
-          
-          _loadBeds();
-        } catch (e) {
-          _showErrorSnackBar('දෝෂයකි: ${e.toString()}');
+        }).toList(),
+        onChanged: (String? newValue) {
+          if (newValue != null) {
+            selectedFertilizerSinhala = newValue;
+          }
+        },
+      ),
+      TextField(
+        controller: quantityController,
+        decoration: const InputDecoration(labelText: 'ප්‍රමාණය (kg)'),
+        keyboardType: TextInputType.number,
+      ),
+      TextField(
+        controller: notesController,
+        decoration: const InputDecoration(labelText: 'සටහන්'),
+        maxLines: 2,
+      ),
+    ],
+    onSave: () async {
+      try {
+        if (selectedFertilizerSinhala.isEmpty || quantityController.text.isEmpty) {
+          _showErrorSnackBar('කරුණාකර අවශ්‍ය තොරතුරු පුරවන්න');
+          return;
         }
-      },
-    );
-  }
+        
+        final quantity = double.tryParse(quantityController.text);
+        if (quantity == null) {
+          _showErrorSnackBar('වලංගු ප්‍රමාණයක් ඇතුළත් කරන්න');
+          return;
+        }
+        
+        final date = DateTime.parse(dateController.text);
+        
+        // Convert Sinhala fertilizer type to English for backend
+        final englishFertilizerType = fertilizerTypes[selectedFertilizerSinhala] ?? selectedFertilizerSinhala;
+        
+        final record = FertilizeRecord(
+          date: date,
+          fertilizerType: englishFertilizerType, // Send English name to backend
+          quantity: quantity,
+          notes: notesController.text,
+        );
+        
+        await _betelBedService.addFertilizeRecord(bed.id, record);
+        
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('පොහොර යෙදීම සාර්ථකව එකතු කරන ලදී')),
+        );
+        
+        _loadBeds();
+      } catch (e) {
+        _showErrorSnackBar('දෝෂයකි: ${e.toString()}');
+      }
+    },
+  );
+}
 
   void _showAddHarvestDialog(BetelBed bed) {
     final dateController = TextEditingController(text: _getTodayFormatted());

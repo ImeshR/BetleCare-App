@@ -276,7 +276,7 @@ Widget _buildRecommendationsSection() {
       {'icon': Icons.grass, 'label': 'පැළ ගණන', 'value': bed.plantCount.toString()},
       {'icon': Icons.location_city, 'label': 'ප්‍රදේශය', 'value': bed.district},
       {'icon': Icons.home, 'label': 'ලිපිනය', 'value': bed.address},
-      {'icon': Icons.grid_view, 'label': 'සමාන පඳුරු ගණන', 'value': bed.sameBedCount.toString()},
+      {'icon': Icons.grid_view, 'label': 'සමාන වගාවන් ගණන', 'value': bed.sameBedCount.toString()},
     ];
     
     return Padding(
@@ -663,63 +663,91 @@ Widget _buildRecommendationsSection() {
     );
   }
 
-  void _showAddFertilizeDialog() {
-    final dateController = TextEditingController(text: _getTodayFormatted());
-    final typeController = TextEditingController();
-    final quantityController = TextEditingController();
-    final notesController = TextEditingController();
-    
-    _showFormDialog(
-      title: 'නව පොහොර යෙදීමක් එක් කරන්න',
-      fields: [
-        _buildDateField(dateController),
-        TextField(controller: typeController, decoration: const InputDecoration(labelText: 'පොහොර වර්ගය')),
-        TextField(
-          controller: quantityController,
-          decoration: const InputDecoration(labelText: 'ප්‍රමාණය (kg)'),
-          keyboardType: TextInputType.number,
-        ),
-        TextField(
-          controller: notesController,
-          decoration: const InputDecoration(labelText: 'සටහන්'),
-          maxLines: 2,
-        ),
-      ],
-      onSave: () async {
-        try {
-          if (typeController.text.isEmpty || quantityController.text.isEmpty) {
-            _showErrorSnackBar('කරුණාකර අවශ්‍ය තොරතුරු පුරවන්න');
-            return;
+void _showAddFertilizeDialog() {
+  final dateController = TextEditingController(text: _getTodayFormatted());
+  // Map of fertilizer types (Sinhala to English)
+  final Map<String, String> fertilizerTypes = {
+    'ග්ලිරිසීඩියා කොල': 'Gliricidia leaves',
+    'ගොම පොහොර': 'Cow dung',
+    'NPK 10 අනුපාතයට': 'NPK (10-10-10)',
+    'කුකුල් පොහොර': 'Chicken manure',
+    'කොම්පෝස්ට්': 'Compost',
+  };
+  
+  // Initialize with the first Sinhala fertilizer type
+  String selectedFertilizerSinhala = fertilizerTypes.keys.first;
+  final quantityController = TextEditingController();
+  final notesController = TextEditingController();
+  
+  _showFormDialog(
+    title: 'නව පොහොර යෙදීමක් එක් කරන්න',
+    fields: [
+      _buildDateField(dateController),
+      // Dropdown for fertilizer types in Sinhala
+      DropdownButtonFormField<String>(
+        value: selectedFertilizerSinhala,
+        decoration: const InputDecoration(labelText: 'පොහොර වර්ගය'),
+        items: fertilizerTypes.keys.map((sinhalaName) => DropdownMenuItem<String>(
+          value: sinhalaName,
+          child: Text(sinhalaName),
+        )).toList(),
+        onChanged: (value) {
+          if (value != null) {
+            selectedFertilizerSinhala = value;
           }
-          
-          final quantity = double.tryParse(quantityController.text);
-          if (quantity == null) {
-            _showErrorSnackBar('වලංගු ප්‍රමාණයක් ඇතුළත් කරන්න');
-            return;
-          }
-          
-          final date = DateTime.parse(dateController.text);
-          final record = FertilizeRecord(
-            date: date,
-            fertilizerType: typeController.text,
-            quantity: quantity,
-            notes: notesController.text,
-          );
-          
-          Navigator.pop(context);
-          setState(() => _isLoading = true);
-          
-          await _betelBedService.addFertilizeRecord(bed.id, record);
-          _showSuccessSnackBar('පොහොර යෙදීම සාර්ථකව එකතු කරන ලදී');
-          
-          await _refreshBedData();
-        } catch (e) {
-          setState(() => _isLoading = false);
-          _showErrorSnackBar('දෝෂයකි: ${e.toString()}');
+        },
+      ),
+      TextField(
+        controller: quantityController,
+        decoration: const InputDecoration(labelText: 'ප්‍රමාණය (kg)'),
+        keyboardType: TextInputType.number,
+      ),
+      TextField(
+        controller: notesController,
+        decoration: const InputDecoration(labelText: 'සටහන්'),
+        maxLines: 2,
+      ),
+    ],
+    onSave: () async {
+      try {
+        if (quantityController.text.isEmpty) {
+          _showErrorSnackBar('කරුණාකර ප්‍රමාණය ඇතුලත් කරන්න');
+          return;
         }
-      },
-    );
-  }
+        
+        final quantity = double.tryParse(quantityController.text);
+        if (quantity == null) {
+          _showErrorSnackBar('වලංගු ප්‍රමාණයක් ඇතුළත් කරන්න');
+          return;
+        }
+        
+        // Convert Sinhala fertilizer name to English for backend
+        final englishFertilizerName = fertilizerTypes[selectedFertilizerSinhala]!;
+        
+        final date = DateTime.parse(dateController.text);
+        final record = FertilizeRecord(
+          date: date,
+          fertilizerType: englishFertilizerName, // Use English name for backend
+          quantity: quantity,
+          notes: notesController.text,
+        );
+        
+        Navigator.pop(context);
+        setState(() => _isLoading = true);
+        
+        await _betelBedService.addFertilizeRecord(bed.id, record);
+        _showSuccessSnackBar('පොහොර යෙදීම සාර්ථකව එකතු කරන ලදී');
+        
+        await _refreshBedData();
+      } catch (e) {
+        setState(() => _isLoading = false);
+        _showErrorSnackBar('දෝෂයකි: ${e.toString()}');
+      }
+    },
+  );
+}
+
+
 
   void _showAddHarvestDialog() {
     final dateController = TextEditingController(text: _getTodayFormatted());
