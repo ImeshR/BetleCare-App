@@ -21,6 +21,7 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
   final WeatherService _weatherService = WeatherService();
   
   bool _isLoading = false;
+  bool _isExpanded = false; // Add expand/collapse state
   Map<String, dynamic>? _todayRecommendation;
   Map<String, dynamic>? _fertilizePlan;
   String _errorMessage = '';
@@ -264,8 +265,9 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
       final recommendation = _fertilizePlan!['recommendation'];
       
       // Check if this is the first time (no history)
-      if (recommendation['message'] != null && recommendation['message'].toString().contains('No fertilization history found')) {
-        isFirstTime = true;
+      isFirstTime = recommendation['is_first_time'] ?? false;
+      
+      if (isFirstTime) {
         firstTimeMessage = isAfterSixPm 
             ? 'පොහොර යෙදීම හෙටින් ආරම්භ කරන්න'  // Start fertilizing from tomorrow
             : 'පොහොර යෙදීම අදින් ආරම්භ කරන්න';   // Start fertilizing from today
@@ -317,15 +319,15 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
                   ),
                 ),
               ),
-              TextButton.icon(
-                onPressed: _loadRecommendations,
-                icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('යාවත්කාලීන', style: TextStyle(fontSize: 12)),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
+              IconButton(
+                icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
+                onPressed: () {
+                  setState(() {
+                    _isExpanded = !_isExpanded;
+                  });
+                },
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
               ),
             ],
           ),
@@ -358,7 +360,7 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
           
           const SizedBox(height: 12),
           
-          // First time message or next fertilizing plan
+          // First time message or next fertilizing plan - Always show this in collapsed or expanded mode
           if (isFirstTime) 
             _buildInfoSection(
               title: 'නිර්දේශය',
@@ -374,96 +376,108 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
               color: Colors.teal
             ),
             
-          const SizedBox(height: 12),
-          
-          // Recommendation message if available
-          if (message.isNotEmpty)
-            _buildInfoSection(
-              title: 'විස්තරය',
-              content: message,
-              icon: Icons.info_outline,
-              color: Colors.grey.shade700
-            ),
+          // Expanded content - only show when expanded
+          if (_isExpanded) ...[
+            const SizedBox(height: 12),
             
-          const SizedBox(height: 12),
-          
-          // List of suitable days in the next 7 days
-          if (suitableDays.isNotEmpty) ...[
-            Text(
-              'ඉදිරි දින 7 තුළ පොහොර යෙදීමට සුදුසු දින:',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade800,
+            // Recommendation message if available
+            if (message.isNotEmpty)
+              _buildInfoSection(
+                title: 'විස්තරය',
+                content: message,
+                icon: Icons.info_outline,
+                color: Colors.grey.shade700
               ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green.shade200),
+              
+            const SizedBox(height: 12),
+            
+            // List of suitable days in the next 7 days
+            if (suitableDays.isNotEmpty) ...[
+              Text(
+                'ඉදිරි දින 7 තුළ පොහොර යෙදීමට සුදුසු දින:',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
+                ),
               ),
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: suitableDays.length,
-                separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey.shade200),
-                itemBuilder: (context, index) {
-                  final day = suitableDays[index];
-                  final date = day['date'].toString();
-                  final dayName = day['day_name_sinhala'].toString();
-                  final isBestDay = day['is_best_day'] == true;
-                  
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    child: Row(
-                      children: [
-                        isBestDay 
-                            ? const Icon(Icons.star, color: Colors.amber, size: 20)
-                            : const Icon(Icons.check_circle, color: Colors.green, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            '$dayName ($date)',
-                            style: TextStyle(
-                              fontWeight: isBestDay ? FontWeight.bold : FontWeight.normal,
-                              color: Colors.grey.shade800,
-                            ),
-                          ),
-                        ),
-                        if (isBestDay)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.amber),
-                            ),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: suitableDays.length,
+                  separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey.shade200),
+                  itemBuilder: (context, index) {
+                    final day = suitableDays[index];
+                    final date = day['date'].toString();
+                    final dayName = day['day_name_sinhala'] ?? day['day_name'];
+                    final isBestDay = day['is_best_day'] == true;
+                    
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      child: Row(
+                        children: [
+                          isBestDay 
+                              ? const Icon(Icons.star, color: Colors.amber, size: 20)
+                              : const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
                             child: Text(
-                              'හොඳම දිනය',
+                              '$dayName ($date)',
                               style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.amber.shade900,
+                                fontWeight: isBestDay ? FontWeight.bold : FontWeight.normal,
+                                color: Colors.grey.shade800,
                               ),
                             ),
                           ),
-                      ],
-                    ),
-                  );
-                },
+                          if (isBestDay)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.amber),
+                              ),
+                              child: Text(
+                                'හොඳම දිනය',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.amber.shade900,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
+            ],
+          ],
+          
+          // If expanded and no detailed content is available, show a message
+          if (_isExpanded && 
+              message.isEmpty && 
+              suitableDays.isEmpty) ...[
+            const SizedBox(height: 12),
+            _buildInfoSection(
+              title: 'අමතර තොරතුරු',
+              content: 'ඉදිරි දින 7 තුළ පොහොර යෙදීමට සුදුසු දින නොමැත. ඔබේ මීළඟ පොහොර යෙදීම සඳහා දිනය තහවුරු කර ගන්න.',
+              icon: Icons.info_outline,
+              color: Colors.grey.shade700
             ),
           ],
         ],
       ),
     );
   }
-  
-
-
-
   
   Widget _buildInfoSection({
     required String title,

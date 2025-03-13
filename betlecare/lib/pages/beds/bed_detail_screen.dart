@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:betlecare/providers/betel_bed_provider.dart';
 import 'package:betlecare/widgets/weather/weeklyWateringRecomendation.dart';
 import 'package:betlecare/widgets/weather/WeeklyFertilizingRecommendationWidget.dart';
+import 'package:betlecare/widgets/weather/WeeklyProtectionRecommendationWidget.dart';
 class BedDetailScreen extends StatefulWidget {
   final BetelBed bed;
   const BedDetailScreen({super.key, required this.bed});
@@ -94,28 +95,22 @@ Widget _buildRecommendationsSection() {
         ),
         const SizedBox(height: 16),
         
+        // Weather-based protection recommendation widget
+        WeeklyProtectionRecommendationWidget(bed: bed),
+        
+        const SizedBox(height: 16),
+        
         // Weekly watering recommendation widget
         WeeklyWateringRecommendationWidget(bed: bed),
         
         const SizedBox(height: 16),
         
-        // Fertilizing recommendation widget - replaced placeholder with actual widget
+        // Fertilizing recommendation widget
         WeeklyFertilizingRecommendationWidget(bed: bed),
-        
-        const SizedBox(height: 16),
-        
-        // Future placeholder for disease protection recommendations
-        _buildPlaceholderCard(
-          title: 'රෝග ආරක්ෂණ නිර්දේශ',
-          icon: Icons.healing,
-          color: Colors.orange.shade700,
-          message: 'ඉදිරියේදී රෝග ආරක්ෂණ නිර්දේශ ලබා ගත හැකි වනු ඇත',
-        ),
       ],
     ),
   );
 }
-
 
   Widget _buildPlaceholderCard({
     required String title,

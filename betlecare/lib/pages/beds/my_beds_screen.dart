@@ -8,6 +8,8 @@ import 'package:betlecare/widgets/weather/WateringRecommendationWidget.dart';
 import 'package:lottie/lottie.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import 'package:betlecare/widgets/weather/FertilizingRecommendationWidget.dart';
+import 'package:betlecare/widgets/weather/ProtectionRecommendationWidget.dart';
+
 class MyBedsScreen extends StatefulWidget {
   const MyBedsScreen({super.key});
 
@@ -402,6 +404,14 @@ Widget _buildBedCard(BetelBed bed) {
 Widget _buildBedCardActions(BetelBed bed) {
   return Column(
     children: [
+      // Protection recommendation widget
+      SizedBox(
+        width: double.infinity,
+        child: ProtectionRecommendationWidget(bed: bed),
+      ),
+      // No need for padding if protection widget is not shown, but add if shown
+      // const SizedBox(height: 8), // This is added dynamically by the ProtectionRecommendationWidget if needed
+      
       // Watering recommendation widget
       SizedBox(
         width: double.infinity,
@@ -409,7 +419,7 @@ Widget _buildBedCardActions(BetelBed bed) {
       ),
       const SizedBox(height: 8), // Add a small gap
       
-      // Fertilizing recommendation widget - Add this new part
+      // Fertilizing recommendation widget
       SizedBox(
         width: double.infinity,
         child: FertilizingRecommendationWidget(bed: bed),
@@ -440,6 +450,7 @@ Widget _buildBedCardActions(BetelBed bed) {
     ],
   );
 }
+
 
   Widget _buildBedStat({
     required IconData icon,
