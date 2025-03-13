@@ -244,6 +244,7 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
     // Get next recommended date and fertilizer type from plan if available
     String nextDate = '';
     String nextFertilizer = '';
+    String nextFertilizerSinhala = '';
     bool hasRecommendation = false;
     bool isFirstTime = false;
     String firstTimeMessage = '';
@@ -259,12 +260,27 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
         firstTimeMessage = isAfterSixPm 
             ? 'පොහොර යෙදීම හෙටින් ආරම්භ කරන්න'  // Start fertilizing from tomorrow
             : 'පොහොර යෙදීම අදින් ආරම්භ කරන්න';   // Start fertilizing from today
+            
+        // Get the fertilizer in Sinhala if available
+        nextFertilizerSinhala = recommendation['next_fertilizer_sinhala'] ?? '';
       } 
-      else if (recommendation['recommended_date'] != null && recommendation['next_fertilizer'] != null) {
+      else if (recommendation['recommended_date'] != null) {
         // Not first time, show next date and fertilizer type
         nextDate = recommendation['recommended_date'];
-        nextFertilizer = recommendation['next_fertilizer'];
+        nextFertilizer = recommendation['next_fertilizer'] ?? '';
+        nextFertilizerSinhala = recommendation['next_fertilizer_sinhala'] ?? nextFertilizer;
         hasRecommendation = true;
+      }
+    }
+    
+    // Check if we have day names in Sinhala
+    String nextDateFormatted = '';
+    if (nextDate.isNotEmpty) {
+      try {
+        final dateObj = DateTime.parse(nextDate);
+        nextDateFormatted = DateFormat('yyyy-MM-dd').format(dateObj);
+      } catch (e) {
+        nextDateFormatted = nextDate;
       }
     }
     
@@ -301,17 +317,27 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
                   color: Colors.grey[800],
                 ),
               ),
+              if (nextFertilizerSinhala.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'පොහොර වර්ගය: $nextFertilizerSinhala',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ],
             ] else if (hasRecommendation) ...[
               const SizedBox(height: 8),
               Text(
-                'මීළඟ යෙදීම: $nextDate',
+                'මීළඟ යෙදීම: $nextDateFormatted',
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.grey[700],
                 ),
               ),
               Text(
-                'පොහොර වර්ගය: $nextFertilizer',
+                'පොහොර වර්ගය: $nextFertilizerSinhala',
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.grey[700],
