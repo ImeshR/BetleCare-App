@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:betlecare/config/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io' show Platform;
 
@@ -12,9 +13,9 @@ class ProtectionService {
   ProtectionService._internal();
   
   // Direct URLs to the API endpoints - use IP address that works for your network setup
-  final String todayUrl = 'http://192.168.43.160:5000/api/protection/today';
-  final String predictUrl = 'http://192.168.43.160:5000/api/protection/predict';
-  final String consolidatedUrl = 'http://192.168.43.160:5000/api/protection/consolidated';
+final String todayUrl = ApiConfig.protectionTodayUrl;
+  final String predictUrl = ApiConfig.protectionPredictUrl;
+  final String consolidatedUrl = ApiConfig.protectionConsolidatedUrl;
   
   // Check today's protection needs
   Future<Map<String, dynamic>> checkTodayProtectionNeeds(
