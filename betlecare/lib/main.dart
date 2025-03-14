@@ -1,6 +1,7 @@
 import 'package:betlecare/pages/market/a_market_screen.dart';
 import 'package:betlecare/pages/sidebar_menu.dart';
 import 'package:betlecare/providers/user_provider.dart';
+import 'package:betlecare/providers/betel_bed_provider.dart'; // Added import for BetelBedProvider
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
@@ -27,9 +28,16 @@ void main() async {
   await userProvider.initializeUser();
 
   runApp(
-    ChangeNotifierProvider.value(
-      value: userProvider,
-      child: MyApp(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(
+          value: userProvider,
+        ),
+        ChangeNotifierProvider(
+          create: (context) => BetelBedProvider(), // Added BetelBedProvider
+        ),
+      ],
+      child: const MyApp(),
     ),
   );
 }
@@ -98,6 +106,15 @@ class _MainPageState extends State<MainPage> {
     const DiseaseManagementScreen(),
     const WeatherScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Preload betel bed data when the app starts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<BetelBedProvider>(context, listen: false).loadBeds();
+    });
+  }
 
   void _onTabChange(int index) {
     setState(() {

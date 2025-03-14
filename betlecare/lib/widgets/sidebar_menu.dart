@@ -48,11 +48,14 @@ class SidebarMenu extends StatelessWidget {
                     radius: 30,
                     backgroundImage: user?.userMetadata?['avatar_url'] != null
                         ? NetworkImage(user!.userMetadata!['avatar_url'])
-                        : const AssetImage('assets/images/profile.png') as ImageProvider,
+                        : const AssetImage('assets/images/profile.png')
+                            as ImageProvider,
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    user?.userMetadata?['full_name'] ?? userData?['full_name'] ?? 'Guest',
+                    user?.userMetadata?['full_name'] ??
+                        userData?['full_name'] ??
+                        'Guest',
                     style: const TextStyle(
                       color: Colors.black,
                       fontSize: 18,
@@ -99,4 +102,3 @@ class SidebarMenu extends StatelessWidget {
     );
   }
 }
-
