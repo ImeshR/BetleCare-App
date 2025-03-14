@@ -204,31 +204,6 @@ class _PriceForecastScreenState extends State<PriceForecastScreen> {
     );
   }
 
-  // Widget _buildMarketInputField(
-  //     String title, TextEditingController controller) {
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(vertical: 8),
-  //     child: TextFormField(
-  //       controller: controller,
-  //       decoration: InputDecoration(
-  //         labelText: title,
-  //         border: OutlineInputBorder(
-  //           borderRadius: BorderRadius.circular(8),
-  //         ),
-  //         filled: true,
-  //         fillColor: Colors.green.shade100,
-  //       ),
-  //       keyboardType: TextInputType.text,
-  //       validator: (value) {
-  //         if (value == null || value.isEmpty) {
-  //           return 'කරුණාකර වටිනාකමක් ඇතුළත් කරන්න';
-  //         }
-  //         return null;
-  //       },
-  //     ),
-  //   );
-  // }
-
   Widget _buildDatePicker(String title, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
