@@ -79,7 +79,7 @@ class _LandDetailsScreenState extends State<LandDetailsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('ස්ථානය: ${land['location']}'),
-              Text('ප්‍රමාණය: ${land['size']} අක්කර'),
+              Text('ප්‍රමාණය: ${land['area'].toStringAsFixed(2)} අක්කර'),
             ],
           ),
           actions: [
@@ -126,7 +126,7 @@ class _LandDetailsScreenState extends State<LandDetailsScreen> {
     return Scaffold(
       // appBar: BasicAppbar(title: 'ඉඩම් විස්තර'),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
                 Padding(
@@ -143,40 +143,32 @@ class _LandDetailsScreenState extends State<LandDetailsScreen> {
                   ),
                 ),
                 Expanded(
-                  child: _filteredLands.isEmpty
-                      ? Center(
-                          child: Text(
-                            'දත්ත නොමැත',
-                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                  child: ListView.builder(
+                    itemCount: _filteredLands.length,
+                    itemBuilder: (context, index) {
+                      final land = _filteredLands[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                            vertical: 8, horizontal: 16),
+                        child: ListTile(
+                          leading: const CircleAvatar(
+                            backgroundColor: Colors.green,
+                            child: Icon(Icons.landscape, color: Colors.white),
                           ),
-                        )
-                      : ListView.builder(
-                          itemCount: _filteredLands.length,
-                          itemBuilder: (context, index) {
-                            final land = _filteredLands[index];
-                            return Card(
-                              margin: const EdgeInsets.symmetric(
-                                  vertical: 8, horizontal: 16),
-                              child: ListTile(
-                                leading: const CircleAvatar(
-                                  backgroundColor: Colors.green,
-                                  child: Icon(Icons.landscape,
-                                      color: Colors.white),
-                                ),
-                                title: Text(land['name'],
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold)),
-                                subtitle: Text(
-                                    '${land['location']} | ${land['size']} අක්කර'),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.info_outline),
-                                  onPressed: () =>
-                                      _showLandDetails(context, land),
-                                ),
-                              ),
-                            );
-                          },
+                          title: Text(land['name'],
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text(
+                              '${land['location']} | ${land['area'].toStringAsFixed(2)} අක්කර' ??
+                                  ''),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.info_outline),
+                            onPressed: () => _showLandDetails(context, land),
+                          ),
                         ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),

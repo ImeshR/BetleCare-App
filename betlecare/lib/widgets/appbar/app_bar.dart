@@ -30,13 +30,13 @@ class BasicAppbar extends StatelessWidget implements PreferredSizeWidget {
       ),
       title: title != null
           ? Text(
-        title!,
-        style: TextStyle(
-          color: Colors.green[800],
-          fontWeight: FontWeight.bold,
-          fontSize: 20,
-        ),
-      )
+              title!,
+              style: TextStyle(
+                color: Colors.green[800],
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            )
           : null,
       centerTitle: true,
     );
@@ -45,4 +45,3 @@ class BasicAppbar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
-

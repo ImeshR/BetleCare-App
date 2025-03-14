@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:developer' as dev;
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class PriceForecastScreen extends StatefulWidget {
   const PriceForecastScreen({super.key});
@@ -17,43 +21,53 @@ class _PriceForecastScreenState extends State<PriceForecastScreen> {
   String? _selectedSize;
   String? _selectedQuality;
   String? _selectedMarket;
+  String? _selectedSeason;
 
   bool _isLoading = false;
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
 
-      //! Remove the below log statements
-      dev.log('Form Submitted');
-      dev.log(
-        'Date: ${_dateController.text}',
-      );
-      dev.log('Quantity: ${_quantityController.text}');
-      dev.log('Type: $_selectedType');
-      dev.log(
-        'Size: $_selectedSize',
-      );
-      dev.log(
-        'Quality: $_selectedQuality',
-      );
-      dev.log(
-        'Market: $_selectedMarket',
+      final requestBody = {
+        'Date': _dateController.text,
+        'Leaf_Type': _selectedType,
+        'Leaf_Size': _selectedSize,
+        'Quality_Grade': _selectedQuality,
+        'No_of_Leaves': _quantityController.text,
+        'Location': _selectedMarket,
+        'Season': _selectedSeason,
+      };
+
+      final apiUrl = '${dotenv.env['MARKET_PREDICT_BASE_URL']!}/predict-price';
+      // Make the API call
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(requestBody),
       );
 
-      Future.delayed(const Duration(seconds: 3), () {
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final price = data['price'];
         setState(() {
           _isLoading = false;
         });
-
-        _showPopup();
-      });
+        _showPopup(price);
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+        dev.log('Error: ${response.statusCode}');
+      }
     }
   }
 
-  void _showPopup() {
+  void _showPopup(price) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -66,8 +80,8 @@ class _PriceForecastScreenState extends State<PriceForecastScreen> {
             children: [
               Image.asset('assets/images/eshan/LM1.png', height: 150),
               const SizedBox(height: 16),
-              const Text(
-                '2025/04/02 දිනට බුලත් කොලයක මිල: 12.50',
+              Text(
+                '${_dateController.text} දිනට බුලත් කොලයක මිල: $price',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
@@ -95,6 +109,7 @@ class _PriceForecastScreenState extends State<PriceForecastScreen> {
     _selectedSize = null;
     _selectedQuality = null;
     _selectedMarket = null;
+    _selectedSeason = null;
   }
 
   @override
@@ -124,7 +139,7 @@ class _PriceForecastScreenState extends State<PriceForecastScreen> {
                         _buildDatePicker('දිනය', _dateController),
                         _buildDropdownField(
                             'කොළ වර්ගය',
-                            ['Type 1', 'Type 2', 'Type 3'],
+                            ['Peedichcha', 'Korikan', 'Keti', 'Raan Keti'],
                             (val) => setState(() => _selectedType = val),
                             _selectedType),
                         _buildDropdownField(
@@ -134,15 +149,23 @@ class _PriceForecastScreenState extends State<PriceForecastScreen> {
                             _selectedSize),
                         _buildDropdownField(
                             'ගුණාත්මක මට්ටම',
-                            ['Low', 'Medium', 'High'],
+                            [
+                              'Ash',
+                              'Dark',
+                            ],
                             (val) => setState(() => _selectedQuality = val),
                             _selectedQuality),
                         _buildNumberInputField('කොළ ගණන', _quantityController),
                         _buildDropdownField(
                             'වෙළඳපොල',
-                            ['Panadura', 'Colombo', 'Nugegoda'],
+                            ['Kuliyapitiya', 'Naiwala', 'Apaladeniya'],
                             (val) => setState(() => _selectedMarket = val),
                             _selectedMarket),
+                        _buildDropdownField(
+                            'වාරය',
+                            ['Dry', 'Wet'],
+                            (val) => setState(() => _selectedSeason = val),
+                            _selectedSeason),
                       ],
                     ),
                   ),

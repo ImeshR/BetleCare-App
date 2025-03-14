@@ -1,4 +1,5 @@
 import 'package:betlecare/pages/harvest/predict/add_prediction_page.dart';
+import 'package:betlecare/pages/harvest/predict/yiled_main_page.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/profile_header.dart';
@@ -28,7 +29,8 @@ class HarvestScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ChildPageWrapper(child: AddPredictionPage()),
+                    builder: (context) =>
+                        const ChildPageWrapper(child: AddPredictionPage()),
                   ),
                 );
               },
@@ -48,7 +50,29 @@ class HarvestScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ChildPageWrapper(child: LandMainScreen()),
+                    builder: (context) =>
+                        const ChildPageWrapper(child: LandMainScreen()),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            _buildCard(
+              title: 'අස්වැන්න පිළිබඳ \nසාරාංශය හා පෙර \nපුරෝකථනයන්',
+              color: Colors.amber.shade100,
+              imagePath: 'assets/images/eshan/LM4.png',
+              gradient: LinearGradient(
+                colors: [
+                  Colors.amber.shade50,
+                  Colors.amber.shade100,
+                ],
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const ChildPageWrapper(child: YieldMainPage()),
                   ),
                 );
               },
@@ -68,27 +92,8 @@ class HarvestScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ChildPageWrapper(child: LandMainScreen()),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            _buildCard(
-              title: 'අස්වැන්න පිළිබඳ \nසාරාංශය',
-              color: Colors.amber.shade100,
-              imagePath: 'assets/images/eshan/LM4.png',
-              gradient: LinearGradient(
-                colors: [
-                  Colors.amber.shade50,
-                  Colors.amber.shade100,
-                ],
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ChildPageWrapper(child: LandMainScreen()),
+                    builder: (context) =>
+                        const ChildPageWrapper(child: LandMainScreen()),
                   ),
                 );
               },
@@ -137,7 +142,8 @@ class HarvestScreen extends StatelessWidget {
                       imagePath, // Use the image path
                       width: 160, // Set the image width
                       height: 160, // Set the image height
-                      fit: BoxFit.contain, // Ensure the image fits without distortion
+                      fit: BoxFit
+                          .contain, // Ensure the image fits without distortion
                     ),
                   ),
                 ),
@@ -146,7 +152,8 @@ class HarvestScreen extends StatelessWidget {
                   child: Center(
                     child: Text(
                       title,
-                      textAlign: TextAlign.center, // Ensure text alignment is centered
+                      textAlign:
+                          TextAlign.center, // Ensure text alignment is centered
                       style: TextStyle(
                         fontSize: 20,
                         color: Colors.grey[800],
