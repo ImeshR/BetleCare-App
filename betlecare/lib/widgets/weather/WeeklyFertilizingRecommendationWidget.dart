@@ -137,18 +137,18 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.shade200),
+        color: Colors.yellow.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.yellow.shade300, width: 1),
       ),
       child: Row(
         children: [
-          Icon(Icons.grass, color: Colors.grey[400]),
+          Icon(Icons.grass, color: Colors.yellow.shade700),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               'පොහොර යෙදීමේ නිර්දේශය ලබා ගනිමින්...',
-              style: TextStyle(color: Colors.grey[600]),
+              style: TextStyle(color: Colors.yellow.shade800),
             ),
           ),
           const SizedBox(width: 8),
@@ -157,7 +157,7 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
             height: 16,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade300),
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.yellow.shade700),
             ),
           ),
         ],
@@ -169,21 +169,21 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.shade200),
+        color: Colors.yellow.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.yellow.shade300, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+              Icon(Icons.warning_amber_rounded, color: Colors.yellow.shade700),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'පොහොර නිර්දේශය ලබා ගත නොහැක',
-                  style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Colors.yellow.shade800, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -192,6 +192,9 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: _loadRecommendations,
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.yellow.shade700,
+              ),
               child: const Text('නැවත උත්සාහ කරන්න'),
             ),
           ),
@@ -204,22 +207,25 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        color: Colors.yellow.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.yellow.shade300, width: 1),
       ),
       child: Row(
         children: [
-          Icon(Icons.grass, color: Colors.grey[400]),
+          Icon(Icons.grass, color: Colors.yellow.shade700),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               'පොහොර යෙදීමේ නිර්දේශය ලබා ගත නොහැක',
-              style: TextStyle(color: Colors.grey[600]),
+              style: TextStyle(color: Colors.yellow.shade800),
             ),
           ),
           TextButton(
             onPressed: _loadRecommendations,
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.yellow.shade700,
+            ),
             child: const Text('නැවත උත්සාහ කරන්න'),
           ),
         ],
@@ -235,7 +241,8 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
     // If it's after 6 PM, adjust the recommendation as needed
     final effectiveIsSuitable = isAfterSixPm ? false : isSuitable;
     
-    final color = effectiveIsSuitable ? Colors.green.shade700 : Colors.orange.shade700;
+    // Always use yellow color theme for fertilizing
+    final color = Colors.yellow.shade700;
     final icon = effectiveIsSuitable ? Icons.check_circle : Icons.cancel;
     
     // Get recommendation text based on time and suitability
@@ -298,9 +305,9 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: effectiveIsSuitable ? Colors.green.shade50 : Colors.orange.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: Colors.yellow.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.yellow.shade300, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,7 +346,7 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: color.withOpacity(0.2)),
+              border: Border.all(color: Colors.yellow.shade300, width: 1),
             ),
             child: Row(
               children: [
@@ -366,14 +373,14 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
               title: 'නිර්දේශය',
               content: firstTimeMessage,
               icon: Icons.new_releases,
-              color: Colors.blue
+              color: Colors.yellow.shade700
             )
           else if (hasRecommendation)
             _buildInfoSection(
               title: 'මීළඟ පොහොර යෙදීම',
               content: 'දිනය: $nextDate\nපොහොර වර්ගය: $nextFertilizer',
               icon: Icons.event,
-              color: Colors.teal
+              color: Colors.yellow.shade700
             ),
             
           // Expanded content - only show when expanded
@@ -386,7 +393,7 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
                 title: 'විස්තරය',
                 content: message,
                 icon: Icons.info_outline,
-                color: Colors.grey.shade700
+                color: Colors.yellow.shade700
               ),
               
             const SizedBox(height: 12),
@@ -406,7 +413,7 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green.shade200),
+                  border: Border.all(color: Colors.yellow.shade300, width: 1),
                 ),
                 child: ListView.separated(
                   shrinkWrap: true,
@@ -424,8 +431,8 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
                       child: Row(
                         children: [
                           isBestDay 
-                              ? const Icon(Icons.star, color: Colors.amber, size: 20)
-                              : const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                              ? Icon(Icons.star, color: Colors.yellow.shade700, size: 20)
+                              : Icon(Icons.check_circle, color: Colors.yellow.shade700, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -440,16 +447,16 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.amber.shade50,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.amber),
+                                color: Colors.yellow.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.yellow.shade300, width: 1),
                               ),
                               child: Text(
                                 'හොඳම දිනය',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.amber.shade900,
+                                  color: Colors.yellow.shade700,
                                 ),
                               ),
                             ),
@@ -471,7 +478,7 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
               title: 'අමතර තොරතුරු',
               content: 'ඉදිරි දින 7 තුළ පොහොර යෙදීමට සුදුසු දින නොමැත. ඔබේ මීළඟ පොහොර යෙදීම සඳහා දිනය තහවුරු කර ගන්න.',
               icon: Icons.info_outline,
-              color: Colors.grey.shade700
+              color: Colors.yellow.shade700
             ),
           ],
         ],
@@ -490,7 +497,7 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: Colors.yellow.shade300, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

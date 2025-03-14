@@ -84,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Welcome Card
-                            _buildWelcomeCard(context),
+                         
                             const SizedBox(height: 16),
                             
                             // Section Title
@@ -145,85 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildWelcomeCard(BuildContext context) {
-    final currentTime = TimeOfDay.now().hour;
-    String greeting = 'සුභ දවසක්';
-    
-    if (currentTime < 12) {
-      greeting = 'සුභ උදෑසනක්';
-    } else if (currentTime < 17) {
-      greeting = 'සුභ දහවලක්';
-    } else {
-      greeting = 'සුභ සන්ධ්‍යාවක්';
-    }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.green.shade400, Colors.green.shade700],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.green.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 26,
-                backgroundColor: Colors.white.withOpacity(0.3),
-                child: const Icon(
-                  Icons.person,
-                  size: 30,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    greeting,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const Text(
-                    'සරංග',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              )
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'ඔබගේ බුලත් වගාවන් ඵලදායී ලෙස කළමනාකරණය කරන්න',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildFeatureCard({
     required BuildContext context,

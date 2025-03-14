@@ -121,7 +121,7 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
             Icon(Icons.add_circle, size: 24, color: Colors.green.shade700),
             const SizedBox(width: 8),
             Text(
-              'නව බුලත් පඳුරක් එකතු කරන්න',
+              'නව බුලත් වගාවක් එකතු කරන්න',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green.shade700),
             ),
           ],
@@ -210,7 +210,7 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'ඔබගේ පළමු බුලත් පඳුර එකතු කිරීමට ඉහත බොත්තම ක්ලික් කරන්න',
+            'ඔබගේ පළමු බුලත් වගාව එකතු කිරීමට ඉහත බොත්තම ක්ලික් කරන්න',
             style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             textAlign: TextAlign.center,
           ),
@@ -409,21 +409,25 @@ Widget _buildBedCardActions(BetelBed bed) {
         width: double.infinity,
         child: ProtectionRecommendationWidget(bed: bed),
       ),
-      // No need for padding if protection widget is not shown, but add if shown
-      // const SizedBox(height: 8), // This is added dynamically by the ProtectionRecommendationWidget if needed
+      
+      // Add consistent spacing - always present regardless of protection widget visibility
+      const SizedBox(height: 12),
       
       // Watering recommendation widget
       SizedBox(
         width: double.infinity,
         child: WateringRecommendationWidget(bed: bed),
       ),
-      const SizedBox(height: 8), // Add a small gap
+      
+      // Add consistent spacing between watering and fertilizing
+      const SizedBox(height: 12),
       
       // Fertilizing recommendation widget
       SizedBox(
         width: double.infinity,
         child: FertilizingRecommendationWidget(bed: bed),
       ),
+      
       const SizedBox(height: 16),
       
       // Action buttons
@@ -450,7 +454,6 @@ Widget _buildBedCardActions(BetelBed bed) {
     ],
   );
 }
-
 
   Widget _buildBedStat({
     required IconData icon,
