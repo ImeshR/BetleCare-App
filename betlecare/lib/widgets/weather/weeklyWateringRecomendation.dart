@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:betlecare/models/betel_bed_model.dart';
 import 'package:betlecare/services/wateringService.dart';
@@ -109,16 +110,6 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
     return sinhalaWeekdays[date.weekday % 7];
   }
   
-  Color _getRecommendationColor(String recommendation) {
-    if (recommendation.contains("No watering")) {
-      return Colors.green;
-    } else if (recommendation.contains("once")) {
-      return Colors.blue;
-    } else {
-      return Colors.indigo;
-    }
-  }
-  
   IconData _getRecommendationIcon(String recommendation) {
     if (recommendation.contains("No watering")) {
       return Icons.check_circle;
@@ -145,21 +136,30 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(12),
+          color: Colors.blue.shade50,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.blue.shade300, width: 1),
         ),
-        child: const Center(
-          child: Column(
-            children: [
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
+        child: Row(
+          children: [
+            Icon(Icons.water_drop, color: Colors.blue.shade700),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'ජල නිර්දේශ ලබා ගැනෙයි...',
+                style: TextStyle(color: Colors.blue.shade800),
               ),
-              SizedBox(height: 12),
-              Text('ජල නිර්දේශ ලබා ගැනෙයි...'),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -168,24 +168,36 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.red.shade100,
-          borderRadius: BorderRadius.circular(12),
+          color: Colors.blue.shade50,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.blue.shade300, width: 1),
         ),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(Icons.error_outline, color: Colors.red.shade700, size: 24),
-              const SizedBox(height: 8),
-              Text(
-                'ජල නිර්දේශය ලබාගැනීමට නොහැකි විය',
-                style: TextStyle(color: Colors.red.shade700),
-              ),
-              TextButton(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.blue.shade700),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'ජල නිර්දේශය ලබාගැනීමට නොහැකි විය',
+                    style: TextStyle(color: Colors.blue.shade800, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
                 onPressed: _fetchWateringRecommendations,
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.blue.shade700,
+                ),
                 child: const Text('නැවත උත්සාහ කරන්න'),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
@@ -196,137 +208,131 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
       return const SizedBox.shrink();
     }
 
-    return Column(
-      children: [
-        // Today's recommendation card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: _getRecommendationColor(today['recommendation']).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _getRecommendationColor(today['recommendation']).withOpacity(0.5),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue.shade300, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Icon(
-                    _getRecommendationIcon(today['recommendation']),
-                    color: _getRecommendationColor(today['recommendation']),
-                    size: 24,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'ජලය යෙදීම සදහා නිර්දේශයන්',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: _getRecommendationColor(today['recommendation']),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _getLocalizedRecommendation(
-                            today['recommendation'],
-                            today['water_amount'],
-                          ),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: _getRecommendationColor(today['recommendation']),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
-                    onPressed: () {
-                      setState(() {
-                        _isExpanded = !_isExpanded;
-                      });
-                    },
-                  ),
-                ],
+              Icon(
+                _getRecommendationIcon(today['recommendation']),
+                color: Colors.blue.shade700,
+                size: 24,
               ),
-              if (_isExpanded)
-                Column(
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Divider(height: 24),
-                    const Text(
-                      'සති පුරා ජල නිර්දේශ',
+                    Text(
+                      'ජලය යෙදීම සදහා නිර්දේශයන්',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade700,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: 100,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _weeklyForecast.length,
-                        itemBuilder: (context, index) {
-                          final day = _weeklyForecast[index];
-                          final color = _getRecommendationColor(day['recommendation']);
-                          final icon = _getRecommendationIcon(day['recommendation']);
-                          
-                          return Container(
-                            width: 100,
-                            margin: const EdgeInsets.only(right: 8),
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: color.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: color.withOpacity(0.3)),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  day['day'],
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  DateFormat('MM/dd').format(day['date']),
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Icon(icon, color: color, size: 20),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${day['water_amount']}L',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: color,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                    const SizedBox(height: 4),
+                    Text(
+                      _getLocalizedRecommendation(
+                        today['recommendation'],
+                        today['water_amount'],
+                      ),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.blue.shade700,
                       ),
                     ),
                   ],
                 ),
+              ),
+              IconButton(
+                icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
+                onPressed: () {
+                  setState(() {
+                    _isExpanded = !_isExpanded;
+                  });
+                },
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+              ),
             ],
           ),
-        ),
-      ],
+          if (_isExpanded)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Divider(height: 24),
+                const Text(
+                  'සති පුරා ජල නිර්දේශ',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 100,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _weeklyForecast.length,
+                    itemBuilder: (context, index) {
+                      final day = _weeklyForecast[index];
+                      final icon = _getRecommendationIcon(day['recommendation']);
+                      
+                      return Container(
+                        width: 100,
+                        margin: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue.shade300, width: 1),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              day['day'],
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              DateFormat('MM/dd').format(day['date']),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Icon(icon, color: Colors.blue.shade700, size: 20),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${day['water_amount']}L',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 }

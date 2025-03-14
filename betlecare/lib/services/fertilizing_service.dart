@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:io' show Platform;
-
+import 'package:betlecare/config/api_config.dart';
 class FertilizingService {
   static final FertilizingService _instance = FertilizingService._internal();
   
@@ -12,8 +12,8 @@ class FertilizingService {
   FertilizingService._internal();
   
   // Direct URLs to the API endpoints - use IP address that works for your network setup
-  final String todayUrl = 'http://192.168.43.160:5000/api/fertilizing/today';
-  final String planUrl = 'http://192.168.43.160:5000/api/fertilizing/plan';
+ final String todayUrl = ApiConfig.fertilizingTodayUrl;
+  final String planUrl = ApiConfig.fertilizingPlanUrl;
   
   // Check if today is suitable for fertilizing
   Future<Map<String, dynamic>> checkTodayFertilizingSuitability(String location, double rainfall) async {

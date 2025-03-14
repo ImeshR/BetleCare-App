@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:betlecare/config/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:betlecare/models/betel_bed_model.dart';
 import 'package:betlecare/services/weather_services2.dart';
@@ -8,7 +9,7 @@ class WateringService {
   final WeatherService _weatherService = WeatherService();
   
   // API endpoint for the watering recommendation service
-  final String baseUrl = 'http://192.168.43.160:5000/api/watering';
+  final String baseUrl = ApiConfig.wateringCheckUrl;
   
   // ========== DEVELOPMENT TOGGLE ==========
   // Set to TRUE to use hardcoded data (no API calls)

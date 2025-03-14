@@ -1,3 +1,6 @@
+
+// WEEKLY PROTECTION RECOMMENDATION WIDGET
+
 import 'package:flutter/material.dart';
 import 'package:betlecare/models/betel_bed_model.dart';
 import 'package:betlecare/services/protection_service.dart';
@@ -179,92 +182,71 @@ class _WeeklyProtectionRecommendationWidgetState extends State<WeeklyProtectionR
   }
   
   Widget _buildLoadingState() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.shield, color: Colors.grey[600]),
-                const SizedBox(width: 12),
-                const Text(
-                  'ආරක්ෂණ නිර්දේශයන්',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ],
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.shade300, width: 1),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.shield, color: Colors.red.shade700),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'ආරක්ෂණ නිර්දේශය ලබා ගනිමින්...',
+              style: TextStyle(color: Colors.red.shade800),
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'ආරක්ෂණ නිර්දේශය ලබා ගනිමින්...',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                ),
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade300),
-                  ),
-                ),
-              ],
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.red.shade700),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
   
   Widget _buildErrorState() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.shield, color: Colors.grey[600]),
-                const SizedBox(width: 12),
-                const Text(
-                  'ආරක්ෂණ නිර්දේශයන්',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.shade300, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.red.shade700),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'ආරක්ෂණ නිර්දේශය ලබා ගත නොහැක',
+                  style: TextStyle(color: Colors.red.shade800, fontWeight: FontWeight.bold),
                 ),
-              ],
+              ),
+            ],
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: _loadRecommendations,
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red.shade700,
+              ),
+              child: const Text('නැවත උත්සාහ කරන්න'),
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'ආරක්ෂණ නිර්දේශය ලබා ගත නොහැක',
-                    style: TextStyle(color: Colors.grey[700]),
-                  ),
-                ),
-                TextButton(
-                  onPressed: _loadRecommendations,
-                  child: const Text('නැවත උත්සාහ කරන්න'),
-                  style: TextButton.styleFrom(
-                    minimumSize: Size.zero,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -281,211 +263,211 @@ class _WeeklyProtectionRecommendationWidgetState extends State<WeeklyProtectionR
     final reason = _currentPeriod!['reason'] as String;
     final dateRange = _currentPeriod!['date_range'] as String;
     
-    // Get color and icon based on protection type
-    final color = protectionType == 1 ? Colors.orange : Colors.blue;
+    // Use consistent red color for protection regardless of type
+    final color = Colors.red.shade700;
     final icon = protectionType == 1 ? Icons.wb_sunny : Icons.umbrella;
     
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.shade300, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.shield, color: color),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'ආරක්ෂණ නිර්දේශයන්',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ),
+              IconButton(
+                icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
+                onPressed: () {
+                  setState(() {
+                    _isExpanded = !_isExpanded;
+                  });
+                },
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          
+          // Current protection period recommendation
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red.shade300, width: 1),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.shield, color: color.shade700),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'ආරක්ෂණ නිර්දේශයන්',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(icon, color: color),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            labelSinhala,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: color,
+                              fontSize: 15,
+                            ),
+                          ),
+                          Text(
+                            dateRange,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  reason,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[800],
                   ),
                 ),
-                IconButton(
-                  icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
-                  onPressed: () {
-                    setState(() {
-                      _isExpanded = !_isExpanded;
-                    });
-                  },
-                  constraints: const BoxConstraints(),
-                  padding: EdgeInsets.zero,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            
-            // Current protection period recommendation
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: color.shade200),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+                if (methods.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(icon, color: color.shade700),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
+                    children: (methods as List).map((method) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              labelSinhala,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: color.shade700,
-                                fontSize: 15,
-                              ),
-                            ),
-                            Text(
-                              dateRange,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[700],
+                            Icon(Icons.check_circle_outline, size: 16, color: color),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                method.toString(),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[800],
+                                ),
                               ),
                             ),
                           ],
                         ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          
+          // Consolidated periods when expanded
+          if (_isExpanded && _consolidatedRecommendations.length > 1) ...[
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+            const Text(
+              'සති පුරා ආරක්ෂණ කාල පරාසයන්',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // List of protection periods
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _consolidatedRecommendations.length,
+              itemBuilder: (context, index) {
+                final period = _consolidatedRecommendations[index];
+                final isSelected = period['isSelected'] == true;
+                final periodType = period['protection_type'] as int;
+                final periodIcon = periodType == 1 ? Icons.wb_sunny : Icons.umbrella;
+                
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      // Update selection in the list
+                      for (var i = 0; i < _consolidatedRecommendations.length; i++) {
+                        _consolidatedRecommendations[i]['isSelected'] = (i == index);
+                      }
+                      
+                      // Update current period
+                      _currentPeriod = Map<String, dynamic>.from(_consolidatedRecommendations[index]);
+                    });
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.red.shade100 : Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isSelected ? Colors.red.shade400 : Colors.red.shade200,
+                        width: isSelected ? 2 : 1,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    reason,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[800],
                     ),
-                  ),
-                  if (methods.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    const Divider(height: 1),
-                    const SizedBox(height: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: (methods as List).map((method) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Row(
+                    child: Row(
+                      children: [
+                        Icon(periodIcon, size: 20, color: color),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(Icons.check_circle_outline, size: 16, color: color.shade700),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  method.toString(),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey[800],
-                                  ),
+                              Text(
+                                period['date_range'],
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: color,
                                 ),
+                              ),
+                              Text(
+                                _getShortProtectionLabelWithReason(periodType, period['reason']),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[700],
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            
-            // Consolidated periods when expanded
-            if (_isExpanded && _consolidatedRecommendations.length > 1) ...[
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 8),
-              const Text(
-                'සති පුරා ආරක්ෂණ කාල පරාසයන්',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              
-              // List of protection periods
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _consolidatedRecommendations.length,
-                itemBuilder: (context, index) {
-                  final period = _consolidatedRecommendations[index];
-                  final isSelected = period['isSelected'] == true;
-                  final periodType = period['protection_type'] as int;
-                  final periodColor = periodType == 1 ? Colors.orange : Colors.blue;
-                  final periodIcon = periodType == 1 ? Icons.wb_sunny : Icons.umbrella;
-                  
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        // Update selection in the list
-                        for (var i = 0; i < _consolidatedRecommendations.length; i++) {
-                          _consolidatedRecommendations[i]['isSelected'] = (i == index);
-                        }
-                        
-                        // Update current period
-                        _currentPeriod = Map<String, dynamic>.from(_consolidatedRecommendations[index]);
-                      });
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isSelected ? periodColor.shade100 : periodColor.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isSelected ? periodColor.shade400 : periodColor.shade200,
-                          width: isSelected ? 2 : 1,
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(periodIcon, size: 20, color: periodColor.shade700),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  period['date_range'],
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    color: periodColor.shade700,
-                                  ),
-                                ),
-                                Text(
-                                  _getShortProtectionLabelWithReason(periodType, period['reason']),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[700],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (isSelected)
-                            Icon(Icons.check_circle, size: 16, color: periodColor.shade700),
-                        ],
-                      ),
+                        if (isSelected)
+                          Icon(Icons.check_circle, size: 16, color: color),
+                      ],
                     ),
-                  );
-                },
-              ),
-            ],
+                  ),
+                );
+              },
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
