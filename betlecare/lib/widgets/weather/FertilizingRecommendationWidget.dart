@@ -133,18 +133,23 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
   }
   
   Widget _buildLoadingState() {
-    return Card(
+    return Container(
       margin: EdgeInsets.zero,
+      decoration: BoxDecoration(
+        color: Colors.yellow.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.yellow.shade300, width: 1),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Row(
           children: [
-            Icon(Icons.grass, color: Colors.grey[400]),
+            Icon(Icons.grass, color: Colors.yellow.shade700),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 'පොහොර යෙදීමේ නිර්දේශය ලබා ගනිමින්...',
-                style: TextStyle(color: Colors.grey[600]),
+                style: TextStyle(color: Colors.yellow.shade800),
               ),
             ),
             const SizedBox(width: 8),
@@ -153,7 +158,7 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
               height: 16,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade300),
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.yellow.shade700),
               ),
             ),
           ],
@@ -163,8 +168,13 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
   }
   
   Widget _buildErrorState() {
-    return Card(
+    return Container(
       margin: EdgeInsets.zero,
+      decoration: BoxDecoration(
+        color: Colors.yellow.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.yellow.shade300, width: 1),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -172,12 +182,12 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
           children: [
             Row(
               children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                Icon(Icons.warning_amber_rounded, color: Colors.yellow.shade700),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'පොහොර නිර්දේශය ලබා ගත නොහැක',
-                    style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Colors.yellow.shade800, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -186,6 +196,9 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: _loadRecommendations,
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.yellow.shade700,
+                ),
                 child: const Text('නැවත උත්සාහ කරන්න'),
               ),
             ),
@@ -196,22 +209,30 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
   }
   
   Widget _buildUnavailableState() {
-    return Card(
+    return Container(
       margin: EdgeInsets.zero,
+      decoration: BoxDecoration(
+        color: Colors.yellow.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.yellow.shade300, width: 1),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Row(
           children: [
-            Icon(Icons.grass, color: Colors.grey[400]),
+            Icon(Icons.grass, color: Colors.yellow.shade700),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 'පොහොර යෙදීමේ නිර්දේශය ලබා ගත නොහැක',
-                style: TextStyle(color: Colors.grey[600]),
+                style: TextStyle(color: Colors.yellow.shade800),
               ),
             ),
             TextButton(
               onPressed: _loadRecommendations,
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.yellow.shade700,
+              ),
               child: const Text('නැවත උත්සාහ කරන්න'),
             ),
           ],
@@ -227,9 +248,6 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
     
     // If it's after 6 PM, adjust the recommendation as needed
     final effectiveIsSuitable = isAfterSixPm ? false : isSuitable;
-    
-    final color = effectiveIsSuitable ? Colors.green.shade700 : Colors.orange.shade700;
-    final icon = effectiveIsSuitable ? Icons.check_circle : Icons.cancel;
     
     // Get recommendation text based on time and suitability
     String statusText;
@@ -284,9 +302,13 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
       }
     }
     
-    return Card(
+    return Container(
       margin: EdgeInsets.zero,
-      color: effectiveIsSuitable ? Colors.green.shade50 : Colors.orange.shade50,
+      decoration: BoxDecoration(
+        color: Colors.yellow.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.yellow.shade300, width: 1),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -294,14 +316,17 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
           children: [
             Row(
               children: [
-                Icon(icon, color: color),
+                Icon(
+                  effectiveIsSuitable ? Icons.check_circle : Icons.cancel, 
+                  color: Colors.yellow.shade700
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     statusText,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: color,
+                      color: Colors.yellow.shade800,
                     ),
                   ),
                 ),
@@ -344,7 +369,6 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
                 ),
               ),
             ],
-            // Refresh button removed
           ],
         ),
       ),

@@ -172,7 +172,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
           await _updateProvider();
           
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('බුලත් පඳුර සාර්ථකව යාවත්කාලීන කරන ලදී')),
+            const SnackBar(content: Text('බුලත් වගාව සාර්ථකව යාවත්කාලීන කරන ලදී')),
           );
           
           // Return true to indicate successful update
@@ -185,7 +185,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
           await _updateProvider();
           
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('බුලත් පඳුර සාර්ථකව යාවත්කාලීන කරන ලදී')),
+            const SnackBar(content: Text('බුලත් වගාව සාර්ථකව යාවත්කාලීන කරන ලදී')),
           );
           
           // Return true to indicate successful update
@@ -219,7 +219,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'බුලත් පඳුර සංස්කරණය',
+          'බුලත් වගාව සංස්කරණය',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.green.shade700,
@@ -310,7 +310,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
                     TextFormField(
                       controller: _nameController,
                       decoration: InputDecoration(
-                        labelText: 'පඳුරේ නම',
+                        labelText: 'වගාවේ නම',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -318,7 +318,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'කරුණාකර පඳුරේ නම ඇතුළත් කරන්න';
+                          return 'කරුණාකර වගාවේ නම ඇතුළත් කරන්න';
                         }
                         return null;
                       },
