@@ -3,6 +3,7 @@ import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/profile_header.dart';
 import 'disease_detection.dart';
 import 'pestpage.dart';
+import 'treatment_scheduling.dart';
 
 class DiseaseManagementScreen extends StatelessWidget {
   const DiseaseManagementScreen({super.key});
@@ -17,7 +18,7 @@ class DiseaseManagementScreen extends StatelessWidget {
             _buildCard(
               title: 'රෝග හඳුනාගැනීම',
               color: Colors.red.shade100,
-              imagePath: 'aassets/images/disease/DD1.png',
+              imagePath: 'assets/images/disease/DD1.png',
               gradient: LinearGradient(
                 colors: [
                   Colors.red.shade50,
@@ -38,7 +39,7 @@ class DiseaseManagementScreen extends StatelessWidget {
             _buildCard(
               title: 'ප්‍රතිකාර සැලසුම්',
               color: Colors.blue.shade100,
-              imagePath: '',
+              imagePath: 'assets/images/disease/DD3.png',
               gradient: LinearGradient(
                 colors: [
                   Colors.blue.shade50,
@@ -46,7 +47,7 @@ class DiseaseManagementScreen extends StatelessWidget {
                 ],
               ),
               onTap: () {
-                // Navigation will be added later
+                //navigation
               },
             ),
             const SizedBox(height: 16),
