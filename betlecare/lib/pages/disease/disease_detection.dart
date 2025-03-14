@@ -116,7 +116,7 @@ class _DiseasePhotoManagementPageState
               title: 'ඡායාරූපයක් ගන්න',
               description: 'ඔබගේ ශාකයේ රෝග ලක්ෂණ ඡායාරූපයක් ගන්න',
               color: Colors.green.shade100,
-              imagePath: 'assets/images/disease/camera.png',
+              imagePath: 'assets/images/disease/DD4.png',
               gradient: LinearGradient(
                 colors: [
                   Colors.green.shade50,
