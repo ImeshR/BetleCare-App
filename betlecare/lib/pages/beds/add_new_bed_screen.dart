@@ -478,7 +478,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                       TextFormField(
                         controller: _sameBedCountController,
                         decoration: InputDecoration(
-                          labelText: 'සමාන පඳුරු ගණන',
+                          labelText: 'සමාන වගාවන් ගණන',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -487,7 +487,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                         keyboardType: TextInputType.number,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'කරුණාකර සමාන පඳුරු ගණන ඇතුළත් කරන්න';
+                            return 'කරුණාකර සමාන වගාවන් ගණන ඇතුළත් කරන්න';
                           }
                           if (int.tryParse(value) == null) {
                             return 'කරුණාකර වලංගු අගයක් ඇතුළත් කරන්න';

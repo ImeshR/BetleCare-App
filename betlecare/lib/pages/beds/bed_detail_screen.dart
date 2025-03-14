@@ -6,7 +6,8 @@ import 'package:betlecare/services/betel_bed_service.dart';
 import 'package:provider/provider.dart';
 import 'package:betlecare/providers/betel_bed_provider.dart';
 import 'package:betlecare/widgets/weather/weeklyWateringRecomendation.dart';
-
+import 'package:betlecare/widgets/weather/WeeklyFertilizingRecommendationWidget.dart';
+import 'package:betlecare/widgets/weather/WeeklyProtectionRecommendationWidget.dart';
 class BedDetailScreen extends StatefulWidget {
   final BetelBed bed;
   const BedDetailScreen({super.key, required this.bed});
@@ -76,50 +77,40 @@ class _BedDetailScreenState extends State<BedDetailScreen> {
     );
   }
 
-  Widget _buildRecommendationsSection() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.tips_and_updates, size: 20, color: Colors.grey[700]),
-              const SizedBox(width: 8),
-              const Text(
-                ' නිර්දේශ',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          // Weekly watering recommendation widget
-          WeeklyWateringRecommendationWidget(bed: bed),
-          
-          const SizedBox(height: 16),
-          
-          // Future placeholder for fertilizing recommendations
-          _buildPlaceholderCard(
-            title: 'පොහොර නිර්දේශ',
-            icon: Icons.water_drop,
-            color: Colors.green.shade700,
-            message: 'ඉදිරියේදී පොහොර නිර්දේශ ලබා ගත හැකි වනු ඇත',
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Future placeholder for disease protection recommendations
-          _buildPlaceholderCard(
-            title: 'රෝග ආරක්ෂණ නිර්දේශ',
-            icon: Icons.healing,
-            color: Colors.orange.shade700,
-            message: 'ඉදිරියේදී රෝග ආරක්ෂණ නිර්දේශ ලබා ගත හැකි වනු ඇත',
-          ),
-        ],
-      ),
-    );
-  }
+Widget _buildRecommendationsSection() {
+  return Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.tips_and_updates, size: 20, color: Colors.grey[700]),
+            const SizedBox(width: 8),
+            const Text(
+              ' නිර්දේශ',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        // Weather-based protection recommendation widget
+        WeeklyProtectionRecommendationWidget(bed: bed),
+        
+        const SizedBox(height: 16),
+        
+        // Weekly watering recommendation widget
+        WeeklyWateringRecommendationWidget(bed: bed),
+        
+        const SizedBox(height: 16),
+        
+        // Fertilizing recommendation widget
+        WeeklyFertilizingRecommendationWidget(bed: bed),
+      ],
+    ),
+  );
+}
 
   Widget _buildPlaceholderCard({
     required String title,
@@ -280,7 +271,7 @@ class _BedDetailScreenState extends State<BedDetailScreen> {
       {'icon': Icons.grass, 'label': 'පැළ ගණන', 'value': bed.plantCount.toString()},
       {'icon': Icons.location_city, 'label': 'ප්‍රදේශය', 'value': bed.district},
       {'icon': Icons.home, 'label': 'ලිපිනය', 'value': bed.address},
-      {'icon': Icons.grid_view, 'label': 'සමාන පඳුරු ගණන', 'value': bed.sameBedCount.toString()},
+      {'icon': Icons.grid_view, 'label': 'සමාන වගාවන් ගණන', 'value': bed.sameBedCount.toString()},
     ];
     
     return Padding(
@@ -667,63 +658,91 @@ class _BedDetailScreenState extends State<BedDetailScreen> {
     );
   }
 
-  void _showAddFertilizeDialog() {
-    final dateController = TextEditingController(text: _getTodayFormatted());
-    final typeController = TextEditingController();
-    final quantityController = TextEditingController();
-    final notesController = TextEditingController();
-    
-    _showFormDialog(
-      title: 'නව පොහොර යෙදීමක් එක් කරන්න',
-      fields: [
-        _buildDateField(dateController),
-        TextField(controller: typeController, decoration: const InputDecoration(labelText: 'පොහොර වර්ගය')),
-        TextField(
-          controller: quantityController,
-          decoration: const InputDecoration(labelText: 'ප්‍රමාණය (kg)'),
-          keyboardType: TextInputType.number,
-        ),
-        TextField(
-          controller: notesController,
-          decoration: const InputDecoration(labelText: 'සටහන්'),
-          maxLines: 2,
-        ),
-      ],
-      onSave: () async {
-        try {
-          if (typeController.text.isEmpty || quantityController.text.isEmpty) {
-            _showErrorSnackBar('කරුණාකර අවශ්‍ය තොරතුරු පුරවන්න');
-            return;
+void _showAddFertilizeDialog() {
+  final dateController = TextEditingController(text: _getTodayFormatted());
+  // Map of fertilizer types (Sinhala to English)
+  final Map<String, String> fertilizerTypes = {
+    'ග්ලිරිසීඩියා කොල': 'Gliricidia leaves',
+    'ගොම පොහොර': 'Cow dung',
+    'NPK 10 අනුපාතයට': 'NPK (10-10-10)',
+    'කුකුල් පොහොර': 'Chicken manure',
+    'කොම්පෝස්ට්': 'Compost',
+  };
+  
+  // Initialize with the first Sinhala fertilizer type
+  String selectedFertilizerSinhala = fertilizerTypes.keys.first;
+  final quantityController = TextEditingController();
+  final notesController = TextEditingController();
+  
+  _showFormDialog(
+    title: 'නව පොහොර යෙදීමක් එක් කරන්න',
+    fields: [
+      _buildDateField(dateController),
+      // Dropdown for fertilizer types in Sinhala
+      DropdownButtonFormField<String>(
+        value: selectedFertilizerSinhala,
+        decoration: const InputDecoration(labelText: 'පොහොර වර්ගය'),
+        items: fertilizerTypes.keys.map((sinhalaName) => DropdownMenuItem<String>(
+          value: sinhalaName,
+          child: Text(sinhalaName),
+        )).toList(),
+        onChanged: (value) {
+          if (value != null) {
+            selectedFertilizerSinhala = value;
           }
-          
-          final quantity = double.tryParse(quantityController.text);
-          if (quantity == null) {
-            _showErrorSnackBar('වලංගු ප්‍රමාණයක් ඇතුළත් කරන්න');
-            return;
-          }
-          
-          final date = DateTime.parse(dateController.text);
-          final record = FertilizeRecord(
-            date: date,
-            fertilizerType: typeController.text,
-            quantity: quantity,
-            notes: notesController.text,
-          );
-          
-          Navigator.pop(context);
-          setState(() => _isLoading = true);
-          
-          await _betelBedService.addFertilizeRecord(bed.id, record);
-          _showSuccessSnackBar('පොහොර යෙදීම සාර්ථකව එකතු කරන ලදී');
-          
-          await _refreshBedData();
-        } catch (e) {
-          setState(() => _isLoading = false);
-          _showErrorSnackBar('දෝෂයකි: ${e.toString()}');
+        },
+      ),
+      TextField(
+        controller: quantityController,
+        decoration: const InputDecoration(labelText: 'ප්‍රමාණය (kg)'),
+        keyboardType: TextInputType.number,
+      ),
+      TextField(
+        controller: notesController,
+        decoration: const InputDecoration(labelText: 'සටහන්'),
+        maxLines: 2,
+      ),
+    ],
+    onSave: () async {
+      try {
+        if (quantityController.text.isEmpty) {
+          _showErrorSnackBar('කරුණාකර ප්‍රමාණය ඇතුලත් කරන්න');
+          return;
         }
-      },
-    );
-  }
+        
+        final quantity = double.tryParse(quantityController.text);
+        if (quantity == null) {
+          _showErrorSnackBar('වලංගු ප්‍රමාණයක් ඇතුළත් කරන්න');
+          return;
+        }
+        
+        // Convert Sinhala fertilizer name to English for backend
+        final englishFertilizerName = fertilizerTypes[selectedFertilizerSinhala]!;
+        
+        final date = DateTime.parse(dateController.text);
+        final record = FertilizeRecord(
+          date: date,
+          fertilizerType: englishFertilizerName, // Use English name for backend
+          quantity: quantity,
+          notes: notesController.text,
+        );
+        
+        Navigator.pop(context);
+        setState(() => _isLoading = true);
+        
+        await _betelBedService.addFertilizeRecord(bed.id, record);
+        _showSuccessSnackBar('පොහොර යෙදීම සාර්ථකව එකතු කරන ලදී');
+        
+        await _refreshBedData();
+      } catch (e) {
+        setState(() => _isLoading = false);
+        _showErrorSnackBar('දෝෂයකි: ${e.toString()}');
+      }
+    },
+  );
+}
+
+
 
   void _showAddHarvestDialog() {
     final dateController = TextEditingController(text: _getTodayFormatted());
@@ -857,30 +876,44 @@ void _showFormDialog({
 void _showDeleteConfirmation() {
   showDialog(
     context: context,
-    builder: (context) => AlertDialog(
+    builder: (dialogContext) => AlertDialog(
       title: const Text('පඳුර මකන්නද?'),
       content: const Text('මෙම බුලත් පඳුර සහ එයට අදාළ සියලුම දත්ත මකා දැමෙනු ඇත. මෙය ආපසු හැරවිය නොහැක.'),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(dialogContext),
           child: const Text('අවලංගු කරන්න'),
         ),
         TextButton(
           onPressed: () async {
             try {
-              Navigator.pop(context);
+              // First close the dialog
+              Navigator.pop(dialogContext);
+              
+              // Then show loading indicator
               setState(() => _isLoading = true);
               
+              // Get the provider and delete the bed
               final betelBedProvider = Provider.of<BetelBedProvider>(context, listen: false);
               await betelBedProvider.deleteBed(bed.id);
               
-              setState(() => _isLoading = false);
-              _showSuccessSnackBar('බුලත් පඳුර සාර්ථකව මකා දමන ලදී');
+              // Show success message and pop with successful deletion result
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('බුලත් පඳුර සාර්ථකව මකා දමන ලදී'))
+              );
               
-              Navigator.pop(context);
+              // Important: Pop the current screen AFTER deletion is complete
+              // and pass true to indicate a refresh is needed
+              if (mounted) {
+                Navigator.of(context).pop(true);
+              }
             } catch (e) {
-              setState(() => _isLoading = false);
-              _showErrorSnackBar('දෝෂයකි: ${e.toString()}');
+              if (mounted) {
+                setState(() => _isLoading = false);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('දෝෂයකි: ${e.toString()}'))
+                );
+              }
             }
           },
           style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),

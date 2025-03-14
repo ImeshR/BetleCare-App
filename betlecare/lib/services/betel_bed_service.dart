@@ -365,27 +365,31 @@ class BetelBedService {
   }
   
   // Delete a betel bed and all its related records
-  Future<void> deleteBed(String bedId) async {
-    try {
-      final supabase = await SupabaseClientManager.instance;
-      
-      // Get the bed to find the image URL
-      final bed = await supabase.client
-          .from('betel_beds')
-          .select('image_url')
-          .eq('id', bedId)
-          .single();
-      
-      final imageUrl = bed['image_url'] as String;
-      
-      // Delete the bed record (cascade will delete harvest and fertilize records)
-      await supabase.client
-          .from('betel_beds')
-          .delete()
-          .eq('id', bedId);
-      
-      // Extract filename from URL to delete the image
-      if (imageUrl.isNotEmpty) {
+// Delete a betel bed and all its related records
+Future<void> deleteBed(String bedId) async {
+  try {
+    final supabase = await SupabaseClientManager.instance;
+    
+    // First get the image URL before deletion
+    final bed = await supabase.client
+        .from('betel_beds')
+        .select('image_url')
+        .eq('id', bedId)
+        .single();
+    
+    final imageUrl = bed['image_url'] as String;
+    
+    // Delete the bed record first - this is the most critical operation
+    // (cascade will delete harvest and fertilize records)
+    await supabase.client
+        .from('betel_beds')
+        .delete()
+        .eq('id', bedId);
+    
+    // After bed is deleted from database, try to clean up the image
+    // Image deletion is non-critical, so wrap in try-catch
+    if (imageUrl.isNotEmpty) {
+      try {
         final uri = Uri.parse(imageUrl);
         final path = uri.path;
         final filePath = path.startsWith('/') ? path.substring(1) : path;
@@ -399,10 +403,18 @@ class BetelBedService {
             await supabase.client.storage.from(bucket).remove([fileKey]);
           }
         }
+      } catch (imageError) {
+        // Log but don't throw - bed is already deleted from database
+        print('Error deleting image file: $imageError');
       }
-    } catch (e) {
-      print('Error deleting betel bed: $e');
-      rethrow;
     }
+    
+    return; // Successfully deleted
+    
+  } catch (e) {
+    print('Error deleting betel bed: $e');
+    rethrow;
   }
+}
+
 }
