@@ -8,7 +8,7 @@ class WateringService {
   final WeatherService _weatherService = WeatherService();
   
   // API endpoint for the watering recommendation service
-  final String baseUrl = 'http://10.0.2.2:5000/api/watering';
+  final String baseUrl = 'http://192.168.43.160:5000/api/watering';
   
   // ========== DEVELOPMENT TOGGLE ==========
   // Set to TRUE to use hardcoded data (no API calls)
