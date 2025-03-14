@@ -3,6 +3,7 @@ import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/profile_header.dart';
 import 'disease_detection.dart';
 import 'pestpage.dart';
+import 'treatment_scheduling.dart';
 
 class DiseaseManagementScreen extends StatelessWidget {
   const DiseaseManagementScreen({super.key});
@@ -46,7 +47,7 @@ class DiseaseManagementScreen extends StatelessWidget {
                 ],
               ),
               onTap: () {
-                // Navigation will be added later
+                //navigation
               },
             ),
             const SizedBox(height: 16),
