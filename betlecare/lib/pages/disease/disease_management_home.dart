@@ -17,7 +17,7 @@ class DiseaseManagementScreen extends StatelessWidget {
             _buildCard(
               title: 'රෝග හඳුනාගැනීම',
               color: Colors.red.shade100,
-              imagePath: 'assets/images/disease/DD1.png',
+              imagePath: 'aassets/images/disease/DD1.png',
               gradient: LinearGradient(
                 colors: [
                   Colors.red.shade50,
@@ -53,7 +53,7 @@ class DiseaseManagementScreen extends StatelessWidget {
             _buildCard(
               title: 'රෝග ව්‍යාප්ති\nසිතියම',
               color: Colors.green.shade100,
-              imagePath: 'assets/images/disease/DD1.png',
+              imagePath: 'assets/images/disease/DD2.png',
               gradient: LinearGradient(
                 colors: [
                   Colors.green.shade50,

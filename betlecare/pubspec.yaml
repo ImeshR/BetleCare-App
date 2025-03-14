@@ -86,6 +86,9 @@ flutter:
     - assets/images/eshan/LM7.png
     - assets/images/market/
     - assets/images/weather/weather2.png
+    - assets/images/disease/DD1.png
+    - assets/images/disease/DD2.png
+    - assets/images/disease/DD4.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
