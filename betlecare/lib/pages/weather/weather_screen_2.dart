@@ -363,50 +363,73 @@ class _WeatherScreen2State extends State<WeatherScreen2> with SingleTickerProvid
     );
   }
 
-  Widget _buildFarmingRecommendation(String weather, dynamic rainfall) {
-    String recommendation = '';
-    IconData icon = Icons.check_circle;
-    Color color = Colors.green;
-    
-    if (weather == 'rainy' || rainfall > 10) {
-      recommendation = 'වැසි සහිත දිනයකි. පොහොර යෙදීම මඟහරින්න.';
-      icon = Icons.water_drop;
-      color = Colors.blue;
-    } else if (weather == 'cloudy') {
-      recommendation = 'මධ්‍යස්ත කාලගුණයක්. පැළ සිටුවීමට සුදුසුය.';
-      icon = Icons.cloud;
-      color = Colors.grey;
-    } else {
-      recommendation = 'හොඳ කාලගුණයක්. වගා කටයුතු සඳහා සුදුසුය.';
+Widget _buildFarmingRecommendation(String weather, dynamic rainfall) {
+  String description = '';
+  IconData icon = Icons.info_outline;
+  Color color = Colors.green;
+  
+  // More nuanced rainfall thresholds
+  if (rainfall > 15) {
+    description = 'දැඩි වර්ෂාව අපේක්ෂිතයි. පරිස්සමින් සිටින්න.';
+    icon = Icons.umbrella;
+    color = Colors.red.shade700;
+  } else if (rainfall > 10) {
+    description = 'මධ්‍යම ප්‍රමාණයේ වර්ෂාව අපේක්ෂිතයි.';
+    icon = Icons.water_drop;
+    color = Colors.blue;
+  } else if (rainfall > 5) {
+    description = 'සුළු වර්ෂාව අපේක්ෂිතයි.';
+    icon = Icons.grain;
+    color = Colors.blue.shade300;
+  } else if (rainfall > 0 && rainfall <= 5) {
+    description = 'ඉතා සුළු වර්ෂාවක් අපේක්ෂිතයි.';
+    icon = Icons.water_drop_outlined;
+    color = Colors.grey;
+  } else {
+    // Weather-based descriptions without farming advice
+    if (weather == 'sunny') {
+      description = 'අව්ව සහිත හිරු එළිය අපේක්ෂිතයි.';
       icon = Icons.wb_sunny;
       color = Colors.orange;
+    } else if (weather == 'partly-cloudy') {
+      description = 'තැනින් තැන වලාකුළු සහිත කාලගුණයක් අපේක්ෂිතයි.';
+      icon = Icons.cloud;
+      color = Colors.grey.shade600;
+    } else if (weather == 'cloudy') {
+      description = 'වලාකුළු සහිත කාලගුණයක් අපේක්ෂිතයි.';
+      icon = Icons.cloud;
+      color = Colors.grey.shade600;
+    } else {
+      description = 'සාමාන්‍ය කාලගුණ තත්ත්වයක් අපේක්ෂිතයි.';
+      icon = Icons.cloud_queue;
+      color = Colors.grey;
     }
-    
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              recommendation,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[800],
-              ),
+  }
+  
+  return Container(
+    padding: const EdgeInsets.all(10),
+    decoration: BoxDecoration(
+      color: color.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: color.withOpacity(0.3)),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, color: color, size: 18),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            description,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[800],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
+        ),
+      ],
+    ),
+  );
+}
   Widget _buildWeatherIcon(String weather) {
     IconData icon;
     Color color;

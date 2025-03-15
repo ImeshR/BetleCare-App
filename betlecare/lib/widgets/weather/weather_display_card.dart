@@ -1,7 +1,7 @@
 import 'package:betlecare/pages/weather/more_weather_data.dart';
 import 'package:flutter/material.dart';
-import 'package:betlecare/services/weather_services2.dart';  // Make sure this path is correct
-import 'location_dropdown.dart';  // Make sure this path is correct
+import 'package:betlecare/services/weather_services2.dart';
+import 'location_dropdown.dart';
 
 class WeatherDisplayCard extends StatefulWidget {
   const WeatherDisplayCard({super.key});
@@ -113,19 +113,21 @@ class _WeatherDisplayCardState extends State<WeatherDisplayCard> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 1,
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            color: const Color.fromARGB(255, 246, 250, 253),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue.shade300, width: 1),
           ),
           child: isLoading 
-            ? const Center(child: CircularProgressIndicator())
+            ? Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
+                  ),
+                ),
+              )
             : Column(
                 children: [
                   Text(
@@ -133,7 +135,7 @@ class _WeatherDisplayCardState extends State<WeatherDisplayCard> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
+                      color: Colors.blue.shade800,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -177,38 +179,32 @@ class _WeatherDisplayCardState extends State<WeatherDisplayCard> {
                   ),
                   const SizedBox(height: 20),
                   
-                  
-                  
-  ElevatedButton(
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MoreWeatherData(
-            selectedLocation: selectedLocation,
-          ),
-        ),
-      );
-    },
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.blue,
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-    ),
-    child: const Text(
-      'තවත් විස්තර',
-      style: TextStyle(
-        color: Colors.white,
-        fontSize: 16,
-      ),
-    ),
-  ),
-                
-                
-                
-                
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MoreWeatherData(
+                            selectedLocation: selectedLocation,
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade700,
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'තවත් විස්තර',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
                 ],
               ),
         ),
@@ -223,17 +219,26 @@ class _WeatherDisplayCardState extends State<WeatherDisplayCard> {
   }) {
     return Column(
       children: [
-        Icon(
-          icon,
-          size: 32,
-          color: Colors.blue,
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue.shade200, width: 1),
+          ),
+          child: Icon(
+            icon,
+            size: 30,
+            color: Colors.blue.shade700,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
+            color: Colors.blue.shade800,
           ),
         ),
         Text(

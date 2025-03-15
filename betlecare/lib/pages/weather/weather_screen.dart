@@ -3,8 +3,6 @@ import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/profile_header.dart';
 import '../../widgets/weather/weather_display_card.dart';
 import 'weather_screen_2.dart';
- 
- 
 
 class WeatherScreen extends StatelessWidget {
   const WeatherScreen({super.key});
@@ -16,101 +14,105 @@ class WeatherScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            //  WeatherDisplayCard
+            // WeatherDisplayCard
             const WeatherDisplayCard(),
             const SizedBox(height: 16),
-            _buildCard(
-              title: 'ඉදිරි සතියේ \nකාලගුණ තත්වය',
-              color: Colors.purple.shade100,
-              imagePath: 'assets/images/weather/weather2.png',
-              gradient: LinearGradient(
-                colors: [
-                  Colors.purple.shade50,
-                  Colors.purple.shade100,
-                ],
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        ChildPageWrapper(child: const WeatherScreen2()),
-                  ),
-                );
-              },
-            ),
+            _buildWeeklyForecastCard(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCard({
-    required String title,
-    required Color color,
-    required String imagePath,
-    required Gradient gradient,
-    required Function()? onTap,
-  }) {
-    return Container(
-      width: double.infinity,
-      height: 180,
-      decoration: BoxDecoration(
-        gradient: gradient,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Container(
-                  width: 160,
-                  height: 160,
-                  child: Center(
-                    child: Image.asset(
-                      imagePath,
-                      width: 160,
-                      height: 160,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
+Widget _buildWeeklyForecastCard(BuildContext context) {
+  return Container(
+    width: double.infinity,
+    // Removed fixed height to let content determine size
+    decoration: BoxDecoration(
+      color: const Color.fromARGB(255, 251, 253, 255),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: const Color.fromARGB(255, 187, 206, 221), width: 1),
+    ),
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  ChildPageWrapper(child: const WeatherScreen2()),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12.0), // Reduced padding
+          child: Row(
+            children: [
+              SizedBox(
+                width: 80, // Reduced size
+                height: 80, // Reduced size
+                child: Image.asset(
+                  'assets/images/weather/weather2.png',
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.contain,
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      title,
-                      textAlign: TextAlign.center,
+              ),
+              const SizedBox(width: 12), // Reduced spacing
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min, // Use minimum required space
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ඉදිරි සතියේ කාලගුණ තත්වය',
                       style: TextStyle(
-                        fontSize: 20,
-                        color: Colors.grey[800],
-                        fontWeight: FontWeight.w600,
-                        height: 1.5,
+                        fontSize: 16, // Slightly smaller font
+                        color: Colors.blue.shade800,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 4), // Reduced spacing
+                    Text(
+                      'සති පුරා කාලගුණ විස්තර බලන්න',
+                      style: TextStyle(
+                        fontSize: 13, // Slightly smaller font
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 8), // Reduced spacing
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.arrow_forward,
+                          size: 14, // Smaller icon
+                          color: Colors.blue.shade700,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'තව දුරටත් කියවන්න',
+                          style: TextStyle(
+                            fontSize: 13, // Slightly smaller font
+                            color: Colors.blue.shade700,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
-
+}
 class ChildPageWrapper extends StatelessWidget {
   final Widget child;
 

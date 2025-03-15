@@ -157,7 +157,7 @@ class _MoreWeatherDataState extends State<MoreWeatherData> with SingleTickerProv
           Expanded(
             child: Container(
               width: double.infinity,
-              color: const Color(0xFFE3F2FD), // Light blue background
+              color: const Color.fromARGB(255, 241, 247, 252),  
               child: isLoading
                 ? Center(
                     child: Column(
