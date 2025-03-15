@@ -1,9 +1,12 @@
 // notification_provider.dart
-import 'package:betlecare/models/betel_bed_model.dart';
+import 'package:betlecare/main.dart';
 import 'package:flutter/foundation.dart';
 import 'package:betlecare/models/notification_model.dart';
+import 'package:betlecare/models/betel_bed_model.dart';
 import 'package:betlecare/services/notification_service.dart';
-
+import 'package:provider/provider.dart';
+import 'package:betlecare/providers/betel_bed_provider.dart';
+import 'package:flutter/material.dart';
 class NotificationProvider with ChangeNotifier {
   final NotificationService _notificationService = NotificationService();
   List<BetelNotification> _notifications = [];
@@ -20,6 +23,7 @@ class NotificationProvider with ChangeNotifier {
   // Initialize
   Future<void> initialize() async {
     await _notificationService.initialize();
+    await loadNotifications();
   }
   
   // Toggle demo mode
@@ -132,4 +136,44 @@ class NotificationProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+  
+  // At the top of notification_provider.dart, add this if it's not already there:
+
+
+// Change the checkAllNotifications method to this:
+Future<void> checkAllNotifications() async {
+  try {
+    // Get beds from BetelBedProvider using the global navigator key
+    final context = navigatorKey.currentContext;
+    if (context == null) return;
+    
+    final betelBedProvider = Provider.of<BetelBedProvider>(context, listen: false);
+    final beds = betelBedProvider.beds;
+    
+    // Check for weather alerts
+    await _notificationService.checkWeatherAlerts(beds);
+    
+    // Check for harvest time alerts
+    await _notificationService.checkHarvestAlerts(beds);
+    
+    // Check for fertilizing alerts
+    for (final bed in beds) {
+      if (bed.daysUntilNextFertilizing <= 3 && bed.daysUntilNextFertilizing > 0) {
+        await _notificationService.createNotification(
+          title: 'පොහොර යෙදීමේ කාලය ළඟයි',
+          message: '${bed.name} සඳහා පොහොර යෙදීම සිදු කිරීමට තව දින ${bed.daysUntilNextFertilizing}ක් පමණි.',
+          type: NotificationType.fertilize,
+          bedId: bed.id,
+          metadata: {'days_until_fertilizing': bed.daysUntilNextFertilizing},
+        );
+      }
+    }
+    
+    // Reload notifications to show the new ones
+    await loadNotifications();
+  } catch (e) {
+    print('Error checking for notifications: $e');
+  }
+}
+
 }

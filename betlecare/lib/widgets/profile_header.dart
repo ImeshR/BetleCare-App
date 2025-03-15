@@ -15,7 +15,7 @@ class ProfileHeader extends StatelessWidget {
     final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user;
 
-final notificationProvider = Provider.of<NotificationProvider>(context);
+    final notificationProvider = Provider.of<NotificationProvider>(context);
     // Get current time of the user in the local time zone
     final currentHour = DateTime.now().hour;
 
@@ -115,39 +115,41 @@ final notificationProvider = Provider.of<NotificationProvider>(context);
             ),
             // Action buttons
             Row(
-              children: [
-              badges.Badge(
-  position: badges.BadgePosition.topEnd(top: -10, end: 0),
-  badgeContent: Text(
-    '${notificationProvider.unreadCount}',
-    style: TextStyle(
-      color: Colors.white,
-      fontWeight: FontWeight.bold,
-      fontSize: 15,
+            children: [
+    Consumer<NotificationProvider>(
+      builder: (context, notificationProvider, _) => badges.Badge(
+        position: badges.BadgePosition.topEnd(top: -10, end: 0),
+        badgeContent: Text(
+          '${notificationProvider.unreadCount}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+          ),
+        ),
+        badgeAnimation: const badges.BadgeAnimation.scale(
+          animationDuration: Duration(seconds: 1),
+          colorChangeAnimationDuration: Duration(seconds: 1),
+          loopAnimation: false,
+        ),
+        badgeStyle: badges.BadgeStyle(
+          shape: badges.BadgeShape.circle,
+          badgeColor: Colors.red,
+          padding: const EdgeInsets.all(8),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: IconButton(
+          icon: const Icon(LineIcons.bellAlt, color: Colors.black87),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const NotificationScreen()),
+            );
+          },
+        ),
+      ),
     ),
-  ),
-  badgeAnimation: const badges.BadgeAnimation.scale(
-    animationDuration: Duration(seconds: 1),
-    colorChangeAnimationDuration: Duration(seconds: 1),
-    loopAnimation: false,
-  ),
-  badgeStyle: badges.BadgeStyle(
-    shape: badges.BadgeShape.circle,
-    badgeColor: Colors.red,
-    padding: const EdgeInsets.all(8),
-    borderRadius: BorderRadius.circular(4),
-  ),
-  child: IconButton(
-    icon: const Icon(LineIcons.bellAlt, color: Colors.black87),
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const NotificationScreen()),
-      );
-    },
-  ),
-),
-              ],
+  ],
             ),
           ],
         ),

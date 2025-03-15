@@ -85,28 +85,40 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
   
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.notifications_off, size: 60, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            'දැනුම්දීම් නොමැත',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'ඔබට නව දැනුම්දීමක් ලැබුණු විට එය මෙහි පෙන්වනු ඇත',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-  
+Widget _buildEmptyState() {
+  return Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.notifications_off, size: 60, color: Colors.grey[400]),
+        const SizedBox(height: 16),
+        Text(
+          'දැනුම්දීම් නොමැත',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'ඔබට නව දැනුම්දීමක් ලැබුණු විට එය මෙහි පෙන්වනු ඇත',
+          style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 24),
+        ElevatedButton(
+          onPressed: () {
+            // Check for new notifications manually - remove context parameter
+            Provider.of<NotificationProvider>(context, listen: false)
+              .checkAllNotifications(); // Remove the context parameter here
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Checking for new notifications...'))
+            );
+          },
+          child: const Text('Check for Notifications'),
+        ),
+      ],
+    ),
+  );
+}
+
   Widget _buildNotificationList(NotificationProvider provider) {
     return RefreshIndicator(
       onRefresh: () => provider.loadNotifications(),

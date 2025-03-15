@@ -1,11 +1,11 @@
 // notification_service.dart
 import 'package:uuid/uuid.dart';
-import 'package:betlecare/models/betel_bed_model.dart';
-import 'package:betlecare/models/notification_model.dart';
-import 'package:betlecare/supabase_client.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:betlecare/models/betel_bed_model.dart';
+import 'package:betlecare/models/notification_model.dart';
+import 'package:betlecare/supabase_client.dart';
 import 'package:betlecare/services/weather_services2.dart';
 
 class NotificationService {
@@ -60,7 +60,7 @@ class NotificationService {
   Future<int> getUnreadCount() async {
     // For demo mode, use demo notifications
     if (_demoMode) {
-      final demoNotifications = await _getDemoNotifications();
+      final demoNotifications = _getDemoNotifications();
       return demoNotifications.where((notification) => !notification.isRead).length;
     }
     
@@ -310,13 +310,13 @@ class NotificationService {
   // DEMO MODE METHODS
   
   // Generate demo notifications for preview/presentation
- List<BetelNotification> _getDemoNotifications() {
-  final user = supabase.auth.currentUser;
-  if (user == null) return [];
-  
-  final now = DateTime.now();
-  final yesterday = now.subtract(const Duration(days: 1));
-  final twoDaysAgo = now.subtract(const Duration(days: 2));
+  List<BetelNotification> _getDemoNotifications() {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return [];
+    
+    final now = DateTime.now();
+    final yesterday = now.subtract(const Duration(days: 1));
+    final twoDaysAgo = now.subtract(const Duration(days: 2));
     
     return [
       BetelNotification(
@@ -359,9 +359,6 @@ class NotificationService {
       ),
     ];
   }
-  
-  // Access to Supabase for demo notifications
-  SupabaseClient get supabase => Supabase.instance.client;
   
   // Generate a demo notification immediately
   Future<void> createDemoNotification(

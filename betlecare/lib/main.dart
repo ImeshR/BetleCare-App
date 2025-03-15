@@ -1,8 +1,10 @@
+// main.dart
 import 'package:betlecare/pages/market/a_market_screen.dart';
+import 'package:betlecare/pages/notification_screen.dart'; // Add this for the notification screen
 import 'package:betlecare/pages/sidebar_menu.dart';
 import 'package:betlecare/providers/notification_provider.dart';
 import 'package:betlecare/providers/user_provider.dart';
-import 'package:betlecare/providers/betel_bed_provider.dart'; // Added import for BetelBedProvider
+import 'package:betlecare/providers/betel_bed_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
@@ -19,6 +21,10 @@ import 'package:betlecare/supabase_client.dart';
 import 'package:line_icons/line_icons.dart';
 import 'package:betlecare/pages/weather/weather_screen.dart';
 import 'package:betlecare/pages/disease/disease_management_home.dart';
+import 'dart:async'; // Add this for Timer
+
+// Add a global navigator key
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   await dotenv.load(fileName: '.env');
@@ -38,16 +44,13 @@ void main() async {
           create: (context) => BetelBedProvider(),
         ),
         ChangeNotifierProvider(
-          create: (context) => NotificationProvider(), // Add this line
+          create: (context) => NotificationProvider(),
         ),
       ],
       child: const MyApp(),
     ),
   );
 }
-
-
-
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -84,6 +87,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey, // Add this line
       debugShowCheckedModeBanner: false,
       initialRoute: '/splash',
       routes: {
@@ -91,6 +95,7 @@ class _MyAppState extends State<MyApp> {
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignupPage(),
         '/main': (context) => const MainPage(),
+        '/notifications': (context) => const NotificationScreen(), // Add notification route
       },
     );
   }
@@ -103,8 +108,9 @@ class MainPage extends StatefulWidget {
   _MainPageState createState() => _MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
+class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   int _selectedIndex = 2;
+  Timer? _notificationTimer;
 
   final List<Widget> _screens = [
     const HarvestScreen(),
@@ -117,9 +123,28 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
+    // Add observer for app lifecycle changes
+    WidgetsBinding.instance.addObserver(this);
+    
     // Preload betel bed data when the app starts
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<BetelBedProvider>(context, listen: false).loadBeds();
+
+      // Initialize notification provider
+      final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+      notificationProvider.initialize();
+      
+      // Check for notifications when app starts - after beds are loaded
+      Future.delayed(const Duration(seconds: 2), () {
+        notificationProvider.checkAllNotifications();
+      });
+      
+      // Set up a periodic check (every 6 hours)
+      _notificationTimer = Timer.periodic(const Duration(hours: 6), (_) {
+        if (mounted) {
+          notificationProvider.checkAllNotifications();
+        }
+      });
 
       // Check for arguments (selected tab index) when navigating back from sub-screens
       final args = ModalRoute.of(context)?.settings.arguments;
@@ -129,6 +154,23 @@ class _MainPageState extends State<MainPage> {
         });
       }
     });
+  }
+  
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _notificationTimer?.cancel();
+    super.dispose();
+  }
+  
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Check for notifications when app is resumed
+      if (mounted) {
+        Provider.of<NotificationProvider>(context, listen: false).checkAllNotifications();
+      }
+    }
   }
 
   void _onTabChange(int index) {
