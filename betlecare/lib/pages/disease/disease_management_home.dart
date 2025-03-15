@@ -47,7 +47,13 @@ class DiseaseManagementScreen extends StatelessWidget {
                 ],
               ),
               onTap: () {
-                //navigation
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ChildPageWrapper(
+                        child: TreatmentSchedulingPage()),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 16),
@@ -151,7 +157,7 @@ class ChildPageWrapper extends StatelessWidget {
           Expanded(child: child),
         ],
       ),
-        bottomNavigationBar: BottomNavBar(
+      bottomNavigationBar: BottomNavBar(
         selectedIndex: 3,
         onTabChange: (index) {
           if (index != 3) {

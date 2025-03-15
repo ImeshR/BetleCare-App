@@ -170,7 +170,7 @@ class _DiseasePhotoManagementPageState
       // Create multipart request
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://127.0.0.1:5000/predict'),
+        Uri.parse('http://192.0.0.1:5000/predict'),
       );
 
       // Get file extension
@@ -227,7 +227,7 @@ class _DiseasePhotoManagementPageState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('රෝග ඡායාරූප'),
+        title: const Text('රෝග හඳුනාගැනීම'),
         backgroundColor: Colors.green.shade100,
       ),
       body: _capturedImagePath != null &&
@@ -256,7 +256,7 @@ class _DiseasePhotoManagementPageState
               title: 'ඡායාරූපයක් ගන්න',
               description: 'ඔබගේ ශාකයේ රෝග ලක්ෂණ ඡායාරූපයක් ගන්න',
               color: Colors.green.shade100,
-              imagePath: 'assets/images/disease/camera.png',
+              imagePath: 'assets/images/disease/DD4.png',
               gradient: LinearGradient(
                 colors: [
                   Colors.green.shade50,
