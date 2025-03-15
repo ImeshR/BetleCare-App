@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:line_icons/line_icons.dart';
 import 'package:badges/badges.dart' as badges;
 import 'package:provider/provider.dart';
+import '../pages/user/user-settings-page.dart';
 import '../providers/user_provider.dart';
 
 class ProfileHeader extends StatelessWidget {
@@ -11,9 +12,6 @@ class ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user;
-
-    // Print user data to console
-    print('User: ${user?.toJson()}');
 
     // Get current time of the user in the local time zone
     final currentHour = DateTime.now().hour;
@@ -38,7 +36,7 @@ class ProfileHeader extends StatelessWidget {
             Expanded(
               child: Row(
                 children: [
-                  // Avatar (now a button to open the drawer)
+                  // Avatar - now opens drawer on tap
                   GestureDetector(
                     onTap: () => Scaffold.of(context).openDrawer(),
                     child: CircleAvatar(
@@ -51,43 +49,63 @@ class ProfileHeader extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Text section
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            greeting,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[800],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Text(
-                            '👋',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      // Name
-                      Text(
-                        (user?.userMetadata?['full_name'] ??
-                                user?.userMetadata?['first_name'] ??
-                                'Guest')
-                            .toString()
-                            .replaceFirstMapped(RegExp(r'^[a-z]'),
-                                (match) => match.group(0)!.toUpperCase()),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
+                  // Text section - now navigates to settings when tapped
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const UserSettingsPage(),
                         ),
-                      ),
-                    ],
+                      );
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              greeting,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[800],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Text(
+                              '👋',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        // Name
+                        Row(
+                          children: [
+                            Text(
+                              (user?.userMetadata?['full_name'] ??
+                                      user?.userMetadata?['first_name'] ??
+                                      'Guest')
+                                  .toString()
+                                  .replaceFirstMapped(RegExp(r'^[a-z]'),
+                                      (match) => match.group(0)!.toUpperCase()),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.settings,
+                              size: 14,
+                              color: Colors.black54,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
