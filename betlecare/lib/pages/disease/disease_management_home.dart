@@ -151,10 +151,17 @@ class ChildPageWrapper extends StatelessWidget {
           Expanded(child: child),
         ],
       ),
-      bottomNavigationBar: BottomNavBar(
+        bottomNavigationBar: BottomNavBar(
         selectedIndex: 3,
         onTabChange: (index) {
-          Navigator.pop(context);
+          if (index != 3) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.of(context).pop();
+
+              Navigator.of(context)
+                  .pushReplacementNamed('/main', arguments: index);
+            });
+          }
         },
       ),
     );
