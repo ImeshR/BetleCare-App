@@ -15,20 +15,31 @@ class AddNewBedScreen extends StatefulWidget {
 class _AddNewBedScreenState extends State<AddNewBedScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _addressController = TextEditingController(); // Changed from locationController
+  final _addressController =
+      TextEditingController(); // Changed from locationController
   final _areaSizeController = TextEditingController();
   final _plantCountController = TextEditingController();
   final _sameBedCountController = TextEditingController();
   DateTime _plantedDate = DateTime.now();
   File? _imageFile;
-  
-  final List<String> _betelTypes = ['රතු බුලත්', 'කොළ බුලත්', 'සුදු බුලත්', 'මිශ්‍ර බුලත්', 'හයිබ්‍රිඩ් බුලත්'];
+
+  final List<String> _betelTypes = [
+    'රතු බුලත්',
+    'කොළ බුලත්',
+    'සුදු බුලත්',
+    'මිශ්‍ර බුලත්',
+    'හයිබ්‍රිඩ් බුලත්'
+  ];
   String? _selectedBetelType;
-  
+
   // New district dropdown
-  final List<String> _districts = ['පුත්තලම (Puttalam)', 'අනමඩුව (Anamaduwa)', 'කුරුණෑගල (Kurunegala)'];
+  final List<String> _districts = [
+    'පුත්තලම (Puttalam)',
+    'අනමඩුව (Anamaduwa)',
+    'කුරුණෑගල (Kurunegala)'
+  ];
   String? _selectedDistrict;
-  
+
   bool _isLoading = false;
   final _betelBedService = BetelBedService();
 
@@ -51,7 +62,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
         maxHeight: 1200,
         imageQuality: 85,
       );
-      
+
       if (pickedFile != null) {
         setState(() {
           _imageFile = File(pickedFile.path);
@@ -75,7 +86,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
         maxHeight: 1200,
         imageQuality: 85,
       );
-      
+
       if (pickedFile != null) {
         setState(() {
           _imageFile = File(pickedFile.path);
@@ -109,7 +120,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
         );
       },
     );
-    
+
     if (picked != null && picked != _plantedDate) {
       setState(() {
         _plantedDate = picked;
@@ -126,7 +137,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
         );
         return false;
       }
-      
+
       // Check if district is selected
       if (_selectedDistrict == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -134,7 +145,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
         );
         return false;
       }
-      
+
       return true;
     }
     return false;
@@ -146,7 +157,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
         setState(() {
           _isLoading = true;
         });
-        
+
         // Create bed object
         final bed = BetelBed(
           id: '', // Will be assigned by Supabase
@@ -163,22 +174,22 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
           harvestHistory: [],
           status: BetelBedStatus.healthy, // Default status
         );
-        
+
         // Save to Supabase
         await _betelBedService.addBetelBed(bed, _imageFile!);
-        
+
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('නව බුලත් වගාව සාර්ථකව එකතු කරන ලදී')),
         );
-        
+
         // Return to previous screen with refresh flag
         Navigator.pop(context, true);
       } catch (e) {
         setState(() {
           _isLoading = false;
         });
-        
+
         // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('දෝෂයකි: ${e.toString()}')),
@@ -291,7 +302,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      
+
                       // Form Fields
                       const Text(
                         'මූලික තොරතුරු',
@@ -301,7 +312,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Name Field
                       TextFormField(
                         controller: _nameController,
@@ -320,7 +331,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // District Dropdown (New field)
                       DropdownButtonFormField<String>(
                         value: _selectedDistrict,
@@ -350,7 +361,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Address Field (Changed from Location)
                       TextFormField(
                         controller: _addressController,
@@ -369,7 +380,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Betel Type Dropdown
                       DropdownButtonFormField<String>(
                         value: _selectedBetelType,
@@ -399,7 +410,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Date Picker
                       InkWell(
                         onTap: () => _selectDate(context),
@@ -417,7 +428,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      
+
                       // Additional Details
                       const Text(
                         'අමතර තොරතුරු',
@@ -427,7 +438,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Area Size Field
                       TextFormField(
                         controller: _areaSizeController,
@@ -450,7 +461,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Plant Count Field
                       TextFormField(
                         controller: _plantCountController,
@@ -473,7 +484,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Similar Bed Count Field
                       TextFormField(
                         controller: _sameBedCountController,
@@ -496,7 +507,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                         },
                       ),
                       const SizedBox(height: 32),
-                      
+
                       // Save Button
                       SizedBox(
                         width: double.infinity,
@@ -512,10 +523,9 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
                           child: const Text(
                             'සුරකින්න',
                             style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white
-                            ),
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white),
                           ),
                         ),
                       ),
@@ -526,10 +536,19 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
               ),
             ),
       bottomNavigationBar: BottomNavBar(
-        selectedIndex: 2,
+        selectedIndex: 2, // Home is selected
         onTabChange: (index) {
           if (index != 2) {
-            Navigator.pop(context);
+            // If not clicking the current tab
+            // Create a replacement route to the MainPage with the correct tab index
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              // First pop back to the main screen
+              Navigator.of(context).pop();
+
+              // Then push a replacement to force refresh the main page with the new index
+              Navigator.of(context)
+                  .pushReplacementNamed('/main', arguments: index);
+            });
           }
         },
       ),

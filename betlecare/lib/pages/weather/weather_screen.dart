@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/profile_header.dart';
 import '../../widgets/weather/weather_display_card.dart';
-import 'weather_screen_1.dart';
 import 'weather_screen_2.dart';
-import 'weather_screen_3.dart';
-import 'weather_screen_4.dart';
+ 
+ 
 
 class WeatherScreen extends StatelessWidget {
   const WeatherScreen({super.key});
@@ -129,7 +128,14 @@ class ChildPageWrapper extends StatelessWidget {
       bottomNavigationBar: BottomNavBar(
         selectedIndex: 4,
         onTabChange: (index) {
-          Navigator.pop(context);
+          if (index != 4) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.of(context).pop();
+
+              Navigator.of(context)
+                  .pushReplacementNamed('/main', arguments: index);
+            });
+          }
         },
       ),
     );
