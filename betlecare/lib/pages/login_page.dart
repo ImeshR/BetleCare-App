@@ -125,25 +125,37 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+    print('User signed in: ${user.toJson()}');
+
     final supabase = await SupabaseClientManager.instance;
 
-    // Set user in UserProvider
-    Provider.of<UserProvider>(context, listen: false).setUser(user);
-
     try {
-      // Fetch additional user data
-      final userData = await supabase.client
-          .from('users')
+      final userSettings = await supabase.client
+          .from('user_settings')
           .select()
-          .eq('id', user.id)
+          .eq('userid', user.id)
           .single();
 
-      Provider.of<UserProvider>(context, listen: false).setUserData(userData);
+      print('User settings: $userSettings');
+
+      // Get the existing user data
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final existingUserData = userProvider.userData ?? {};
+
+      // Merge user settings into existing user data
+      final combinedUserData = {
+        ...existingUserData,
+        'settings': userSettings, // Store settings inside user data
+      };
+
+      // Update provider with the merged user data
+      userProvider.setUserData(combinedUserData);
     } catch (e) {
-      print('Error fetching user data: $e');
-      // If fetching user data fails, we still want to proceed with login
-      // You might want to handle this error differently based on your app's requirements
+      print('Error fetching user settings: $e');
     }
+
+// Set user in UserProvider
+    Provider.of<UserProvider>(context, listen: false).setUser(user);
 
     Navigator.of(context).pushReplacementNamed('/main');
   }

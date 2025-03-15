@@ -1,6 +1,9 @@
+import 'package:betlecare/pages/user/stripe_payment_page.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../providers/user_provider.dart';
 import '../../styles/auth_styles.dart';
 import '../../supabase_client.dart';
 
@@ -205,10 +208,16 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final userSettings =
+        userProvider.userData?['settings']; // Retrieve user settings
+    print('User Settings: $userSettings');
+
     return Scaffold(
       appBar: AppBar(
         title: Text('පරිශීලක සැකසුම්'),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
       ),
       body: _isLoadingSettings
           ? Center(child: CircularProgressIndicator())
@@ -429,6 +438,11 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
   }
 
   Widget _buildPaymentStatusCard() {
+    final userProvider = Provider.of<UserProvider>(context);
+    final userSettings = userProvider.userData?['settings'];
+    final paymentStatus =
+        userSettings?['payment_status'] ?? false; // Get payment status
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -441,7 +455,7 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
               children: [
                 Icon(
                   Icons.payment,
-                  color: _paymentStatus ? Colors.green : Colors.orange,
+                  color: paymentStatus ? Colors.green : Colors.orange,
                 ),
                 SizedBox(width: 8),
                 Text(
@@ -458,12 +472,12 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
               width: double.infinity,
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: _paymentStatus
+                color: paymentStatus
                     ? Colors.green.shade50
                     : Colors.orange.shade50,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: _paymentStatus
+                  color: paymentStatus
                       ? Colors.green.shade200
                       : Colors.orange.shade200,
                 ),
@@ -474,18 +488,16 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
                   Row(
                     children: [
                       Icon(
-                        _paymentStatus ? Icons.check_circle : Icons.info,
-                        color: _paymentStatus ? Colors.green : Colors.orange,
+                        paymentStatus ? Icons.check_circle : Icons.info,
+                        color: paymentStatus ? Colors.green : Colors.orange,
                       ),
                       SizedBox(width: 8),
                       Text(
-                        _paymentStatus
-                            ? 'ගෙවීම් සම්පූර්ණයි'
-                            : 'ගෙවීම් අවශ්‍යයි',
+                        paymentStatus ? 'ගෙවීම් සම්පූර්ණයි' : 'ගෙවීම් අවශ්‍යයි',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: _paymentStatus
+                          color: paymentStatus
                               ? Colors.green.shade800
                               : Colors.orange.shade800,
                         ),
@@ -494,26 +506,34 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    _paymentStatus
+                    paymentStatus
                         ? 'ඔබගේ ගිණුම සක්‍රීයයි. සියලුම විශේෂාංග භාවිතා කිරීමට ඔබට ප්‍රවේශය ඇත.'
                         : 'සියලුම විශේෂාංග භාවිතා කිරීමට ඔබගේ දායකත්වය යාවත්කාලීන කරන්න.',
                     style: TextStyle(
-                      color: _paymentStatus
+                      color: paymentStatus
                           ? Colors.green.shade700
                           : Colors.orange.shade700,
                     ),
                   ),
-                  if (!_paymentStatus) ...[
+                  if (!paymentStatus) ...[
                     SizedBox(height: 16),
                     Center(
                       child: ElevatedButton.icon(
-                        onPressed: () {
-                          // Navigate to payment page
-                        },
+                        onPressed: paymentStatus
+                            ? null // Disable the button if payment is complete
+                            : () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => StripePaymentPage(),
+                                  ),
+                                );
+                              },
                         icon: Icon(Icons.credit_card),
                         label: Text('දැන් ගෙවන්න'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
+                          backgroundColor:
+                              paymentStatus ? Colors.grey : Colors.orange,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(
                               horizontal: 16, vertical: 12),
