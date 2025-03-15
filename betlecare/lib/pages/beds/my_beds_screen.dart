@@ -22,7 +22,7 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
   final _betelBedService = BetelBedService();
   final _wateringService = WateringService();
   bool _isLoading = false;
-  
+
   // Map to store watering recommendations for each bed
   final Map<String, Map<String, dynamic>> _wateringRecommendations = {};
 
@@ -37,9 +37,9 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
       _isLoading = true;
       _bedsFuture = _betelBedService.getBetelBeds();
     });
-    
+
     await _bedsFuture;
-    
+
     setState(() {
       _isLoading = false;
     });
@@ -49,11 +49,14 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('මගේ බුලත් වගාවන්', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('මගේ බුලත් වගාවන්',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.green.shade700,
         foregroundColor: Colors.white,
         elevation: 0,
-        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _loadBeds)],
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadBeds)
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _loadBeds,
@@ -87,10 +90,19 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
         ),
       ),
       bottomNavigationBar: BottomNavBar(
-        selectedIndex: 2,
+        selectedIndex: 2, // Home is selected
         onTabChange: (index) {
           if (index != 2) {
-            Navigator.pop(context);
+            // If not clicking the current tab
+            // Create a replacement route to the MainPage with the correct tab index
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              // First pop back to the main screen
+              Navigator.of(context).pop();
+
+              // Then push a replacement to force refresh the main page with the new index
+              Navigator.of(context)
+                  .pushReplacementNamed('/main', arguments: index);
+            });
           }
         },
       ),
@@ -111,7 +123,8 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,
           side: BorderSide(color: Colors.green.shade300, width: 2),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(vertical: 16),
           elevation: 2,
         ),
@@ -122,7 +135,10 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
             const SizedBox(width: 8),
             Text(
               'නව බුලත් වගාවක් එකතු කරන්න',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green.shade700),
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green.shade700),
             ),
           ],
         ),
@@ -165,7 +181,7 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
               child: _buildEmptyState(),
             );
           }
-          
+
           final beds = snapshot.data!;
           return SliverList(
             delegate: SliverChildBuilderDelegate(
@@ -190,8 +206,10 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
         children: [
           Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
           const SizedBox(height: 16),
-          Text('දත්ත ලබා ගැනීමේ දෝෂයකි', style: TextStyle(color: Colors.red[700])),
-          TextButton(onPressed: _loadBeds, child: const Text('නැවත උත්සාහ කරන්න')),
+          Text('දත්ත ලබා ගැනීමේ දෝෂයකි',
+              style: TextStyle(color: Colors.red[700])),
+          TextButton(
+              onPressed: _loadBeds, child: const Text('නැවත උත්සාහ කරන්න')),
         ],
       ),
     );
@@ -206,7 +224,10 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
           const SizedBox(height: 16),
           Text(
             'තවම බුලත් වගාවන් නැත',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[600]),
+            style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
@@ -220,52 +241,52 @@ class _MyBedsScreenState extends State<MyBedsScreen> {
   }
 
 // Modified method in MyBedsScreen to properly handle navigation to BedDetailScreen with result
-Widget _buildBedCard(BetelBed bed) {
-  final statusColor = _getStatusColor(bed.status);
-  
-  return Card(
-    elevation: 3,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-      side: BorderSide(color: statusColor.withOpacity(0.3)),
-    ),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: () async {
-        final result = await Navigator.push(
-          context, 
-          MaterialPageRoute(builder: (context) => BedDetailScreen(bed: bed))
-        );
-        
-        // If result is true (bed was updated or deleted), refresh the list
-        if (result == true) {
-          _loadBeds();
-        }
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildBedCardHeader(bed, statusColor),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildBedCardTitle(bed),
-                const SizedBox(height: 8),
-                _buildBedCardLocation(bed),
-                const SizedBox(height: 16),
-                _buildBedCardStats(bed),
-                const Divider(height: 32),
-                _buildBedCardActions(bed),
-              ],
-            ),
-          ),
-        ],
+  Widget _buildBedCard(BetelBed bed) {
+    final statusColor = _getStatusColor(bed.status);
+
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: statusColor.withOpacity(0.3)),
       ),
-    ),
-  );
-}
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () async {
+          final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => BedDetailScreen(bed: bed)));
+
+          // If result is true (bed was updated or deleted), refresh the list
+          if (result == true) {
+            _loadBeds();
+          }
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildBedCardHeader(bed, statusColor),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildBedCardTitle(bed),
+                  const SizedBox(height: 8),
+                  _buildBedCardLocation(bed),
+                  const SizedBox(height: 16),
+                  _buildBedCardStats(bed),
+                  const Divider(height: 32),
+                  _buildBedCardActions(bed),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildBedCardHeader(BetelBed bed, Color statusColor) {
     return Stack(
@@ -282,7 +303,9 @@ Widget _buildBedCard(BetelBed bed) {
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Container(
                 color: Colors.grey.shade200,
-                child: const Center(child: Icon(Icons.image_not_supported, size: 40, color: Colors.grey)),
+                child: const Center(
+                    child: Icon(Icons.image_not_supported,
+                        size: 40, color: Colors.grey)),
               ),
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
@@ -291,7 +314,8 @@ Widget _buildBedCard(BetelBed bed) {
                   child: Center(
                     child: CircularProgressIndicator(
                       value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
                           : null,
                     ),
                   ),
@@ -314,7 +338,10 @@ Widget _buildBedCard(BetelBed bed) {
             ),
             child: Text(
               bed.nextAction,
-              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
             ),
@@ -393,67 +420,74 @@ Widget _buildBedCard(BetelBed bed) {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildBedStat(icon: Icons.spa, label: 'බුලත් වර්ගය', value: bed.betelType),
-          _buildBedStat(icon: Icons.grass, label: 'පැළ ගණන', value: bed.plantCount.toString()),
-          _buildBedStat(icon: Icons.straighten, label: 'ප්‍රමාණය', value: '${bed.areaSize} m²'),
+          _buildBedStat(
+              icon: Icons.spa, label: 'බුලත් වර්ගය', value: bed.betelType),
+          _buildBedStat(
+              icon: Icons.grass,
+              label: 'පැළ ගණන',
+              value: bed.plantCount.toString()),
+          _buildBedStat(
+              icon: Icons.straighten,
+              label: 'ප්‍රමාණය',
+              value: '${bed.areaSize} m²'),
         ],
       ),
     );
   }
 
-Widget _buildBedCardActions(BetelBed bed) {
-  return Column(
-    children: [
-      // Protection recommendation widget
-      SizedBox(
-        width: double.infinity,
-        child: ProtectionRecommendationWidget(bed: bed),
-      ),
-      
-      // Add consistent spacing - always present regardless of protection widget visibility
-      const SizedBox(height: 12),
-      
-      // Watering recommendation widget
-      SizedBox(
-        width: double.infinity,
-        child: WateringRecommendationWidget(bed: bed),
-      ),
-      
-      // Add consistent spacing between watering and fertilizing
-      const SizedBox(height: 12),
-      
-      // Fertilizing recommendation widget
-      SizedBox(
-        width: double.infinity,
-        child: FertilizingRecommendationWidget(bed: bed),
-      ),
-      
-      const SizedBox(height: 16),
-      
-      // Action buttons
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildActionButton(
-            icon: Icons.water_drop,
-            label: 'පොහොර',
-            onTap: () => _showFertilizeHistory(bed),
-          ),
-          _buildActionButton(
-            icon: Icons.shopping_basket,
-            label: 'අස්වනු',
-            onTap: () => _showHarvestHistory(bed),
-          ),
-          _buildActionButton(
-            icon: Icons.more_horiz,
-            label: 'තවත්',
-            onTap: () => _showStatusUpdateDialog(bed),
-          ),
-        ],
-      ),
-    ],
-  );
-}
+  Widget _buildBedCardActions(BetelBed bed) {
+    return Column(
+      children: [
+        // Protection recommendation widget
+        SizedBox(
+          width: double.infinity,
+          child: ProtectionRecommendationWidget(bed: bed),
+        ),
+
+        // Add consistent spacing - always present regardless of protection widget visibility
+        const SizedBox(height: 12),
+
+        // Watering recommendation widget
+        SizedBox(
+          width: double.infinity,
+          child: WateringRecommendationWidget(bed: bed),
+        ),
+
+        // Add consistent spacing between watering and fertilizing
+        const SizedBox(height: 12),
+
+        // Fertilizing recommendation widget
+        SizedBox(
+          width: double.infinity,
+          child: FertilizingRecommendationWidget(bed: bed),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Action buttons
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildActionButton(
+              icon: Icons.water_drop,
+              label: 'පොහොර',
+              onTap: () => _showFertilizeHistory(bed),
+            ),
+            _buildActionButton(
+              icon: Icons.shopping_basket,
+              label: 'අස්වනු',
+              onTap: () => _showHarvestHistory(bed),
+            ),
+            _buildActionButton(
+              icon: Icons.more_horiz,
+              label: 'තවත්',
+              onTap: () => _showStatusUpdateDialog(bed),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 
   Widget _buildBedStat({
     required IconData icon,
@@ -472,7 +506,7 @@ Widget _buildBedCardActions(BetelBed bed) {
             overflow: TextOverflow.ellipsis,
           ),
           Text(
-            label, 
+            label,
             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -494,7 +528,7 @@ Widget _buildBedCardActions(BetelBed bed) {
           Icon(icon, size: 24, color: Colors.green.shade700),
           const SizedBox(height: 4),
           Text(
-            label, 
+            label,
             style: TextStyle(fontSize: 12, color: Colors.grey[700]),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -506,11 +540,16 @@ Widget _buildBedCardActions(BetelBed bed) {
 
   Color _getStatusColor(BetelBedStatus status) {
     switch (status) {
-      case BetelBedStatus.needsFertilizing: return Colors.orange;
-      case BetelBedStatus.readyToHarvest: return Colors.green.shade600;
-      case BetelBedStatus.needsWatering: return Colors.blue;
-      case BetelBedStatus.diseased: return Colors.red;
-      default: return Colors.teal;
+      case BetelBedStatus.needsFertilizing:
+        return Colors.orange;
+      case BetelBedStatus.readyToHarvest:
+        return Colors.green.shade600;
+      case BetelBedStatus.needsWatering:
+        return Colors.blue;
+      case BetelBedStatus.diseased:
+        return Colors.red;
+      default:
+        return Colors.teal;
     }
   }
 
@@ -562,7 +601,8 @@ Widget _buildBedCardActions(BetelBed bed) {
       itemBuilder: (harvest) => ListTile(
         leading: CircleAvatar(
           backgroundColor: Colors.green.shade700,
-          child: const Icon(Icons.shopping_basket, color: Colors.white, size: 18),
+          child:
+              const Icon(Icons.shopping_basket, color: Colors.white, size: 18),
         ),
         title: Text(
           '${harvest.leavesCount} කොළ • ${harvest.weight}kg',
@@ -629,7 +669,8 @@ Widget _buildBedCardActions(BetelBed bed) {
               padding: const EdgeInsets.all(16),
               child: Text(
                 title,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),
@@ -637,10 +678,13 @@ Widget _buildBedCardActions(BetelBed bed) {
             const Divider(),
             Expanded(
               child: historyItems.isEmpty
-                  ? Center(child: Text(emptyText, style: TextStyle(color: Colors.grey[600])))
+                  ? Center(
+                      child: Text(emptyText,
+                          style: TextStyle(color: Colors.grey[600])))
                   : ListView.builder(
                       itemCount: historyItems.length,
-                      itemBuilder: (context, index) => itemBuilder(historyItems[index]),
+                      itemBuilder: (context, index) =>
+                          itemBuilder(historyItems[index]),
                     ),
             ),
             Padding(
@@ -650,7 +694,8 @@ Widget _buildBedCardActions(BetelBed bed) {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green.shade700,
                   minimumSize: const Size.fromHeight(50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text(buttonText),
               ),
@@ -661,94 +706,98 @@ Widget _buildBedCardActions(BetelBed bed) {
     );
   }
 
-void _showAddFertilizeDialog(BetelBed bed) {
-  final dateController = TextEditingController(text: _getTodayFormatted());
-  // Remove the typeController as we'll use the dropdown value directly
-  final quantityController = TextEditingController();
-  final notesController = TextEditingController();
-  
-  // Define fertilizer types mapping (Sinhala to English)
-  final Map<String, String> fertilizerTypes = {
-    'ග්ලිරිසීඩියා කොල': 'Gliricidia leaves',
-    'ගොම පොහොර': 'Cow dung',
-    'NPK 10 අනුපාතයට': 'Balanced NPK (10-10-10)',
-    'කුකුල් පොහොර': 'Poultry manure',
-    'කොම්පෝස්ට්': 'Compost',
-  };
-  
-  // Initial selection
-  String selectedFertilizerSinhala = 'ග්ලිරිසීඩියා කොල'; // Default selection
-  
-  _showFormDialog(
-    title: 'නව පොහොර යෙදීමක් එක් කරන්න',
-    fields: [
-      _buildDateField(dateController),
-      // Replace TextField with DropdownButtonFormField
-      DropdownButtonFormField<String>(
-        value: selectedFertilizerSinhala,
-        decoration: const InputDecoration(labelText: 'පොහොර වර්ගය'),
-        items: fertilizerTypes.keys.map((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(value),
-          );
-        }).toList(),
-        onChanged: (String? newValue) {
-          if (newValue != null) {
-            selectedFertilizerSinhala = newValue;
+  void _showAddFertilizeDialog(BetelBed bed) {
+    final dateController = TextEditingController(text: _getTodayFormatted());
+    // Remove the typeController as we'll use the dropdown value directly
+    final quantityController = TextEditingController();
+    final notesController = TextEditingController();
+
+    // Define fertilizer types mapping (Sinhala to English)
+    final Map<String, String> fertilizerTypes = {
+      'ග්ලිරිසීඩියා කොල': 'Gliricidia leaves',
+      'ගොම පොහොර': 'Cow dung',
+      'NPK 10 අනුපාතයට': 'Balanced NPK (10-10-10)',
+      'කුකුල් පොහොර': 'Poultry manure',
+      'කොම්පෝස්ට්': 'Compost',
+    };
+
+    // Initial selection
+    String selectedFertilizerSinhala = 'ග්ලිරිසීඩියා කොල'; // Default selection
+
+    _showFormDialog(
+      title: 'නව පොහොර යෙදීමක් එක් කරන්න',
+      fields: [
+        _buildDateField(dateController),
+        // Replace TextField with DropdownButtonFormField
+        DropdownButtonFormField<String>(
+          value: selectedFertilizerSinhala,
+          decoration: const InputDecoration(labelText: 'පොහොර වර්ගය'),
+          items: fertilizerTypes.keys.map((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+          onChanged: (String? newValue) {
+            if (newValue != null) {
+              selectedFertilizerSinhala = newValue;
+            }
+          },
+        ),
+        TextField(
+          controller: quantityController,
+          decoration: const InputDecoration(labelText: 'ප්‍රමාණය (kg)'),
+          keyboardType: TextInputType.number,
+        ),
+        TextField(
+          controller: notesController,
+          decoration: const InputDecoration(labelText: 'සටහන්'),
+          maxLines: 2,
+        ),
+      ],
+      onSave: () async {
+        try {
+          if (selectedFertilizerSinhala.isEmpty ||
+              quantityController.text.isEmpty) {
+            _showErrorSnackBar('කරුණාකර අවශ්‍ය තොරතුරු පුරවන්න');
+            return;
           }
-        },
-      ),
-      TextField(
-        controller: quantityController,
-        decoration: const InputDecoration(labelText: 'ප්‍රමාණය (kg)'),
-        keyboardType: TextInputType.number,
-      ),
-      TextField(
-        controller: notesController,
-        decoration: const InputDecoration(labelText: 'සටහන්'),
-        maxLines: 2,
-      ),
-    ],
-    onSave: () async {
-      try {
-        if (selectedFertilizerSinhala.isEmpty || quantityController.text.isEmpty) {
-          _showErrorSnackBar('කරුණාකර අවශ්‍ය තොරතුරු පුරවන්න');
-          return;
+
+          final quantity = double.tryParse(quantityController.text);
+          if (quantity == null) {
+            _showErrorSnackBar('වලංගු ප්‍රමාණයක් ඇතුළත් කරන්න');
+            return;
+          }
+
+          final date = DateTime.parse(dateController.text);
+
+          // Convert Sinhala fertilizer type to English for backend
+          final englishFertilizerType =
+              fertilizerTypes[selectedFertilizerSinhala] ??
+                  selectedFertilizerSinhala;
+
+          final record = FertilizeRecord(
+            date: date,
+            fertilizerType:
+                englishFertilizerType, // Send English name to backend
+            quantity: quantity,
+            notes: notesController.text,
+          );
+
+          await _betelBedService.addFertilizeRecord(bed.id, record);
+
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('පොහොර යෙදීම සාර්ථකව එකතු කරන ලදී')),
+          );
+
+          _loadBeds();
+        } catch (e) {
+          _showErrorSnackBar('දෝෂයකි: ${e.toString()}');
         }
-        
-        final quantity = double.tryParse(quantityController.text);
-        if (quantity == null) {
-          _showErrorSnackBar('වලංගු ප්‍රමාණයක් ඇතුළත් කරන්න');
-          return;
-        }
-        
-        final date = DateTime.parse(dateController.text);
-        
-        // Convert Sinhala fertilizer type to English for backend
-        final englishFertilizerType = fertilizerTypes[selectedFertilizerSinhala] ?? selectedFertilizerSinhala;
-        
-        final record = FertilizeRecord(
-          date: date,
-          fertilizerType: englishFertilizerType, // Send English name to backend
-          quantity: quantity,
-          notes: notesController.text,
-        );
-        
-        await _betelBedService.addFertilizeRecord(bed.id, record);
-        
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('පොහොර යෙදීම සාර්ථකව එකතු කරන ලදී')),
-        );
-        
-        _loadBeds();
-      } catch (e) {
-        _showErrorSnackBar('දෝෂයකි: ${e.toString()}');
-      }
-    },
-  );
-}
+      },
+    );
+  }
 
   void _showAddHarvestDialog(BetelBed bed) {
     final dateController = TextEditingController(text: _getTodayFormatted());
@@ -757,9 +806,9 @@ void _showAddFertilizeDialog(BetelBed bed) {
     final revenueController = TextEditingController();
     final qualityController = TextEditingController(text: 'A');
     final notesController = TextEditingController();
-    
+
     final qualities = ['A', 'B', 'C', 'D'];
-    
+
     _showFormDialog(
       title: 'නව අස්වැන්නක් එක් කරන්න',
       fields: [
@@ -782,10 +831,12 @@ void _showAddFertilizeDialog(BetelBed bed) {
         DropdownButtonFormField<String>(
           value: qualityController.text,
           decoration: const InputDecoration(labelText: 'තත්ත්වය'),
-          items: qualities.map((quality) => DropdownMenuItem<String>(
-            value: quality,
-            child: Text(quality),
-          )).toList(),
+          items: qualities
+              .map((quality) => DropdownMenuItem<String>(
+                    value: quality,
+                    child: Text(quality),
+                  ))
+              .toList(),
           onChanged: (value) => qualityController.text = value!,
         ),
         TextField(
@@ -796,22 +847,24 @@ void _showAddFertilizeDialog(BetelBed bed) {
       ],
       onSave: () async {
         try {
-          if (leavesController.text.isEmpty || weightController.text.isEmpty || revenueController.text.isEmpty) {
+          if (leavesController.text.isEmpty ||
+              weightController.text.isEmpty ||
+              revenueController.text.isEmpty) {
             _showErrorSnackBar('කරුණාකර අවශ්‍ය තොරතුරු පුරවන්න');
             return;
           }
-          
+
           final leaves = int.tryParse(leavesController.text);
           final weight = double.tryParse(weightController.text);
           final revenue = double.tryParse(revenueController.text);
-          
+
           if (leaves == null || weight == null || revenue == null) {
             _showErrorSnackBar('වලංගු අගයන් ඇතුළත් කරන්න');
             return;
           }
-          
+
           final date = DateTime.parse(dateController.text);
-          
+
           final record = HarvestRecord(
             date: date,
             leavesCount: leaves,
@@ -820,14 +873,14 @@ void _showAddFertilizeDialog(BetelBed bed) {
             quality: qualityController.text,
             notes: notesController.text,
           );
-          
+
           await _betelBedService.addHarvestRecord(bed.id, record);
-          
+
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('අස්වැන්න සාර්ථකව එකතු කරන ලදී')),
           );
-          
+
           _loadBeds();
         } catch (e) {
           _showErrorSnackBar('දෝෂයකි: ${e.toString()}');
@@ -848,7 +901,7 @@ void _showAddFertilizeDialog(BetelBed bed) {
           firstDate: DateTime(2020),
           lastDate: DateTime.now(),
         );
-        
+
         if (date != null) {
           controller.text = _formatDate(date);
         }
@@ -882,7 +935,8 @@ void _showAddFertilizeDialog(BetelBed bed) {
           ),
           ElevatedButton(
             onPressed: onSave,
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade700),
             child: const Text('සුරකින්න'),
           ),
         ],
@@ -939,7 +993,7 @@ void _showAddFertilizeDialog(BetelBed bed) {
       ),
     );
   }
-  
+
   Widget _buildStatusOption({
     required BetelBed bed,
     required BetelBedStatus status,
@@ -954,14 +1008,14 @@ void _showAddFertilizeDialog(BetelBed bed) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('තත්ත්වය යාවත්කාලීන කරමින්...')),
           );
-          
+
           await _betelBedService.updateBedStatus(bed.id, status);
           _loadBeds();
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('තත්ත්වය සාර්ථකව යාවත්කාලීන කරන ලදී')),
           );
-       } catch (e) {
+        } catch (e) {
           _showErrorSnackBar('දෝෂයකි: ${e.toString()}');
         }
       },
@@ -982,12 +1036,13 @@ void _showAddFertilizeDialog(BetelBed bed) {
   }
 
   // Helper methods
-  String _formatDate(DateTime date) => 
+  String _formatDate(DateTime date) =>
       '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  
+
   String _getTodayFormatted() => _formatDate(DateTime.now());
-  
+
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 }
