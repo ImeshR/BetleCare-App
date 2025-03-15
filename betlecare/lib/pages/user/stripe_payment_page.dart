@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 
+import '../../providers/user_provider.dart';
 import '../../styles/auth_styles.dart';
 import '../../supabase_client.dart';
 
@@ -110,6 +112,9 @@ class _StripePaymentPageState extends State<StripePaymentPage> {
           // If payments table doesn't exist, just continue
           print('Error logging payment: ${e.toString()}');
         }
+
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        await userProvider.fetchUserSettings();
 
         setState(() {
           _isPaymentSuccess = true;

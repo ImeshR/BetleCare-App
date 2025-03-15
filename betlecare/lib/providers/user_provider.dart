@@ -7,9 +7,11 @@ import '../supabase_client.dart';
 class UserProvider extends ChangeNotifier {
   User? _user;
   Map<String, dynamic>? _userData;
+  Map<String, dynamic>? _userSettings;
 
   static const String _userKey = 'user';
   static const String _userDataKey = 'userData';
+  static const String _userSettingsKey = 'userSettings';
 
   UserProvider() {
     _loadUserFromStorage();
@@ -17,11 +19,13 @@ class UserProvider extends ChangeNotifier {
 
   User? get user => _user;
   Map<String, dynamic>? get userData => _userData;
+  Map<String, dynamic>? get userSettings => _userSettings;
 
   Future<void> _loadUserFromStorage() async {
     final prefs = await SharedPreferences.getInstance();
     final userJson = prefs.getString(_userKey);
     final userDataJson = prefs.getString(_userDataKey);
+    final settingsJson = prefs.getString(_userSettingsKey);
 
     if (userJson != null) {
       _user = User.fromJson(json.decode(userJson));
@@ -29,6 +33,10 @@ class UserProvider extends ChangeNotifier {
 
     if (userDataJson != null) {
       _userData = json.decode(userDataJson);
+    }
+
+    if (settingsJson != null) {
+      _userSettings = json.decode(settingsJson);
     }
 
     notifyListeners();
@@ -47,6 +55,12 @@ class UserProvider extends ChangeNotifier {
     } else {
       await prefs.remove(_userDataKey);
     }
+
+    if (_userSettings != null) {
+      await prefs.setString(_userSettingsKey, json.encode(_userSettings));
+    } else {
+      await prefs.remove(_userSettingsKey);
+    }
   }
 
   Future<void> initializeUser() async {
@@ -54,18 +68,31 @@ class UserProvider extends ChangeNotifier {
     final currentUser = supabase.client.auth.currentUser;
     if (currentUser != null) {
       setUser(currentUser);
-      // Fetch additional user data if needed
-      try {
-        final userData = await supabase.client
-            .from('users')
-            .select()
-            .eq('id', currentUser.id)
-            .single();
-        setUserData(userData);
-      } catch (e) {
-        print('Error fetching user data: $e');
-      }
+      await fetchUserSettings();
     }
+  }
+
+  Future<void> fetchUserSettings() async {
+    if (_user == null) return;
+
+    final supabase = await SupabaseClientManager.instance;
+    try {
+      final response = await supabase.client
+          .from('user_settings')
+          .select()
+          .eq('userid', _user!.id)
+          .single();
+
+      setUserSettings(response);
+    } catch (e) {
+      print('Error fetching user settings: $e');
+    }
+  }
+
+  void setUserSettings(Map<String, dynamic>? settings) {
+    _userSettings = settings;
+    _saveUserToStorage();
+    notifyListeners();
   }
 
   void setUser(User? user) {
@@ -82,7 +109,7 @@ class UserProvider extends ChangeNotifier {
 
   Future<void> clearUser() async {
     _user = null;
-    _userData = null;
+    _userSettings = null;
     await _saveUserToStorage();
     notifyListeners();
   }

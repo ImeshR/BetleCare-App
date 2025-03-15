@@ -439,9 +439,8 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
 
   Widget _buildPaymentStatusCard() {
     final userProvider = Provider.of<UserProvider>(context);
-    final userSettings = userProvider.userData?['settings'];
-    final paymentStatus =
-        userSettings?['payment_status'] ?? false; // Get payment status
+    final userSettings = userProvider.userSettings;
+    final paymentStatus = userSettings?['payment_status'] ?? false;
 
     return Card(
       elevation: 4,
