@@ -271,7 +271,7 @@ class _DiseasePhotoManagementPageState
               title: 'ඡායාරූපයක් උඩුගත කරන්න',
               description: 'ඔබගේ ගැලරියෙන් ඡායාරූපයක් තෝරන්න',
               color: Colors.purple.shade100,
-              imagePath: 'assets/images/disease/gallery.png',
+              imagePath: 'assets/images/disease/DD5.png',
               gradient: LinearGradient(
                 colors: [
                   Colors.purple.shade50,
