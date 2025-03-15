@@ -1,4 +1,4 @@
-// notification_service.dart
+// notification_service.dart with enhanced real-time handling
 import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,6 +7,9 @@ import 'package:betlecare/models/betel_bed_model.dart';
 import 'package:betlecare/models/notification_model.dart';
 import 'package:betlecare/supabase_client.dart';
 import 'package:betlecare/services/weather_services2.dart';
+import 'package:betlecare/main.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -18,6 +21,15 @@ class NotificationService {
   bool _demoMode = false;
   bool get demoMode => _demoMode;
   
+  // Keep track of deleted notification keys
+  Set<String> _deletedNotificationKeys = {};
+  
+  // Supabase real-time subscription
+  RealtimeChannel? _notificationSubscription;
+  
+  // Callback to notify provider of changes
+  Function? _onNotificationsChanged;
+  
   // Toggle demo mode
   Future<void> setDemoMode(bool value) async {
     _demoMode = value;
@@ -26,10 +38,151 @@ class NotificationService {
     await prefs.setBool('notification_demo_mode', value);
   }
   
-  // Initialize - check for demo mode
+  // Initialize - check for demo mode and load deleted notifications
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
     _demoMode = prefs.getBool('notification_demo_mode') ?? false;
+    
+    // Load deleted notification keys
+    final deletedKeysJson = prefs.getStringList('deleted_notification_keys') ?? [];
+    _deletedNotificationKeys = Set<String>.from(deletedKeysJson);
+    
+    // Start real-time subscription with a delay to ensure auth is ready
+    await Future.delayed(const Duration(seconds: 2));
+    await _setupRealtimeSubscription();
+  }
+  
+  // Setup real-time subscription to notifications
+  Future<void> _setupRealtimeSubscription() async {
+    final supabase = await SupabaseClientManager.instance;
+    final user = supabase.client.auth.currentUser;
+    
+    if (user == null) {
+      debugPrint('Cannot setup real-time subscription: User not authenticated');
+      return;
+    }
+    
+    // Close existing subscription if any
+    await _unsubscribeFromNotifications();
+    
+    try {
+      debugPrint('Setting up real-time subscription for user ${user.id}...');
+      
+      // Create channel with a unique name to avoid conflicts
+      final channelName = 'notifications-${user.id.substring(0, 8)}';
+      
+      _notificationSubscription = supabase.client
+        .channel(channelName)
+        .onPostgresChanges(
+          schema: 'public',
+          table: 'notifications',
+          event: PostgresChangeEvent.insert,
+          callback: (payload) {
+            debugPrint('⚡ INSERT notification event received: ${payload.newRecord}');
+            _triggerNotificationRefresh();
+          })
+        .onPostgresChanges(
+          schema: 'public',
+          table: 'notifications',
+          event: PostgresChangeEvent.update,
+          callback: (payload) {
+            debugPrint('⚡ UPDATE notification event received:');
+            debugPrint('  - Old: ${payload.oldRecord}');
+            debugPrint('  - New: ${payload.newRecord}');
+            
+            // Check if status changed to active
+            final Map<String, dynamic> newRecord = payload.newRecord as Map<String, dynamic>;
+            final Map<String, dynamic> oldRecord = payload.oldRecord as Map<String, dynamic>;
+            
+            if (newRecord['status'] == 'active' && oldRecord['status'] == 'deleted') {
+              debugPrint('⚡ Status changed from deleted to active - refreshing notifications');
+              _triggerNotificationRefresh();
+            } else if (newRecord['is_read'] != oldRecord['is_read']) {
+              debugPrint('⚡ Read status changed - refreshing notifications');
+              _triggerNotificationRefresh();
+            } else {
+              debugPrint('⚡ Other update detected - refreshing notifications');
+              _triggerNotificationRefresh();
+            }
+          })
+        .onPostgresChanges(
+          schema: 'public',
+          table: 'notifications',
+          event: PostgresChangeEvent.delete,
+          callback: (payload) {
+            debugPrint('⚡ DELETE notification event received');
+            _triggerNotificationRefresh();
+          });
+    
+      _notificationSubscription = _notificationSubscription!.subscribe((status, error) {
+        if (status == 'SUBSCRIBED') {
+          debugPrint('✅ Successfully subscribed to notification changes');
+        } else if (status == 'CLOSED') {
+          debugPrint('❌ Subscription to notification changes closed');
+        } else if (status == 'CHANNEL_ERROR') {
+          debugPrint('❌ Error in notification subscription: $error');
+        } else {
+          debugPrint('⚠️ Notification subscription status: $status');
+        }
+      });
+    } catch (e) {
+      debugPrint('❌ Error setting up real-time subscription: $e');
+    }
+  }
+  
+  // Trigger a notification refresh
+  void _triggerNotificationRefresh() {
+    if (_onNotificationsChanged != null) {
+      debugPrint('🔄 Triggering notification refresh callback');
+      _onNotificationsChanged!();
+    } else {
+      debugPrint('⚠️ No notification callback registered');
+    }
+  }
+  
+  // Unsubscribe from notifications
+  Future<void> _unsubscribeFromNotifications() async {
+    if (_notificationSubscription != null) {
+      try {
+        await _notificationSubscription!.unsubscribe();
+        debugPrint('Unsubscribed from notification changes');
+      } catch (e) {
+        debugPrint('Error unsubscribing from notifications: $e');
+      }
+      _notificationSubscription = null;
+    }
+  }
+  
+  // Refresh the subscription (useful if connection is lost)
+  Future<void> refreshSubscription() async {
+    debugPrint('🔄 Refreshing notification subscription');
+    await _unsubscribeFromNotifications();
+    await _setupRealtimeSubscription();
+  }
+  
+  // Register callback for notification changes
+  void setNotificationCallback(Function callback) {
+    debugPrint('Setting notification callback');
+    _onNotificationsChanged = callback;
+  }
+  
+  // Remove callback
+  void removeNotificationCallback() {
+    _onNotificationsChanged = null;
+  }
+  
+  // Save deleted notification keys
+  Future<void> _saveDeletedKeys() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('deleted_notification_keys', _deletedNotificationKeys.toList());
+  }
+  
+  // Generate a unique key for a notification to avoid duplicates
+  String _generateUniqueKey(String title, String message, String type, String? bedId) {
+    final keyData = '$title-$message-$type-$bedId';
+    final bytes = utf8.encode(keyData);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
   }
   
   // Get all notifications for current user
@@ -46,14 +199,24 @@ class NotificationService {
       return _getDemoNotifications();
     }
     
-    final data = await supabase.client
-      .from('notifications')
-      .select()
-      .eq('user_id', user.id)
-      .order('created_at', ascending: false);
-    
-    return data.map<BetelNotification>((json) => 
-      BetelNotification.fromJson(json)).toList();
+    try {
+      debugPrint('🔍 Fetching notifications for user: ${user.id}');
+      
+      final data = await supabase.client
+        .from('notifications')
+        .select()
+        .eq('user_id', user.id)
+        .neq('status', 'deleted')  // Filter out deleted notifications
+        .order('created_at', ascending: false);
+      
+      debugPrint('📊 Found ${data.length} notifications');
+      
+      return data.map<BetelNotification>((json) => 
+        BetelNotification.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('❌ Error fetching notifications: $e');
+      rethrow;
+    }
   }
   
   // Get unread notification count
@@ -71,19 +234,52 @@ class NotificationService {
       return 0;
     }
     
-    // For Supabase Flutter 2.8.3
+    try {
+      debugPrint('🔍 Fetching unread notification count for user: ${user.id}');
+      
+      // For Supabase Flutter
+      final data = await supabase.client
+        .from('notifications')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_read', false)
+        .neq('status', 'deleted');  // Filter out deleted notifications
+      
+      final count = data.length;
+      debugPrint('📊 Unread notification count: $count');
+      
+      return count;
+    } catch (e) {
+      debugPrint('❌ Error fetching unread count: $e');
+      return 0;
+    }
+  }
+  
+  // Check if notification with similar content already exists to avoid duplicates
+  Future<bool> _notificationExists(String uniqueKey) async {
+    if (_deletedNotificationKeys.contains(uniqueKey)) {
+      return true; // Consider deleted notifications as existing
+    }
+    
+    final supabase = await SupabaseClientManager.instance;
+    final user = supabase.client.auth.currentUser;
+    
+    if (user == null) {
+      return false;
+    }
+    
     final data = await supabase.client
       .from('notifications')
-      .select()
+      .select('id')
       .eq('user_id', user.id)
-      .eq('is_read', false);
+      .eq('unique_key', uniqueKey)
+      .limit(1);
     
-    // Simply count the returned rows
-    return data.length;
+    return data.isNotEmpty;
   }
   
   // Create a new notification
-  Future<BetelNotification> createNotification({
+  Future<BetelNotification?> createNotification({
     required String title,
     required String message,
     required NotificationType type,
@@ -97,6 +293,15 @@ class NotificationService {
       throw Exception('User not authenticated');
     }
     
+    // Generate a unique key for this notification to check for duplicates
+    final uniqueKey = _generateUniqueKey(title, message, type.toString(), bedId);
+    
+    // Don't create duplicate notifications
+    final exists = await _notificationExists(uniqueKey);
+    if (exists) {
+      return null; // Skip creating this notification
+    }
+    
     if (_demoMode) {
       // In demo mode, just return a fake notification without saving to DB
       return BetelNotification(
@@ -108,6 +313,7 @@ class NotificationService {
         createdAt: DateTime.now(),
         type: type,
         metadata: metadata,
+        uniqueKey: uniqueKey,
       );
     }
     
@@ -120,15 +326,26 @@ class NotificationService {
       'is_read': false,
       'type': type.toString().split('.').last,
       'metadata': metadata,
+      'status': 'active',
+      'unique_key': uniqueKey,
     };
     
-    final response = await supabase.client
-      .from('notifications')
-      .insert(notification)
-      .select()
-      .single();
-    
-    return BetelNotification.fromJson(response);
+    try {
+      debugPrint('📝 Creating new notification: $title');
+      
+      final response = await supabase.client
+        .from('notifications')
+        .insert(notification)
+        .select()
+        .single();
+      
+      debugPrint('✅ Notification created with ID: ${response['id']}');
+      
+      return BetelNotification.fromJson(response);
+    } catch (e) {
+      debugPrint('❌ Error creating notification: $e');
+      rethrow;
+    }
   }
   
   // Mark notification as read
@@ -137,10 +354,22 @@ class NotificationService {
     
     final supabase = await SupabaseClientManager.instance;
     
-    await supabase.client
-      .from('notifications')
-      .update({'is_read': true})
-      .eq('id', notificationId);
+    try {
+      debugPrint('📝 Marking notification as read: $notificationId');
+      
+      await supabase.client
+        .from('notifications')
+        .update({
+          'is_read': true,
+          'status': 'read'
+        })
+        .eq('id', notificationId);
+      
+      debugPrint('✅ Notification marked as read');
+    } catch (e) {
+      debugPrint('❌ Error marking notification as read: $e');
+      rethrow;
+    }
   }
   
   // Mark all notifications as read
@@ -154,22 +383,50 @@ class NotificationService {
       throw Exception('User not authenticated');
     }
     
-    await supabase.client
-      .from('notifications')
-      .update({'is_read': true})
-      .eq('user_id', user.id);
+    try {
+      debugPrint('📝 Marking all notifications as read for user: ${user.id}');
+      
+      await supabase.client
+        .from('notifications')
+        .update({
+          'is_read': true,
+          'status': 'read'
+        })
+        .eq('user_id', user.id)
+        .eq('status', 'active');
+      
+      debugPrint('✅ All notifications marked as read');
+    } catch (e) {
+      debugPrint('❌ Error marking all notifications as read: $e');
+      rethrow;
+    }
   }
   
-  // Delete a notification
-  Future<void> deleteNotification(String notificationId) async {
+  // Soft delete a notification
+  Future<void> deleteNotification(String notificationId, String uniqueKey) async {
     if (_demoMode) return; // Do nothing in demo mode
+    
+    // Remember this notification key to avoid recreating it
+    if (uniqueKey.isNotEmpty) {
+      _deletedNotificationKeys.add(uniqueKey);
+      await _saveDeletedKeys();
+    }
     
     final supabase = await SupabaseClientManager.instance;
     
-    await supabase.client
-      .from('notifications')
-      .delete()
-      .eq('id', notificationId);
+    try {
+      debugPrint('📝 Soft deleting notification: $notificationId');
+      
+      await supabase.client
+        .from('notifications')
+        .update({'status': 'deleted'})
+        .eq('id', notificationId);
+      
+      debugPrint('✅ Notification soft deleted');
+    } catch (e) {
+      debugPrint('❌ Error soft deleting notification: $e');
+      rethrow;
+    }
   }
   
   // Weather alert - check forecasted rainfall/temperature and create notifications
@@ -307,6 +564,12 @@ class NotificationService {
     return await weatherService.fetchWeatherData(district);
   }
   
+  // Clean up resources
+  void dispose() {
+    _unsubscribeFromNotifications();
+    _onNotificationsChanged = null;
+  }
+  
   // DEMO MODE METHODS
   
   // Generate demo notifications for preview/presentation
@@ -327,6 +590,7 @@ class NotificationService {
         createdAt: now,
         type: NotificationType.weather,
         metadata: {'weather_type': 'heavy_rain', 'rainfall': 15.2},
+        uniqueKey: 'demo-1',
       ),
       BetelNotification(
         id: '2',
@@ -337,6 +601,7 @@ class NotificationService {
         type: NotificationType.harvest,
         isRead: true,
         metadata: {'days_till_harvest': 3, 'harvest_type': 'first'},
+        uniqueKey: 'demo-2',
       ),
       BetelNotification(
         id: '3',
@@ -346,6 +611,7 @@ class NotificationService {
         createdAt: twoDaysAgo,
         type: NotificationType.weather,
         metadata: {'weather_type': 'high_temperature', 'temperature': 36.5},
+        uniqueKey: 'demo-3',
       ),
       BetelNotification(
         id: '4',
@@ -356,6 +622,7 @@ class NotificationService {
         type: NotificationType.fertilize,
         isRead: true,
         metadata: {'days_since_last_fertilize': 30},
+        uniqueKey: 'demo-4',
       ),
     ];
   }
@@ -366,66 +633,64 @@ class NotificationService {
     NotificationType type, 
     {Map<String, dynamic>? metadata}
   ) async {
-    if (!_demoMode) {
-      // Set demo mode true temporarily
-      bool originalMode = _demoMode;
-      _demoMode = true;
-      
-      switch (type) {
-        case NotificationType.weather:
-          if (metadata?['weather_type'] == 'heavy_rain') {
-            final rainfall = metadata?['rainfall'] ?? 15.2;
-            await createNotification(
-              title: 'අධික වැසි අනතුරු ඇඟවීම (Demo)',
-              message: '${bed.name} සඳහා හෙට දිනට අධික වැසි (${rainfall}mm) අපේක්ෂා කෙරේ. ඔබගේ බුලත් වගාව ආරක්ෂා කර ගැනීමට අවශ්‍ය පියවර ගන්න.',
-              type: NotificationType.weather,
-              bedId: bed.id,
-              metadata: {'weather_type': 'heavy_rain', 'rainfall': rainfall},
-            );
-          } else if (metadata?['weather_type'] == 'high_temperature') {
-            final temp = metadata?['temperature'] ?? 36.5;
-            await createNotification(
-              title: 'අධික උෂ්ණත්ව අනතුරු ඇඟවීම (Demo)',
-              message: '${bed.name} සඳහා සතියේ ඉතිරි දිනවල අධික උෂ්ණත්වයක් (${temp}°C) අපේක්ෂා කෙරේ. ඔබගේ බුලත් පැළවලට හානි නොවන ලෙස නිසි අවධානය යොමු කරන්න.',
-              type: NotificationType.weather,
-              bedId: bed.id,
-              metadata: {'weather_type': 'high_temperature', 'temperature': temp},
-            );
-          }
-          break;
-          
-        case NotificationType.harvest:
+    // Set demo mode true temporarily
+    bool originalMode = _demoMode;
+    _demoMode = true;
+    
+    switch (type) {
+      case NotificationType.weather:
+        if (metadata?['weather_type'] == 'heavy_rain') {
+          final rainfall = metadata?['rainfall'] ?? 15.2;
           await createNotification(
-            title: 'අස්වනු කාලය ළඟයි (Demo)',
-            message: '${bed.name} සඳහා පළමු අස්වැන්න නෙලීමට දින 3 ක් පමණ ඉතිරිව ඇත. අස්වනු නෙලීමට සූදානම් වන්න.',
-            type: NotificationType.harvest,
+            title: 'අධික වැසි අනතුරු ඇඟවීම (Demo)',
+            message: '${bed.name} සඳහා හෙට දිනට අධික වැසි (${rainfall}mm) අපේක්ෂා කෙරේ. ඔබගේ බුලත් වගාව ආරක්ෂා කර ගැනීමට අවශ්‍ය පියවර ගන්න.',
+            type: NotificationType.weather,
             bedId: bed.id,
-            metadata: {'days_till_harvest': 3, 'harvest_type': 'first'},
+            metadata: {'weather_type': 'heavy_rain', 'rainfall': rainfall},
           );
-          break;
-          
-        case NotificationType.fertilize:
+        } else if (metadata?['weather_type'] == 'high_temperature') {
+          final temp = metadata?['temperature'] ?? 36.5;
           await createNotification(
-            title: 'පොහොර යෙදීමේ කාලය (Demo)',
-            message: '${bed.name} සඳහා පොහොර යෙදීමට කාලය පැමිණ ඇත. අවසන් පොහොර යෙදීමේ සිට දින 30කට වඩා ගතවී ඇත.',
-            type: NotificationType.fertilize,
+            title: 'අධික උෂ්ණත්ව අනතුරු ඇඟවීම (Demo)',
+            message: '${bed.name} සඳහා සතියේ ඉතිරි දිනවල අධික උෂ්ණත්වයක් (${temp}°C) අපේක්ෂා කෙරේ. ඔබගේ බුලත් පැළවලට හානි නොවන ලෙස නිසි අවධානය යොමු කරන්න.',
+            type: NotificationType.weather,
             bedId: bed.id,
-            metadata: {'days_since_last_fertilize': 30},
+            metadata: {'weather_type': 'high_temperature', 'temperature': temp},
           );
-          break;
-          
-        case NotificationType.system:
-          await createNotification(
-            title: 'පද්ධති දැනුම්දීම (Demo)',
-            message: 'මෙය පද්ධති දැනුම්දීමක් සඳහා උදාහරණයකි.',
-            type: NotificationType.system,
-            bedId: bed.id,
-          );
-          break;
-      }
-      
-      // Restore original mode
-      _demoMode = originalMode;
+        }
+        break;
+        
+      case NotificationType.harvest:
+        await createNotification(
+          title: 'අස්වනු කාලය ළඟයි (Demo)',
+          message: '${bed.name} සඳහා පළමු අස්වැන්න නෙලීමට දින 3 ක් පමණ ඉතිරිව ඇත. අස්වනු නෙලීමට සූදානම් වන්න.',
+          type: NotificationType.harvest,
+          bedId: bed.id,
+          metadata: {'days_till_harvest': 3, 'harvest_type': 'first'},
+        );
+        break;
+        
+      case NotificationType.fertilize:
+        await createNotification(
+          title: 'පොහොර යෙදීමේ කාලය (Demo)',
+          message: '${bed.name} සඳහා පොහොර යෙදීමට කාලය පැමිණ ඇත. අවසන් පොහොර යෙදීමේ සිට දින 30කට වඩා ගතවී ඇත.',
+          type: NotificationType.fertilize,
+          bedId: bed.id,
+          metadata: {'days_since_last_fertilize': 30},
+        );
+        break;
+        
+      case NotificationType.system:
+        await createNotification(
+          title: 'පද්ධති දැනුම්දීම (Demo)',
+          message: 'මෙය පද්ධති දැනුම්දීමක් සඳහා උදාහරණයකි.',
+          type: NotificationType.system,
+          bedId: bed.id,
+        );
+        break;
     }
+    
+    // Restore original mode
+    _demoMode = originalMode;
   }
 }

@@ -6,16 +6,26 @@ enum NotificationType {
   system
 }
 
+enum NotificationStatus {
+  active,
+  read,
+  deleted
+}
+
 class BetelNotification {
   final String id;
   final String userId;
-  final String? bedId; // Optional - may be null for general notifications
+  final String? bedId;
   final String title;
   final String message;
   final DateTime createdAt;
   final bool isRead;
   final NotificationType type;
   final Map<String, dynamic>? metadata;
+  final NotificationStatus status;
+  
+  // Add a unique identifier to avoid duplicates
+  final String? uniqueKey;
 
   BetelNotification({
     required this.id,
@@ -27,9 +37,11 @@ class BetelNotification {
     this.isRead = false,
     required this.type,
     this.metadata,
+    this.status = NotificationStatus.active,
+    this.uniqueKey,
   });
 
-  // Convert to/from Supabase
+  // Convert from JSON
   factory BetelNotification.fromJson(Map<String, dynamic> json) {
     return BetelNotification(
       id: json['id'],
@@ -44,9 +56,17 @@ class BetelNotification {
         orElse: () => NotificationType.system,
       ),
       metadata: json['metadata'],
+      status: json['status'] != null
+          ? NotificationStatus.values.firstWhere(
+              (e) => e.toString() == 'NotificationStatus.${json['status']}',
+              orElse: () => NotificationStatus.active,
+            )
+          : NotificationStatus.active,
+      uniqueKey: json['unique_key'],
     );
   }
 
+  // Convert to JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -58,6 +78,37 @@ class BetelNotification {
       'is_read': isRead,
       'type': type.toString().split('.').last,
       'metadata': metadata,
+      'status': status.toString().split('.').last,
+      'unique_key': uniqueKey,
     };
+  }
+  
+  // Create a copy with different properties
+  BetelNotification copyWith({
+    String? id,
+    String? userId,
+    String? bedId,
+    String? title,
+    String? message,
+    DateTime? createdAt,
+    bool? isRead,
+    NotificationType? type,
+    Map<String, dynamic>? metadata,
+    NotificationStatus? status,
+    String? uniqueKey,
+  }) {
+    return BetelNotification(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      bedId: bedId ?? this.bedId,
+      title: title ?? this.title,
+      message: message ?? this.message,
+      createdAt: createdAt ?? this.createdAt,
+      isRead: isRead ?? this.isRead,
+      type: type ?? this.type,
+      metadata: metadata ?? this.metadata,
+      status: status ?? this.status,
+      uniqueKey: uniqueKey ?? this.uniqueKey,
+    );
   }
 }
