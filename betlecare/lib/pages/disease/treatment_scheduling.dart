@@ -304,12 +304,6 @@ class _TreatmentSchedulingPageState extends State<TreatmentSchedulingPage> {
         backgroundColor: Colors.blue,
         child: const Icon(Icons.add),
       ),
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: 1,
-        onTabChange: (index) {
-          // Handle navigation between tabs
-        },
-      ),
     );
   }
 
