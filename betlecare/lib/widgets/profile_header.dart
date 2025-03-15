@@ -1,3 +1,5 @@
+import 'package:betlecare/pages/notification_screen.dart';
+import 'package:betlecare/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:line_icons/line_icons.dart';
 import 'package:badges/badges.dart' as badges;
@@ -13,6 +15,7 @@ class ProfileHeader extends StatelessWidget {
     final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user;
 
+final notificationProvider = Provider.of<NotificationProvider>(context);
     // Get current time of the user in the local time zone
     final currentHour = DateTime.now().hour;
 
@@ -113,32 +116,37 @@ class ProfileHeader extends StatelessWidget {
             // Action buttons
             Row(
               children: [
-                badges.Badge(
-                  position: badges.BadgePosition.topEnd(top: -10, end: 0),
-                  badgeContent: const Text(
-                    '5',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                  badgeAnimation: const badges.BadgeAnimation.scale(
-                    animationDuration: Duration(seconds: 1),
-                    colorChangeAnimationDuration: Duration(seconds: 1),
-                    loopAnimation: false,
-                  ),
-                  badgeStyle: badges.BadgeStyle(
-                    shape: badges.BadgeShape.circle,
-                    badgeColor: Colors.red,
-                    padding: const EdgeInsets.all(8),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(LineIcons.bellAlt, color: Colors.black87),
-                    onPressed: () {},
-                  ),
-                ),
+              badges.Badge(
+  position: badges.BadgePosition.topEnd(top: -10, end: 0),
+  badgeContent: Text(
+    '${notificationProvider.unreadCount}',
+    style: TextStyle(
+      color: Colors.white,
+      fontWeight: FontWeight.bold,
+      fontSize: 15,
+    ),
+  ),
+  badgeAnimation: const badges.BadgeAnimation.scale(
+    animationDuration: Duration(seconds: 1),
+    colorChangeAnimationDuration: Duration(seconds: 1),
+    loopAnimation: false,
+  ),
+  badgeStyle: badges.BadgeStyle(
+    shape: badges.BadgeShape.circle,
+    badgeColor: Colors.red,
+    padding: const EdgeInsets.all(8),
+    borderRadius: BorderRadius.circular(4),
+  ),
+  child: IconButton(
+    icon: const Icon(LineIcons.bellAlt, color: Colors.black87),
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const NotificationScreen()),
+      );
+    },
+  ),
+),
               ],
             ),
           ],

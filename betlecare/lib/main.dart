@@ -1,5 +1,6 @@
 import 'package:betlecare/pages/market/a_market_screen.dart';
 import 'package:betlecare/pages/sidebar_menu.dart';
+import 'package:betlecare/providers/notification_provider.dart';
 import 'package:betlecare/providers/user_provider.dart';
 import 'package:betlecare/providers/betel_bed_provider.dart'; // Added import for BetelBedProvider
 import 'package:flutter/material.dart';
@@ -34,13 +35,19 @@ void main() async {
           value: userProvider,
         ),
         ChangeNotifierProvider(
-          create: (context) => BetelBedProvider(), // Added BetelBedProvider
+          create: (context) => BetelBedProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => NotificationProvider(), // Add this line
         ),
       ],
       child: const MyApp(),
     ),
   );
 }
+
+
+
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
