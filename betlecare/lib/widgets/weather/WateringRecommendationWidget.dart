@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:betlecare/models/betel_bed_model.dart';
 import 'package:betlecare/services/wateringService.dart';
@@ -48,16 +49,6 @@ class _WateringRecommendationWidgetState extends State<WateringRecommendationWid
     }
   }
   
-  Color _getRecommendationColor(String recommendation) {
-    if (recommendation.contains("No watering")) {
-      return Colors.green;
-    } else if (recommendation.contains("once")) {
-      return Colors.blue;
-    } else {
-      return Colors.indigo;
-    }
-  }
-  
   IconData _getRecommendationIcon(String recommendation) {
     if (recommendation.contains("No watering")) {
       return Icons.check_circle;
@@ -82,22 +73,33 @@ class _WateringRecommendationWidgetState extends State<WateringRecommendationWid
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        margin: EdgeInsets.zero,
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(30),
+          color: Colors.blue.shade50,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.blue.shade300, width: 1),
         ),
-        child: const Center(
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
+              Icon(Icons.water_drop, color: Colors.blue.shade700),
+              const SizedBox(width: 18),
+              Expanded(
+                child: Text(
+                  'ජල නිර්දේශ ලබා ගැනෙයි...',
+                  style: TextStyle(color: Colors.blue.shade800),
+                ),
               ),
-              SizedBox(width: 12),
-              Text('ජල නිර්දේශ ලබා ගැනෙයි...'),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
+                ),
+              ),
             ],
           ),
         ),
@@ -106,59 +108,76 @@ class _WateringRecommendationWidgetState extends State<WateringRecommendationWid
 
     if (_error.isNotEmpty || _recommendation == null) {
       return Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        margin: EdgeInsets.zero,
         decoration: BoxDecoration(
-          color: Colors.red.shade100,
-          borderRadius: BorderRadius.circular(30),
+          color: Colors.blue.shade50,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.blue.shade300, width: 1),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'ජල නිර්දේශය ලබාගැනීමට නොහැකි විය',
-                style: TextStyle(color: Colors.red.shade700, fontSize: 13),
-                textAlign: TextAlign.center,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: Colors.blue.shade700),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'ජල නිර්දේශය ලබාගැනීමට නොහැකි විය',
+                      style: TextStyle(color: Colors.blue.shade800, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _fetchWateringRecommendation,
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.blue.shade700,
+                  ),
+                  child: const Text('නැවත උත්සාහ කරන්න'),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     final recommendation = _recommendation!['watering_recommendation'] ?? '';
     final waterAmount = _recommendation!['water_amount'] ?? 0;
-    final color = _getRecommendationColor(recommendation);
     final icon = _getRecommendationIcon(recommendation);
     final text = _getLocalizedRecommendation(recommendation, waterAmount);
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      margin: EdgeInsets.zero,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue.shade300, width: 1),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: color,
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.blue.shade700),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue.shade800,
+                ),
               ),
-              textAlign: TextAlign.center,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

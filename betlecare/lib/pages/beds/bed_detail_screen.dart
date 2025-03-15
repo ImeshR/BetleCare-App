@@ -93,17 +93,19 @@ Widget _buildRecommendationsSection() {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         
         // Weather-based protection recommendation widget
         WeeklyProtectionRecommendationWidget(bed: bed),
         
-        const SizedBox(height: 16),
+        // Consistent 12px gap between all recommendation widgets
+        const SizedBox(height: 12),
         
         // Weekly watering recommendation widget
         WeeklyWateringRecommendationWidget(bed: bed),
         
-        const SizedBox(height: 16),
+        // Consistent 12px gap between all recommendation widgets
+        const SizedBox(height: 12),
         
         // Fertilizing recommendation widget
         WeeklyFertilizingRecommendationWidget(bed: bed),
@@ -111,6 +113,7 @@ Widget _buildRecommendationsSection() {
     ),
   );
 }
+
 
   Widget _buildPlaceholderCard({
     required String title,
@@ -877,8 +880,8 @@ void _showDeleteConfirmation() {
   showDialog(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: const Text('පඳුර මකන්නද?'),
-      content: const Text('මෙම බුලත් පඳුර සහ එයට අදාළ සියලුම දත්ත මකා දැමෙනු ඇත. මෙය ආපසු හැරවිය නොහැක.'),
+      title: const Text('වගාව මකන්නද?'),
+      content: const Text('මෙම බුලත් වගාව සහ එයට අදාළ සියලුම දත්ත මකා දැමෙනු ඇත. මෙය ආපසු හැරවිය නොහැක.'),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogContext),
@@ -899,7 +902,7 @@ void _showDeleteConfirmation() {
               
               // Show success message and pop with successful deletion result
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('බුලත් පඳුර සාර්ථකව මකා දමන ලදී'))
+                const SnackBar(content: Text('බුලත් වගාව සාර්ථකව මකා දමන ලදී'))
               );
               
               // Important: Pop the current screen AFTER deletion is complete

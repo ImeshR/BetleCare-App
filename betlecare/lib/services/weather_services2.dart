@@ -5,12 +5,10 @@ import 'package:geocoding/geocoding.dart';
 
 class WeatherService {
   // API selection flags
-  
-  String selectedApi = 'openmeteo'; // options: 'openmeteo', 'weatherbit', 'openweathermap'
+  String selectedApi = 'openmeteo'; // options: 'openmeteo', 'weatherbit'
   
   // API keys
-  final String weatherbitApiKey = "884502715d6c45d6880cb8e0f20486a7";
-  final String openWeatherMapApiKey = "c60aebdca18be574a6d0d0618ae45f17";
+  final String weatherbitApiKey = "6687d437211b4021841a6dc906dfad90";
   
   final Map<String, Map<String, double>> locations = {
     'වත්මන් ස්ථානය (Current Location)': {'lat': 0, 'lon': 0}, // Placeholder values, will be updated with actual location
@@ -42,8 +40,6 @@ class WeatherService {
         return fetchOpenMeteoWeatherData(location);
       case 'weatherbit':
         return fetchWeatherbitWeatherData(location);
-      case 'openweathermap':
-        return fetchOpenWeatherMapData(location);
       default:
         return fetchOpenMeteoWeatherData(location);
     }
@@ -82,42 +78,8 @@ class WeatherService {
     }
   }
 
-  // New Weatherbit API implementation
+  // Fixed Weatherbit API implementation
   Future<Map<String, dynamic>?> fetchWeatherbitWeatherData(String location) async {
-    try {
-      String cityName;
-      
-      // Check if we need to get current location
-      if (location == 'වත්මන් ස්ථානය (Current Location)') {
-        Position position = await _getCurrentPosition();
-        
-        // Get the name of the current location using reverse geocoding
-        await _updateCurrentLocationName(position);
-        cityName = currentCity;
-      } else {
-        cityName = cityNames[location] ?? 'Colombo'; // Default to Colombo if not found
-      }
-      
-      final response = await http.get(Uri.parse(
-          'https://api.weatherbit.io/v2.0/forecast/daily?city=${cityName},LK&key=$weatherbitApiKey&days=7'));
-
-      if (response.statusCode == 200) {
-        Map<String, dynamic> weatherbitData = json.decode(response.body);
-        
-        // Convert Weatherbit data format to match Open Meteo format for consistency
-        return _convertWeatherbitToOpenMeteoFormat(weatherbitData);
-      } else {
-        print('Failed to load Weatherbit data: ${response.statusCode}');
-        return null;
-      }
-    } catch (e) {
-      print('Error fetching Weatherbit data: $e');
-      return null;
-    }
-  }
-  
-  // OpenWeatherMap API implementation
-  Future<Map<String, dynamic>?> fetchOpenWeatherMapData(String location) async {
     try {
       Map<String, double> coordinates;
       
@@ -130,118 +92,57 @@ class WeatherService {
         
         // Get the name of the current location using reverse geocoding
         await _updateCurrentLocationName(position);
-      } else {
-        coordinates = locations[location]!;
-      }
-      
-      // Get current weather data
-      final currentResponse = await http.get(Uri.parse(
-          'https://api.openweathermap.org/data/2.5/weather?lat=${coordinates['lat']}&lon=${coordinates['lon']}&appid=$openWeatherMapApiKey&units=metric'));
-      
-      // Get 7-day forecast data
-      final forecastResponse = await http.get(Uri.parse(
-          'https://api.openweathermap.org/data/2.5/onecall?lat=${coordinates['lat']}&lon=${coordinates['lon']}&exclude=minutely,hourly,alerts&appid=$openWeatherMapApiKey&units=metric'));
-
-      if (currentResponse.statusCode == 200 && forecastResponse.statusCode == 200) {
-        Map<String, dynamic> currentData = json.decode(currentResponse.body);
-        Map<String, dynamic> forecastData = json.decode(forecastResponse.body);
         
-        // Convert OpenWeatherMap data format to match Open Meteo format for consistency
-        return _convertOpenWeatherMapToOpenMeteoFormat(currentData, forecastData);
+        // Use latitude and longitude for current location instead of city name
+        final response = await http.get(Uri.parse(
+            'https://api.weatherbit.io/v2.0/forecast/daily?lat=${coordinates['lat']}&lon=${coordinates['lon']}&key=$weatherbitApiKey&days=7'));
+            
+        if (response.statusCode == 200) {
+          Map<String, dynamic> weatherbitData = json.decode(response.body);
+          return _convertWeatherbitToOpenMeteoFormat(weatherbitData);
+        } else {
+          print('Failed to load Weatherbit data: ${response.statusCode}');
+          return null;
+        }
       } else {
-        print('Failed to load OpenWeatherMap data: ${currentResponse.statusCode} / ${forecastResponse.statusCode}');
-        return null;
+        // For predefined cities, use the city name approach
+        String cityName = cityNames[location] ?? 'Colombo'; // Default to Colombo if not found
+        
+        final response = await http.get(Uri.parse(
+            'https://api.weatherbit.io/v2.0/forecast/daily?city=${cityName},LK&key=$weatherbitApiKey&days=7'));
+
+        if (response.statusCode == 200) {
+          Map<String, dynamic> weatherbitData = json.decode(response.body);
+          return _convertWeatherbitToOpenMeteoFormat(weatherbitData);
+        } else {
+          // Fallback to coordinates if city name fails
+          coordinates = locations[location]!;
+          final retryResponse = await http.get(Uri.parse(
+              'https://api.weatherbit.io/v2.0/forecast/daily?lat=${coordinates['lat']}&lon=${coordinates['lon']}&key=$weatherbitApiKey&days=7'));
+              
+          if (retryResponse.statusCode == 200) {
+            Map<String, dynamic> weatherbitData = json.decode(retryResponse.body);
+            return _convertWeatherbitToOpenMeteoFormat(weatherbitData);
+          } else {
+            print('Failed to load Weatherbit data: ${retryResponse.statusCode}');
+            return null;
+          }
+        }
       }
     } catch (e) {
-      print('Error fetching OpenWeatherMap data: $e');
+      print('Error fetching Weatherbit data: $e');
       return null;
     }
   }
   
-  // Method to convert OpenWeatherMap response to Open Meteo format
-  Map<String, dynamic> _convertOpenWeatherMapToOpenMeteoFormat(
-      Map<String, dynamic> currentData,
-      Map<String, dynamic> forecastData) {
-    
-    // Extract daily data
-    List<dynamic> dailyData = forecastData['daily'];
-    
-    // Prepare the conversion
-    Map<String, dynamic> convertedData = {
-      'daily': {
-        'time': <String>[],
-        'weather_code': <int>[],
-        'temperature_2m_max': <double>[],
-        'temperature_2m_min': <double>[],
-        'precipitation_sum': <double>[],
-        'precipitation_probability_max': <int>[],
-        'relative_humidity_2m_max': <int>[],
-      },
-      'current': {
-        'temperature_2m': currentData['main']['temp'],
-        'relative_humidity_2m': currentData['main']['humidity'],
-        'precipitation': currentData['rain'] != null ? 
-            (currentData['rain']['1h'] ?? 0.0) : 0.0,
-        'weather_code': _convertOpenWeatherMapCodeToOpenMeteoCode(currentData['weather'][0]['id']),
-      }
-    };
-    
-    // Convert daily forecast data
-    for (var day in dailyData) {
-      // Format date as YYYY-MM-DD
-      DateTime date = DateTime.fromMillisecondsSinceEpoch(day['dt'] * 1000);
-      String formattedDate = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      
-      convertedData['daily']['time'].add(formattedDate);
-      convertedData['daily']['weather_code'].add(_convertOpenWeatherMapCodeToOpenMeteoCode(day['weather'][0]['id']));
-      convertedData['daily']['temperature_2m_max'].add(day['temp']['max'].toDouble());
-      convertedData['daily']['temperature_2m_min'].add(day['temp']['min'].toDouble());
-      convertedData['daily']['precipitation_sum'].add((day['rain'] ?? 0.0).toDouble());
-      convertedData['daily']['precipitation_probability_max'].add((day['pop'] * 100).toInt()); // Convert 0-1 to percentage
-      convertedData['daily']['relative_humidity_2m_max'].add(day['humidity'] ?? 0);
-    }
-    
-    return convertedData;
-  }
-  
-  // Convert OpenWeatherMap code to OpenMeteo equivalent
-  int _convertOpenWeatherMapCodeToOpenMeteoCode(int code) {
-    // Clear to partly cloudy (800-802)
-    if (code == 800) return 0; // Clear sky
-    if (code == 801) return 1; // Few clouds
-    if (code == 802) return 2; // Scattered clouds
-    
-    // Cloudy (803-804)
-    if (code >= 803 && code <= 804) return 3; // Broken/overcast clouds
-    
-    // Fog, mist, etc. (7xx)
-    if (code >= 700 && code <= 799) return 45; // Fog
-    
-    // Light rain (3xx, 500-501)
-    if (code >= 300 && code <= 399) return 51; // Drizzle
-    if (code == 500 || code == 501) return 61; // Light rain
-    
-    // Moderate to heavy rain (502-504)
-    if (code >= 502 && code <= 504) return 80; // Rain showers
-    
-    // Thunderstorm (2xx)
-    if (code >= 200 && code <= 299) return 95; // Thunderstorm
-    
-    // Snow (6xx)
-    if (code >= 600 && code <= 699) return 71; // Snow
-    
-    // Other precipitation (511, 520-531)
-    if (code == 511 || (code >= 520 && code <= 531)) return 82; // Rain showers
-    
-    return 0; // Default clear
-  }
+  // The OpenWeatherMap implementation has been removed
   
   // Method to convert Weatherbit response to Open Meteo format
   Map<String, dynamic> _convertWeatherbitToOpenMeteoFormat(Map<String, dynamic> weatherbitData) {
     // Get daily data
     List<dynamic> dailyData = weatherbitData['data'];
     
-    // Prepare the conversion
+    // Prepare the conversion - ensuring exact same structure as OpenMeteo
     Map<String, dynamic> convertedData = {
       'daily': {
         'time': <String>[],
@@ -253,11 +154,15 @@ class WeatherService {
         'relative_humidity_2m_max': <int>[],
       },
       'current': {
-        'temperature_2m': dailyData[0]['temp'],
-        'relative_humidity_2m': dailyData[0]['rh'],
-        'precipitation': dailyData[0]['precip'],
+        // Use first day's data for current data as Weatherbit doesn't have current endpoint in free tier
+        'temperature_2m': dailyData[0]['temp'].toDouble(),
+        'relative_humidity_2m': dailyData[0]['rh'].toInt(),
+        'precipitation': dailyData[0]['precip'].toDouble(),
         'weather_code': _convertWeatherbitCodeToOpenMeteoCode(dailyData[0]['weather']['code']),
-      }
+      },
+      'latitude': weatherbitData['lat'],
+      'longitude': weatherbitData['lon'],
+      'timezone': weatherbitData['timezone'],
     };
     
     // Convert daily forecast data
@@ -274,22 +179,36 @@ class WeatherService {
     return convertedData;
   }
   
-  // Convert Weatherbit code to OpenMeteo equivalent (approximate mapping)
+  // Convert Weatherbit code to OpenMeteo equivalent (improved mapping)
   int _convertWeatherbitCodeToOpenMeteoCode(int code) {
-    // Clear to partly cloudy
-    if (code >= 800 && code <= 802) return 1; // Sunny to partly cloudy
-    // Cloudy
-    if (code >= 803 && code <= 804) return 45; // Cloudy
-    // Rain
-    if (code >= 500 && code <= 522) return 80; // Rain
-    // Thunderstorm
-    if (code >= 200 && code <= 233) return 95; // Thunderstorm
-    // Snow
-    if (code >= 600 && code <= 623) return 71; // Snow
-    // Mist, fog
-    if (code >= 700 && code <= 751) return 45; // Fog
+    // Clear
+    if (code == 800) return 0;  // Clear sky
     
-    return 0; // Default clear
+    // Few/Scattered clouds
+    if (code == 801 || code == 802) return 1;  // Few clouds
+    
+    // Cloudy
+    if (code == 803) return 2;  // Scattered clouds
+    if (code == 804) return 3;  // Overcast
+    
+    // Fog, mist
+    if (code >= 700 && code <= 751) return 45;  // Fog
+    
+    // Light rain
+    if (code >= 300 && code <= 311) return 51;  // Light drizzle
+    if (code >= 500 && code <= 501) return 61;  // Light rain
+    
+    // Moderate to heavy rain
+    if (code >= 502 && code <= 504) return 63;  // Moderate rain
+    if (code >= 520 && code <= 522) return 80;  // Rain showers
+    
+    // Thunderstorm
+    if (code >= 200 && code <= 233) return 95;  // Thunderstorm
+    
+    // Snow
+    if (code >= 600 && code <= 623) return 71;  // Snow
+    
+    return 0;  // Default clear
   }
   
   // Method to get current location name using reverse geocoding

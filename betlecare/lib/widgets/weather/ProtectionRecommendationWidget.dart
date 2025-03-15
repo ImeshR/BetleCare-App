@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:betlecare/models/betel_bed_model.dart';
 import 'package:betlecare/services/protection_service.dart';
@@ -152,7 +153,7 @@ class _ProtectionRecommendationWidgetState extends State<ProtectionRecommendatio
   
   @override
   Widget build(BuildContext context) {
-    // If there are no protection days, return an empty container
+    // If there are no protection days, return an empty container with fixed height for consistent spacing
     if (!_isLoading && _errorMessage.isEmpty && _protectionForecast != null && !_hasProtectionDays) {
       return Container(); // Don't show anything if no protection needed
     }
@@ -173,18 +174,23 @@ class _ProtectionRecommendationWidgetState extends State<ProtectionRecommendatio
   }
   
   Widget _buildLoadingState() {
-    return Card(
+    return Container(
       margin: EdgeInsets.zero,
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.shade300, width: 1),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Row(
           children: [
-            Icon(Icons.shield, color: Colors.grey[400]),
+            Icon(Icons.shield, color: Colors.red.shade700),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 'ආරක්ෂණ නිර්දේශය ලබා ගනිමින්...',
-                style: TextStyle(color: Colors.grey[600]),
+                style: TextStyle(color: Colors.red.shade800),
               ),
             ),
             const SizedBox(width: 8),
@@ -193,7 +199,7 @@ class _ProtectionRecommendationWidgetState extends State<ProtectionRecommendatio
               height: 16,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade300),
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.red.shade700),
               ),
             ),
           ],
@@ -203,8 +209,13 @@ class _ProtectionRecommendationWidgetState extends State<ProtectionRecommendatio
   }
   
   Widget _buildErrorState() {
-    return Card(
+    return Container(
       margin: EdgeInsets.zero,
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.shade300, width: 1),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -212,12 +223,12 @@ class _ProtectionRecommendationWidgetState extends State<ProtectionRecommendatio
           children: [
             Row(
               children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                Icon(Icons.warning_amber_rounded, color: Colors.red.shade700),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'ආරක්ෂණ නිර්දේශය ලබා ගත නොහැක',
-                    style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Colors.red.shade800, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -226,6 +237,9 @@ class _ProtectionRecommendationWidgetState extends State<ProtectionRecommendatio
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: _loadRecommendations,
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.red.shade700,
+                ),
                 child: const Text('නැවත උත්සාහ කරන්න'),
               ),
             ),
@@ -236,22 +250,30 @@ class _ProtectionRecommendationWidgetState extends State<ProtectionRecommendatio
   }
   
   Widget _buildUnavailableState() {
-    return Card(
+    return Container(
       margin: EdgeInsets.zero,
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.shade300, width: 1),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Row(
           children: [
-            Icon(Icons.shield, color: Colors.grey[400]),
+            Icon(Icons.shield, color: Colors.red.shade700),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 'ආරක්ෂණ නිර්දේශය ලබා ගත නොහැක',
-                style: TextStyle(color: Colors.grey[600]),
+                style: TextStyle(color: Colors.red.shade800),
               ),
             ),
             TextButton(
               onPressed: _loadRecommendations,
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red.shade700,
+              ),
               child: const Text('නැවත උත්සාහ කරන්න'),
             ),
           ],
@@ -277,32 +299,18 @@ class _ProtectionRecommendationWidgetState extends State<ProtectionRecommendatio
     // Get protection methods
     final methods = urgentDay['protection_methods_sinhala'] as List<dynamic>;
     
-    // Determine card color based on protection type
-    Color cardColor;
-    Color textColor;
-    IconData icon;
-    
-    switch (protectionType) {
-      case 1: // Drought protection
-        cardColor = Colors.orange.shade50;
-        textColor = Colors.orange.shade700;
-        icon = Icons.wb_sunny;
-        break;
-      case 2: // Excess rain protection
-        cardColor = Colors.blue.shade50;
-        textColor = Colors.blue.shade700;
-        icon = Icons.umbrella;
-        break;
-      default:
-        cardColor = Colors.green.shade50;
-        textColor = Colors.green.shade700;
-        icon = Icons.check_circle;
-    }
+    // Always use red color theme for protection
+    final textColor = Colors.red.shade700;
+    final iconData = protectionType == 1 ? Icons.wb_sunny : Icons.umbrella;
     
     // Build the card
-    return Card(
+    return Container(
       margin: EdgeInsets.zero,
-      color: cardColor,
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.shade300, width: 1),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -310,7 +318,7 @@ class _ProtectionRecommendationWidgetState extends State<ProtectionRecommendatio
           children: [
             Row(
               children: [
-                Icon(icon, color: textColor),
+                Icon(iconData, color: textColor),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -368,3 +376,5 @@ class _ProtectionRecommendationWidgetState extends State<ProtectionRecommendatio
     );
   }
 }
+
+ 
