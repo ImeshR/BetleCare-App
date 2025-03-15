@@ -1,138 +1,153 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class LeafQuantityConversionPage extends StatefulWidget {
-  const LeafQuantityConversionPage({Key? key}) : super(key: key);
+class LeafHarvestingCalculatorPage extends StatefulWidget {
+  const LeafHarvestingCalculatorPage({Key? key}) : super(key: key);
 
   @override
-  _LeafQuantityConversionPageState createState() =>
-      _LeafQuantityConversionPageState();
+  _LeafHarvestingCalculatorPageState createState() =>
+      _LeafHarvestingCalculatorPageState();
 }
 
-class _LeafQuantityConversionPageState
-    extends State<LeafQuantityConversionPage> {
+class _LeafHarvestingCalculatorPageState
+    extends State<LeafHarvestingCalculatorPage> {
   final _formKey = GlobalKey<FormState>();
 
-  // Conversion types
-  final List<String> _conversionTypes = [
-    'ගණන සිට බර දක්වා', // Count to Weight
-    'බර සිට ගණන දක්වා', // Weight to Count
-    'ප්‍රදේශය අනුව ඇස්තමේන්තුව', // Estimate by Area
-  ];
-
-  String _selectedConversionType = 'ගණන සිට බර දක්වා';
-
-  // Leaf types
-  final List<String> _leafTypes = [
-    'පීදුනු කොළ (P)', // Mature Leaf
-    'කෙටි කොළ (KT)', // Short Leaf
-    'රෑන් කෙටි කොළ (RKT)', // Young Short Leaf
-  ];
-
-  String _selectedLeafType = 'පීදුනු කොළ (P)';
-
-  // Input values
-  double _inputValue = 0;
-  double _resultValue = 0;
-
-  // Conversion history
-  List<Map<String, dynamic>> _conversionHistory = [];
-
-  // Conversion factors (these would ideally come from a database)
-  final Map<String, Map<String, double>> _conversionFactors = {
-    'පීදුනු කොළ (P)': {
-      'countToWeight': 0.05, // 1 leaf = 0.05 kg
-      'weightToCount': 20, // 1 kg = 20 leaves
-      'areaToCount': 500, // 1 square meter = 500 leaves
-    },
-    'කෙටි කොළ (KT)': {
-      'countToWeight': 0.03, // 1 leaf = 0.03 kg
-      'weightToCount': 33.33, // 1 kg = 33.33 leaves
-      'areaToCount': 700, // 1 square meter = 700 leaves
-    },
-    'රෑන් කෙටි කොළ (RKT)': {
-      'countToWeight': 0.02, // 1 leaf = 0.02 kg
-      'weightToCount': 50, // 1 kg = 50 leaves
-      'areaToCount': 900, // 1 square meter = 900 leaves
-    },
+  // Leaf types and their quantities
+  final Map<String, int> _leafQuantities = {
+    'පීදුනු කොළ (P)': 0, // Mature Leaf
+    'කෙටි කොළ (KT)': 0, // Short Leaf
+    'රෑන් කෙටි කොළ (RKT)': 0, // Young Short Leaf
   };
 
-  // Input labels based on conversion type
-  Map<String, Map<String, String>> _inputLabels = {
-    'ගණන සිට බර දක්වා': {
-      'input': 'කොළ ගණන',
-      'result': 'බර (කිලෝග්‍රෑම්)',
-      'inputHint': 'කොළ ගණන ඇතුළත් කරන්න',
+  // Land size options in අක්කර (acres)
+  final List<Map<String, dynamic>> _landSizeOptions = [
+    {'label': 'බාගයක්', 'value': 0.5},
+    {'label': 'එකක්', 'value': 1.0},
+    {'label': 'එක හමාරක්', 'value': 1.5},
+    {'label': 'දෙකක්', 'value': 2.0},
+  ];
+
+  double _selectedLandSize = 1.0;
+  String _selectedLandSizeLabel = 'එකක්';
+
+  // Results
+  int _totalLeaves = 0;
+  int _totalBulatAtCount = 0;
+  int _requiredLabourers = 0;
+  String _harvestingSchedule = '';
+  Map<String, int> _bulatAtByType = {};
+
+  // Calculation history
+  List<Map<String, dynamic>> _calculationHistory = [];
+
+  // Conversion factors
+  final Map<String, Map<String, dynamic>> _conversionFactors = {
+    'පීදුනු කොළ (P)': {
+      'leavesPerAcre': 10000,
+      'packsPerBulatAta': 20,
+      'labourersPerAcre': 6,
     },
-    'බර සිට ගණන දක්වා': {
-      'input': 'බර (කිලෝග්‍රෑම්)',
-      'result': 'කොළ ගණන',
-      'inputHint': 'බර ඇතුළත් කරන්න',
+    'කෙටි කොළ (KT)': {
+      'leavesPerAcre': 12000,
+      'packsPerBulatAta': 20,
+      'labourersPerAcre': 5,
     },
-    'ප්‍රදේශය අනුව ඇස්තමේන්තුව': {
-      'input': 'ප්‍රදේශය (වර්ග මීටර)',
-      'result': 'ඇස්තමේන්තුගත කොළ ගණන',
-      'inputHint': 'ප්‍රදේශය ඇතුළත් කරන්න',
+    'රෑන් කෙටි කොළ (RKT)': {
+      'leavesPerAcre': 15000,
+      'packsPerBulatAta': 20,
+      'labourersPerAcre': 4,
     },
   };
 
   @override
   void initState() {
     super.initState();
-    // Load any saved conversion history or preferences here
+    // Initialize bulatAtByType with zeros
+    _leafQuantities.keys.forEach((type) {
+      _bulatAtByType[type] = 0;
+    });
   }
 
-  void _performConversion() {
+  void _performCalculation() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      double result = 0;
+      int totalLeaves = 0;
+      int totalBulatAt = 0;
+      int requiredLabourers = 0;
+      Map<String, int> bulatAtByType = {};
 
-      // Get the appropriate conversion factor
-      final factors = _conversionFactors[_selectedLeafType];
+      // Calculate for each leaf type
+      _leafQuantities.forEach((leafType, quantity) {
+        final factors = _conversionFactors[leafType];
 
-      if (factors != null) {
-        if (_selectedConversionType == 'ගණන සිට බර දක්වා') {
-          result = _inputValue * factors['countToWeight']!;
-        } else if (_selectedConversionType == 'බර සිට ගණන දක්වා') {
-          result = _inputValue * factors['weightToCount']!;
-        } else if (_selectedConversionType == 'ප්‍රදේශය අනුව ඇස්තමේන්තුව') {
-          result = _inputValue * factors['areaToCount']!;
+        if (factors != null && quantity > 0) {
+          totalLeaves += quantity;
+
+          // Calculate බුලත් අත් for this type
+          int bulatAt = (quantity / factors['packsPerBulatAta']).round();
+          bulatAtByType[leafType] = bulatAt;
+          totalBulatAt += bulatAt;
+
+          // Add to required laborers based on leaf type and quantity
+          double acreEquivalent = quantity / factors['leavesPerAcre'];
+          requiredLabourers +=
+              (acreEquivalent * factors['labourersPerAcre']).round();
+        } else {
+          bulatAtByType[leafType] = 0;
         }
+      });
+
+      // Generate harvesting schedule based on total leaves
+      String schedule = '';
+      if (_selectedLandSize <= 1.0) {
+        schedule =
+            'දින 2ක් අවශ්‍ය වේ. උදේ 6:00 සිට 10:30 දක්වා සහ සවස 3:00 සිට 6:00 දක්වා නෙලීම සිදු කරන්න.';
+      } else {
+        int days = (_selectedLandSize > 1.5) ? 4 : 3;
+        schedule =
+            'දින $days අවශ්‍ය වේ. උදේ 6:00 සිට 10:30 දක්වා සහ සවස 3:00 සිට 6:00 දක්වා නෙලීම සිදු කරන්න.';
       }
 
       // Save to history
-      _conversionHistory.add({
+      _calculationHistory.add({
         'date': DateTime.now(),
-        'conversionType': _selectedConversionType,
-        'leafType': _selectedLeafType,
-        'inputValue': _inputValue,
-        'resultValue': result,
+        'landSize': _selectedLandSize,
+        'landSizeLabel': _selectedLandSizeLabel,
+        'leafQuantities': Map<String, int>.from(_leafQuantities),
+        'totalLeaves': totalLeaves,
+        'totalBulatAt': totalBulatAt,
+        'requiredLabourers': requiredLabourers,
       });
 
       setState(() {
-        _resultValue = result;
+        _totalLeaves = totalLeaves;
+        _totalBulatAtCount = totalBulatAt;
+        _requiredLabourers = requiredLabourers;
+        _harvestingSchedule = schedule;
+        _bulatAtByType = bulatAtByType;
       });
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('පරිවර්තනය සාර්ථකයි')),
+        SnackBar(content: Text('ගණනය කිරීම සාර්ථකයි')),
       );
     }
   }
 
-  String _formatNumber(double value) {
+  String _formatNumber(int value) {
     if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(2)}K';
+      return '${(value / 1000).toStringAsFixed(1)}K';
     }
-    return value.toStringAsFixed(2);
+    return value.toString();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('කොළ ප්‍රමාණ පරිවර්තනය'),
+        title: Text('කොළ අස්වනු ගණනය කිරීම'),
         backgroundColor: Colors.green,
       ),
       body: SingleChildScrollView(
@@ -140,20 +155,20 @@ class _LeafQuantityConversionPageState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildConversionCard(),
+            _buildInputCard(),
             SizedBox(height: 16),
             _buildResultCard(),
             SizedBox(height: 16),
-            _buildConversionHistoryCard(),
+            _buildHarvestingInfoCard(),
             SizedBox(height: 16),
-            _buildInfoCard(),
+            _buildCalculationHistoryCard(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildConversionCard() {
+  Widget _buildInputCard() {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -166,82 +181,79 @@ class _LeafQuantityConversionPageState
             children: [
               Row(
                 children: [
-                  Icon(Icons.swap_horiz, color: Colors.green),
+                  Icon(Icons.eco, color: Colors.green),
                   SizedBox(width: 8),
                   Text(
-                    "පරිවර්තන විස්තර",
+                    "කොළ ප්‍රමාණය ඇතුලත් කරන්න",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
               SizedBox(height: 16),
-              DropdownButtonFormField<String>(
+
+              // Land size selection
+              DropdownButtonFormField<double>(
                 decoration: InputDecoration(
-                  labelText: 'පරිවර්තන වර්ගය',
+                  labelText: 'ඉඩම් ප්‍රමාණය (අක්කර)',
                   border: OutlineInputBorder(),
                 ),
-                value: _selectedConversionType,
-                items: _conversionTypes.map((type) {
-                  return DropdownMenuItem<String>(
-                    value: type,
-                    child: Text(type),
+                value: _selectedLandSize,
+                items: _landSizeOptions.map((option) {
+                  return DropdownMenuItem<double>(
+                    value: option['value'],
+                    child: Text('අක්කර ${option['label']}'),
                   );
                 }).toList(),
                 onChanged: (value) {
                   setState(() {
-                    _selectedConversionType = value!;
-                    _resultValue =
-                        0; // Reset result when changing conversion type
+                    _selectedLandSize = value!;
+                    _selectedLandSizeLabel = _landSizeOptions.firstWhere(
+                        (option) => option['value'] == value)['label'];
                   });
                 },
               ),
               SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: 'කොළ වර්ගය',
-                  border: OutlineInputBorder(),
-                ),
-                value: _selectedLeafType,
-                items: _leafTypes.map((type) {
-                  return DropdownMenuItem<String>(
-                    value: type,
-                    child: Text(type),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedLeafType = value!;
-                    _resultValue = 0; // Reset result when changing leaf type
-                  });
-                },
-              ),
-              SizedBox(height: 16),
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: _inputLabels[_selectedConversionType]!['input'],
-                  hintText: _inputLabels[_selectedConversionType]!['inputHint'],
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'අගයක් ඇතුළත් කරන්න';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'වලංගු සංඛ්‍යාවක් ඇතුළත් කරන්න';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  _inputValue = double.parse(value!);
-                },
-              ),
-              SizedBox(height: 16),
+
+              // Input fields for each leaf type
+              ..._leafQuantities.keys.map((leafType) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: TextFormField(
+                    decoration: InputDecoration(
+                      labelText: '$leafType කොළ ගණන',
+                      hintText: '$leafType කොළ ගණන ඇතුළත් කරන්න',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.spa, color: Colors.green),
+                    ),
+                    keyboardType: TextInputType.number,
+                    initialValue: _leafQuantities[leafType]! > 0
+                        ? _leafQuantities[leafType].toString()
+                        : '',
+                    validator: (value) {
+                      if (value != null && value.isNotEmpty) {
+                        if (int.tryParse(value) == null) {
+                          return 'වලංගු සංඛ්‍යාවක් ඇතුළත් කරන්න';
+                        }
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      if (value != null && value.isNotEmpty) {
+                        _leafQuantities[leafType] = int.parse(value);
+                      } else {
+                        _leafQuantities[leafType] = 0;
+                      }
+                    },
+                  ),
+                );
+              }).toList(),
+
+              SizedBox(height: 8),
               Center(
                 child: ElevatedButton.icon(
-                  onPressed: _performConversion,
+                  onPressed: _performCalculation,
                   icon: Icon(Icons.calculate),
-                  label: Text('පරිවර්තනය කරන්න'),
+                  label: Text('ගණනය කරන්න'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -269,41 +281,216 @@ class _LeafQuantityConversionPageState
                 Icon(Icons.check_circle, color: Colors.green),
                 SizedBox(width: 8),
                 Text(
-                  "පරිවර්තන ප්‍රතිඵලය",
+                  "ගණනය කිරීමේ ප්‍රතිඵල",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green.shade200),
+
+            // Total leaves
+            _buildResultItem(
+              icon: Icons.spa,
+              title: "මුළු කොළ ගණන",
+              value: _totalLeaves > 0 ? _formatNumber(_totalLeaves) : '0',
+            ),
+
+            // Total බුලත් අත්
+            _buildResultItem(
+              icon: Icons.inventory_2,
+              title: "මුළු බුලත් අත් ගණන",
+              value: _totalBulatAtCount > 0
+                  ? _formatNumber(_totalBulatAtCount)
+                  : '0',
+              subtitle: "(බුලත් අතක් = කොළ 20)",
+            ),
+
+            // බුලත් අත් by leaf type
+            if (_totalBulatAtCount > 0) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Text(
+                  "කොළ වර්ග අනුව බුලත් අත් ගණන:",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
+              ..._bulatAtByType.entries.where((e) => e.value > 0).map((entry) {
+                return Padding(
+                  padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.arrow_right, color: Colors.green),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(entry.key),
+                      ),
+                      Text(
+                        "${_formatNumber(entry.value)} බුලත් අත්",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green.shade800,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ],
+
+            // Required laborers
+            _buildResultItem(
+              icon: Icons.people,
+              title: "අවශ්‍ය කම්කරුවන් ගණන",
+              value:
+                  _requiredLabourers > 0 ? _requiredLabourers.toString() : '0',
+            ),
+
+            // Harvesting schedule
+            if (_harvestingSchedule.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.amber.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.schedule,
+                              color: Colors.amber.shade800, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            "නෙලීමේ කාලසටහන",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.amber.shade800,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Text(_harvestingSchedule),
+                      SizedBox(height: 4),
+                      Text(
+                        "සටහන: කොළ මැලවීම (හෙයන්ව) වැළැක්වීමට උදේ 10:30 සිට සවස 3:00 දක්වා නෙලීම නවතා දමන්න.",
+                        style: TextStyle(
+                          fontStyle: FontStyle.italic,
+                          fontSize: 12,
+                          color: Colors.red.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResultItem({
+    required IconData icon,
+    required String title,
+    required String value,
+    String? subtitle,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: Colors.green),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (subtitle != null)
                   Text(
-                    _inputLabels[_selectedConversionType]!['result'] ??
-                        'ප්‍රතිඵලය',
+                    subtitle,
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
                     ),
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    _resultValue > 0 ? _formatNumber(_resultValue) : '0',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade800,
-                    ),
-                  ),
-                ],
+              ],
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.green.shade800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHarvestingInfoCard() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.info, color: Colors.blue),
+                SizedBox(width: 8),
+                Text(
+                  "නෙලීමේ උපදෙස්",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            _buildInfoItem(
+              title: "කොළ මැලවීම (හෙයන්ව) වැළැක්වීම",
+              details:
+                  "උදේ 6:00 සිට 10:30 දක්වා සහ සවස 3:00 සිට 6:00 දක්වා පමණක් නෙලීම සිදු කරන්න.",
+            ),
+            _buildInfoItem(
+              title: "අක්කර එකක් සඳහා කම්කරුවන්",
+              details:
+                  "අක්කර එකක් සඳහා කම්කරුවන් 6 දෙනෙකු අවශ්‍ය වේ. දින දෙකක් තුළ නෙලීම අවසන් කළ හැකිය.",
+            ),
+            _buildInfoItem(
+              title: "බුලත් අත් ගණනය",
+              details: "කොළ 20ක් = බුලත් අතක් 1",
+            ),
+            SizedBox(height: 8),
+            Divider(),
+            SizedBox(height: 8),
+            Text(
+              "සටහන: මෙම ගණනය කිරීම් සාමාන්‍ය අගයන් වන අතර, කොළ ප්‍රමාණය, වර්ගය සහ තත්ත්වය අනුව වෙනස් විය හැක.",
+              style: TextStyle(
+                fontStyle: FontStyle.italic,
+                color: Colors.grey.shade700,
+                fontSize: 12,
               ),
             ),
           ],
@@ -312,7 +499,7 @@ class _LeafQuantityConversionPageState
     );
   }
 
-  Widget _buildConversionHistoryCard() {
+  Widget _buildCalculationHistoryCard() {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -326,20 +513,20 @@ class _LeafQuantityConversionPageState
               children: [
                 Row(
                   children: [
-                    Icon(Icons.history, color: Colors.blue),
+                    Icon(Icons.history, color: Colors.purple),
                     SizedBox(width: 8),
                     Text(
-                      "පරිවර්තන ඉතිහාසය",
+                      "ගණනය කිරීමේ \nඉතිහාසය",
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
-                if (_conversionHistory.isNotEmpty)
+                if (_calculationHistory.isNotEmpty)
                   TextButton.icon(
                     onPressed: () {
                       setState(() {
-                        _conversionHistory.clear();
+                        _calculationHistory.clear();
                       });
                     },
                     icon: Icon(Icons.delete, size: 18),
@@ -348,12 +535,12 @@ class _LeafQuantityConversionPageState
               ],
             ),
             SizedBox(height: 8),
-            if (_conversionHistory.isEmpty)
+            if (_calculationHistory.isEmpty)
               Center(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
-                    "පරිවර්තන ඉතිහාසය නොමැත",
+                    "ගණනය කිරීමේ ඉතිහාසය නොමැත",
                     style: TextStyle(
                       color: Colors.grey,
                       fontStyle: FontStyle.italic,
@@ -365,19 +552,23 @@ class _LeafQuantityConversionPageState
               ListView.builder(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
-                itemCount: _conversionHistory.length > 5
+                itemCount: _calculationHistory.length > 5
                     ? 5
-                    : _conversionHistory.length,
+                    : _calculationHistory.length,
                 itemBuilder: (context, index) {
-                  final reversedIndex = _conversionHistory.length - 1 - index;
-                  final item = _conversionHistory[reversedIndex];
+                  final reversedIndex = _calculationHistory.length - 1 - index;
+                  final item = _calculationHistory[reversedIndex];
+
+                  // Calculate total leaves for this history item
+                  int totalLeaves = item['totalLeaves'];
+
                   return ListTile(
                     title: Text(
-                      "${item['leafType']} - ${item['conversionType']}",
+                      "අක්කර ${item['landSizeLabel']} - කොළ ${_formatNumber(totalLeaves)}",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(
-                      "${_formatNumber(item['inputValue'])} → ${_formatNumber(item['resultValue'])}",
+                      "බුලත් අත්: ${_formatNumber(item['totalBulatAt'])} | කම්කරුවන්: ${item['requiredLabourers']}",
                     ),
                     trailing: Text(
                       DateFormat('yyyy-MM-dd HH:mm').format(item['date']),
@@ -386,55 +577,6 @@ class _LeafQuantityConversionPageState
                   );
                 },
               ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoCard() {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.info, color: Colors.orange),
-                SizedBox(width: 8),
-                Text(
-                  "පරිවර්තන තොරතුරු",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-            _buildInfoItem(
-              title: "පීදුනු කොළ (P)",
-              details: "1 කොළයක් = 0.05 kg | 1 kg = 20 කොළ",
-            ),
-            _buildInfoItem(
-              title: "කෙටි කොළ (KT)",
-              details: "1 කොළයක් = 0.03 kg | 1 kg = 33 කොළ",
-            ),
-            _buildInfoItem(
-              title: "රෑන් කෙටි කොළ (RKT)",
-              details: "1 කොළයක් = 0.02 kg | 1 kg = 50 කොළ",
-            ),
-            SizedBox(height: 8),
-            Divider(),
-            SizedBox(height: 8),
-            Text(
-              "සටහන: මෙම පරිවර්තන සාධක සාමාන්‍ය අගයන් වන අතර, කොළ ප්‍රමාණය, වර්ගය සහ තත්ත්වය අනුව වෙනස් විය හැක.",
-              style: TextStyle(
-                fontStyle: FontStyle.italic,
-                color: Colors.grey.shade700,
-                fontSize: 12,
-              ),
-            ),
           ],
         ),
       ),
