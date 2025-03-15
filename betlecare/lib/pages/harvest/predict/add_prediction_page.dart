@@ -329,7 +329,10 @@ class _AddPredictionPageState extends State<AddPredictionPage> {
 
       try {
         // Get the API URL from environment variables
-        final apiUrl = dotenv.env['HARVEST_PREDICT']!;
+        final apiUrl = dotenv.env['HARVEST_PREDICT']?.trim();
+        if (apiUrl == null || apiUrl.isEmpty) {
+          throw Exception('API URL is missing');
+        }
 
         // Make the API call
         final response = await http.post(

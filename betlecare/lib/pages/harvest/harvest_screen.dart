@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/profile_header.dart';
 import 'land_main_screen.dart';
+import 'leaf-quantity-conversion.dart';
 
 class HarvestScreen extends StatelessWidget {
   const HarvestScreen({super.key});
@@ -92,8 +93,8 @@ class HarvestScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        const ChildPageWrapper(child: LandMainScreen()),
+                    builder: (context) => const ChildPageWrapper(
+                        child: LeafQuantityConversionPage()),
                   ),
                 );
               },
