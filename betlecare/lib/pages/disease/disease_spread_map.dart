@@ -26,18 +26,77 @@ class _DiseaseReportPageState extends State<DiseaseReportPage> {
   List<String> _citySuggestions = []; // List to store city suggestions
   List<LatLng> _cityCoordinates = []; // List to store city coordinates
   final double maxDistanceInKm = 50.0; // Max allowed distance in kilometers
+  List<Map<String, dynamic>> _diseaseReports =
+      []; // List to hold disease reports
+  Set<Marker> _markers = {}; // Set of markers to display on map
 
   @override
   void initState() {
     super.initState();
     _mapApiKey = dotenv.env['MAP_API_KEY'];
     _getUserLocation();
+    _loadDiseaseReports();
   }
 
   @override
   void dispose() {
     _cityController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadDiseaseReports() async {
+    try {
+      final supabaseService = await SupabaseService.init();
+      List<Map<String, dynamic>> reports =
+          await supabaseService.getDiseaseReportsFromDate();
+
+      // Update the state with fetched reports and create markers
+      setState(() {
+        _diseaseReports = reports;
+        _markers = reports.map((report) {
+          final LatLng position =
+              LatLng(report['latitude'], report['longitude']);
+          return Marker(
+            markerId: MarkerId(report['id'].toString()),
+            position: position,
+            onTap: () {
+              _showReportDetails(report);
+            },
+          );
+        }).toSet();
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading disease reports: $e')),
+      );
+    }
+  }
+
+  void _showReportDetails(Map<String, dynamic> report) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Disease Report Details'),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Disease: ${report['disease']}'),
+              Text('Reported on: ${report['created_at']}'),
+              Text('City: ${report['city']}'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _getUserLocation() async {
