@@ -88,14 +88,14 @@ class SidebarMenu extends StatelessWidget {
               onTabChange(0);
             },
           ),
-          ListTile(
-            leading: const Icon(LineIcons.user),
-            title: const Text('Profile'),
-            onTap: () {
-              Navigator.pop(context);
-              onTabChange(1);
-            },
-          ),
+          // ListTile(
+          //   leading: const Icon(LineIcons.user),
+          //   title: const Text('Profile'),
+          //   onTap: () {
+          //     Navigator.pop(context);
+          //     onTabChange(1);
+          //   },
+          // ),
           const Divider(),
           ListTile(
             leading: const Icon(LineIcons.alternateSignOut, color: Colors.red),
