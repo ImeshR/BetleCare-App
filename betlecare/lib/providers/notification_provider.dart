@@ -1,4 +1,4 @@
-// notification_provider.dart with improved real-time updates
+// notification_provider.dart - updated with correct method calls
 import 'package:flutter/material.dart';
 import 'package:betlecare/models/notification_model.dart';
 import 'package:betlecare/models/betel_bed_model.dart';
@@ -31,6 +31,9 @@ class NotificationProvider with ChangeNotifier {
     // Register callback for real-time updates
     _notificationService.setNotificationCallback(_onNotificationsChanged);
     
+    // Set up notification action handler
+    _notificationService.setupNotificationActions(_handleNotificationTap);
+    
     // First load
     await loadNotifications();
     
@@ -44,6 +47,20 @@ class NotificationProvider with ChangeNotifier {
     Future.delayed(const Duration(seconds: 5), () {
       _notificationService.refreshSubscription();
     });
+  }
+  
+  // Handle when a notification is tapped
+  void _handleNotificationTap(String? notificationId) async {
+    if (notificationId == null) return;
+    
+    // Mark the notification as read
+    await markAsRead(notificationId);
+    
+    // Navigate to the notifications screen
+    final context = navigatorKey.currentContext;
+    if (context != null) {
+      Navigator.of(context).pushNamed('/notifications');
+    }
   }
   
   // Callback function for real-time notifications

@@ -1,10 +1,11 @@
-// notification_screen.dart
+// notification_screen.dart - Fixed version
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:betlecare/models/notification_model.dart';
 import 'package:betlecare/providers/notification_provider.dart';
 import 'package:betlecare/providers/betel_bed_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:betlecare/services/notification_controller.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({Key? key}) : super(key: key);
@@ -67,13 +68,50 @@ class _NotificationScreenState extends State<NotificationScreen> {
               },
               tooltip: notificationProvider.demoMode ? 'Disable Demo Mode' : 'Enable Demo Mode',
             ),
+          // Test button visible in dev mode
+          if (_isDevMode)
+            IconButton(
+              icon: const Icon(Icons.notifications_active),
+              onPressed: () => _showTestOptions(context, betelBedProvider, notificationProvider),
+              tooltip: 'Test Notifications',
+            ),
         ],
       ),
-      body: notificationProvider.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : notificationProvider.notifications.isEmpty
-              ? _buildEmptyState()
-              : _buildNotificationList(notificationProvider),
+      body: Column(
+        children: [
+          // Debug info bar in dev mode
+          if (_isDevMode)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: Colors.grey[200],
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Unread: ${notificationProvider.unreadCount} | ' +
+                      'Total: ${notificationProvider.notifications.length} | ' +
+                      'Demo: ${notificationProvider.demoMode ? 'ON' : 'OFF'}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh, size: 16),
+                    onPressed: () => notificationProvider.refreshSubscription(),
+                    tooltip: 'Refresh Subscription',
+                  ),
+                ],
+              ),
+            ),
+          // Main content
+          Expanded(
+            child: notificationProvider.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : notificationProvider.notifications.isEmpty
+                    ? _buildEmptyState()
+                    : _buildNotificationList(notificationProvider),
+          ),
+        ],
+      ),
       // Only show in dev mode
       floatingActionButton: _isDevMode && notificationProvider.demoMode && betelBedProvider.beds.isNotEmpty
           ? FloatingActionButton(
@@ -105,7 +143,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {
-              // Fixed - no context parameter
               Provider.of<NotificationProvider>(context, listen: false)
                 .checkAllNotifications();
               ScaffoldMessenger.of(context).showSnackBar(
@@ -114,6 +151,17 @@ class _NotificationScreenState extends State<NotificationScreen> {
             },
             child: const Text('Check for Notifications'),
           ),
+          if (_isDevMode)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: ElevatedButton(
+                onPressed: () => NotificationController.createTestNotification(),
+                child: const Text('Send Test Notification'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -206,6 +254,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   color: Colors.grey[600],
                 ),
               ),
+              // Show additional metadata in dev mode
+              if (_isDevMode && notification.metadata != null)
+                Text(
+                  'Metadata: ${notification.metadata.toString()}',
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                ),
             ],
           ),
           isThreeLine: true,
@@ -222,6 +276,84 @@ class _NotificationScreenState extends State<NotificationScreen> {
             }
           },
         ),
+      ),
+    );
+  }
+  
+  // Show test options menu
+  void _showTestOptions(
+    BuildContext context, 
+    BetelBedProvider bedProvider, 
+    NotificationProvider notificationProvider
+  ) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const ListTile(
+            title: Text('Test Options', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          ListTile(
+            leading: const Icon(Icons.notifications, color: Colors.purple),
+            title: const Text('Create Direct Notification'),
+            subtitle: const Text('Shows a notification immediately'),
+            onTap: () {
+              NotificationController.createTestNotification();
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Test notification sent!'))
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.storage, color: Colors.blue),
+            title: const Text('Create Database Notification'),
+            subtitle: const Text('Creates in database to trigger real-time'),
+            onTap: () async {
+              Navigator.pop(context);
+              // Get a bed to attach to the notification
+              final beds = bedProvider.beds;
+              if (beds.isNotEmpty) {
+                try {
+                  // Use the public method createDemoNotification instead of accessing private fields
+                  await notificationProvider.createDemoNotification(
+                    beds.first,
+                    NotificationType.system,
+                    metadata: {
+                      'test_time': DateTime.now().toString(),
+                      'source': 'database_test'
+                    }
+                  );
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Database notification created! You should receive a push notification.'))
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error creating notification: $e'))
+                  );
+                }
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No beds available to attach to notification'))
+                );
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.refresh, color: Colors.green),
+            title: const Text('Refresh Notification System'),
+            subtitle: const Text('Reconnects to Supabase real-time'),
+            onTap: () {
+              Navigator.pop(context);
+              notificationProvider.refreshSubscription();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Notification subscription refreshed!'))
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -288,6 +420,17 @@ class _NotificationScreenState extends State<NotificationScreen> {
               notificationProvider.createDemoNotification(
                 bed,
                 NotificationType.fertilize,
+              );
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.message, color: Colors.purple),
+            title: const Text('System Message'),
+            onTap: () {
+              notificationProvider.createDemoNotification(
+                bed,
+                NotificationType.system,
               );
               Navigator.pop(context);
             },

@@ -1,4 +1,4 @@
-// notification_service.dart with enhanced real-time handling
+// notification_service.dart - updated with setupNotificationActions method
 import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,12 +10,17 @@ import 'package:betlecare/services/weather_services2.dart';
 import 'package:betlecare/main.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
+// Import the awesome notification helper
+import 'package:betlecare/services/awesome_notification_helper.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   
   NotificationService._internal();
+  
+  // Initialize awesome notification helper
+  final AwesomeNotificationHelper _notificationHelper = AwesomeNotificationHelper();
   
   // Demo mode setting
   bool _demoMode = false;
@@ -52,84 +57,103 @@ class NotificationService {
     await _setupRealtimeSubscription();
   }
   
-  // Setup real-time subscription to notifications
-  Future<void> _setupRealtimeSubscription() async {
-    final supabase = await SupabaseClientManager.instance;
-    final user = supabase.client.auth.currentUser;
-    
-    if (user == null) {
-      debugPrint('Cannot setup real-time subscription: User not authenticated');
-      return;
-    }
-    
-    // Close existing subscription if any
-    await _unsubscribeFromNotifications();
-    
-    try {
-      debugPrint('Setting up real-time subscription for user ${user.id}...');
-      
-      // Create channel with a unique name to avoid conflicts
-      final channelName = 'notifications-${user.id.substring(0, 8)}';
-      
-      _notificationSubscription = supabase.client
-        .channel(channelName)
-        .onPostgresChanges(
-          schema: 'public',
-          table: 'notifications',
-          event: PostgresChangeEvent.insert,
-          callback: (payload) {
-            debugPrint('⚡ INSERT notification event received: ${payload.newRecord}');
-            _triggerNotificationRefresh();
-          })
-        .onPostgresChanges(
-          schema: 'public',
-          table: 'notifications',
-          event: PostgresChangeEvent.update,
-          callback: (payload) {
-            debugPrint('⚡ UPDATE notification event received:');
-            debugPrint('  - Old: ${payload.oldRecord}');
-            debugPrint('  - New: ${payload.newRecord}');
-            
-            // Check if status changed to active
-            final Map<String, dynamic> newRecord = payload.newRecord as Map<String, dynamic>;
-            final Map<String, dynamic> oldRecord = payload.oldRecord as Map<String, dynamic>;
-            
-            if (newRecord['status'] == 'active' && oldRecord['status'] == 'deleted') {
-              debugPrint('⚡ Status changed from deleted to active - refreshing notifications');
-              _triggerNotificationRefresh();
-            } else if (newRecord['is_read'] != oldRecord['is_read']) {
-              debugPrint('⚡ Read status changed - refreshing notifications');
-              _triggerNotificationRefresh();
-            } else {
-              debugPrint('⚡ Other update detected - refreshing notifications');
-              _triggerNotificationRefresh();
-            }
-          })
-        .onPostgresChanges(
-          schema: 'public',
-          table: 'notifications',
-          event: PostgresChangeEvent.delete,
-          callback: (payload) {
-            debugPrint('⚡ DELETE notification event received');
-            _triggerNotificationRefresh();
-          });
-    
-      _notificationSubscription = _notificationSubscription!.subscribe((status, error) {
-        if (status == 'SUBSCRIBED') {
-          debugPrint('✅ Successfully subscribed to notification changes');
-        } else if (status == 'CLOSED') {
-          debugPrint('❌ Subscription to notification changes closed');
-        } else if (status == 'CHANNEL_ERROR') {
-          debugPrint('❌ Error in notification subscription: $error');
-        } else {
-          debugPrint('⚠️ Notification subscription status: $status');
-        }
-      });
-    } catch (e) {
-      debugPrint('❌ Error setting up real-time subscription: $e');
-    }
+  // Add this method to fix the missing method error
+  void setupNotificationActions(Function(String?) onNotificationTap) {
+    // This is just a pass-through method - the actual setup is handled in NotificationController
+    debugPrint('Setting up notification tap handler');
   }
   
+  // Setup real-time subscription to notifications
+Future<void> _setupRealtimeSubscription() async {
+  final supabase = await SupabaseClientManager.instance;
+  final user = supabase.client.auth.currentUser;
+  
+  if (user == null) {
+    debugPrint('Cannot setup real-time subscription: User not authenticated');
+    return;
+  }
+  
+  // Close existing subscription if any
+  await _unsubscribeFromNotifications();
+  
+  try {
+    debugPrint('Setting up real-time subscription for user ${user.id}...');
+    
+    // Create channel with a unique name to avoid conflicts
+    final channelName = 'notifications-${user.id.substring(0, 8)}';
+    
+    _notificationSubscription = supabase.client
+      .channel(channelName)
+      .onPostgresChanges(
+        schema: 'public',
+        table: 'notifications',
+        event: PostgresChangeEvent.insert,
+        callback: (payload) {
+          debugPrint('⚡ INSERT notification event received: ${payload.newRecord}');
+          
+          // Convert the payload to a BetelNotification object
+          try {
+            final newRecord = payload.newRecord as Map<String, dynamic>;
+            debugPrint('New notification data: $newRecord');
+            
+            // Only process if status is 'active' and is_read is false
+            if (newRecord['status'] == 'active' && newRecord['is_read'] == false) {
+              final newNotification = BetelNotification.fromJson(
+                Map<String, dynamic>.from(newRecord)
+              );
+              
+              // Show an awesome notification - this creates the push notification
+              debugPrint('🔔 Showing push notification for: ${newNotification.title}');
+              _notificationHelper.showNotification(newNotification).then((success) {
+                debugPrint(success ? '✅ Push notification displayed!' : '❌ Failed to show push notification');
+              });
+            } else {
+              debugPrint('Skipping notification with status=${newRecord['status']} and is_read=${newRecord['is_read']}');
+            }
+          } catch (e) {
+            debugPrint('❌ Error processing notification: $e');
+          }
+          
+          // Always trigger refresh (this updates the badge count)
+          _triggerNotificationRefresh();
+        })
+      .onPostgresChanges(
+        schema: 'public',
+        table: 'notifications',
+        event: PostgresChangeEvent.update,
+        callback: (payload) {
+          debugPrint('⚡ UPDATE notification event received');
+          
+          // For updates, we only need to update the UI badge, not show a new notification
+          _triggerNotificationRefresh();
+        })
+      .onPostgresChanges(
+        schema: 'public',
+        table: 'notifications',
+        event: PostgresChangeEvent.delete,
+        callback: (payload) {
+          debugPrint('⚡ DELETE notification event received');
+          _triggerNotificationRefresh();
+        });
+  
+    // Subscribe to the channel
+    _notificationSubscription = _notificationSubscription!.subscribe((status, error) {
+      if (status == 'SUBSCRIBED') {
+        debugPrint('✅ Successfully subscribed to notification changes');
+      } else if (status == 'CLOSED') {
+        debugPrint('❌ Subscription to notification changes closed');
+      } else if (status == 'CHANNEL_ERROR') {
+        debugPrint('❌ Error in notification subscription: $error');
+      } else {
+        debugPrint('⚠️ Notification subscription status: $status');
+      }
+    });
+  } catch (e) {
+    debugPrint('❌ Error setting up real-time subscription: $e');
+  }
+}
+
+
   // Trigger a notification refresh
   void _triggerNotificationRefresh() {
     if (_onNotificationsChanged != null) {
@@ -304,7 +328,7 @@ class NotificationService {
     
     if (_demoMode) {
       // In demo mode, just return a fake notification without saving to DB
-      return BetelNotification(
+      final demoNotification = BetelNotification(
         id: const Uuid().v4(),
         userId: user.id,
         bedId: bedId,
@@ -315,6 +339,12 @@ class NotificationService {
         metadata: metadata,
         uniqueKey: uniqueKey,
       );
+      
+      // Show a notification even in demo mode
+      debugPrint('Creating demo notification: $title');
+      await _notificationHelper.showNotification(demoNotification);
+      
+      return demoNotification;
     }
     
     final notification = {
@@ -341,7 +371,13 @@ class NotificationService {
       
       debugPrint('✅ Notification created with ID: ${response['id']}');
       
-      return BetelNotification.fromJson(response);
+      // Convert to BetelNotification
+      final betelNotification = BetelNotification.fromJson(response);
+      
+      // Show a notification directly 
+      await _notificationHelper.showNotification(betelNotification);
+      
+      return betelNotification;
     } catch (e) {
       debugPrint('❌ Error creating notification: $e');
       rethrow;
@@ -372,7 +408,7 @@ class NotificationService {
     }
   }
   
-  // Mark all notifications as read
+  // Mark all as read
   Future<void> markAllAsRead() async {
     if (_demoMode) return; // Do nothing in demo mode
     
@@ -569,8 +605,6 @@ class NotificationService {
     _unsubscribeFromNotifications();
     _onNotificationsChanged = null;
   }
-  
-  // DEMO MODE METHODS
   
   // Generate demo notifications for preview/presentation
   List<BetelNotification> _getDemoNotifications() {

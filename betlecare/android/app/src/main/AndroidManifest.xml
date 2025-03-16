@@ -1,19 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Keep your existing permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
-
+    
+    <!-- Add these permissions for notifications -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    
     <application
             android:label="betlecare"
             android:name="${applicationName}"
             android:icon="@mipmap/ic_launcher"
             android:usesCleartextTraffic="true">
-
+        
         <!-- Google Maps API Key -->
         <meta-data
                 android:name="com.google.android.geo.API_KEY"
                 android:value="API KEY" />
-
+        
+        <!-- Add notification icon -->
+        <meta-data
+                android:name="com.google.firebase.messaging.default_notification_icon"
+                android:resource="@mipmap/ic_launcher" />
+                
+        <!-- Add notification color -->
+        <meta-data
+                android:name="com.google.firebase.messaging.default_notification_color"
+                android:resource="@android:color/holo_green_dark" />
+        
+        <!-- Default notification channel ID -->
+        <meta-data
+                android:name="com.google.firebase.messaging.default_notification_channel_id"
+                android:value="system_channel" />
+        
+        <!-- AwesomeNotifications broadcast receivers -->
+        <receiver android:name="me.carda.awesome_notifications.notifications.broadcastReceivers.DismissedNotificationReceiver"
+                  android:exported="false"/>
+        
+        <receiver android:name="me.carda.awesome_notifications.notifications.broadcastReceivers.ScheduledNotificationReceiver"
+                  android:exported="false"/>
+        
+        <receiver android:name="me.carda.awesome_notifications.notifications.broadcastReceivers.KeepOnTopActionReceiver"
+                  android:exported="false"/>
+        
+        <receiver android:name="me.carda.awesome_notifications.notifications.broadcastReceivers.ActionButtonsReceiver"
+                  android:exported="false"/>
+        
+        <!-- Boot receiver for scheduled notifications -->
+        <receiver android:name="me.carda.awesome_notifications.notifications.broadcastReceivers.BootCompletedReceiver"
+                  android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+        
         <activity
                 android:name=".MainActivity"
                 android:exported="true"
@@ -32,16 +80,17 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-
+        
         <meta-data
                 android:name="com.google.android.gms.auth.api.signin"
                 android:value="true"/>
+        
         <!-- Flutter metadata -->
         <meta-data
                 android:name="flutterEmbedding"
                 android:value="2" />
     </application>
-
+    
     <!-- Required to query activities that can process text -->
     <queries>
         <intent>

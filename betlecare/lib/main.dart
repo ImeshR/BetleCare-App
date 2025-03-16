@@ -1,6 +1,6 @@
-// main.dart
+// main.dart with proper notification initialization
 import 'package:betlecare/pages/market/a_market_screen.dart';
-import 'package:betlecare/pages/notification_screen.dart'; // Add this for the notification screen
+import 'package:betlecare/pages/notification_screen.dart';
 import 'package:betlecare/pages/sidebar_menu.dart';
 import 'package:betlecare/providers/notification_provider.dart';
 import 'package:betlecare/providers/user_provider.dart';
@@ -21,19 +21,25 @@ import 'package:betlecare/supabase_client.dart';
 import 'package:line_icons/line_icons.dart';
 import 'package:betlecare/pages/weather/weather_screen.dart';
 import 'package:betlecare/pages/disease/disease_management_home.dart';
-import 'dart:async'; // Add this for Timer
+import 'dart:async';
+import 'package:betlecare/services/notification_controller.dart';
 
 // Add a global navigator key
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
-  await dotenv.load(fileName: '.env');
+  // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize notifications first
+  await NotificationController.initializeNotifications();
+  
+  await dotenv.load(fileName: '.env');
   await SupabaseClientManager.instance;
 
   final userProvider = UserProvider();
   await userProvider.initializeUser();
-
+  
   runApp(
     MultiProvider(
       providers: [
@@ -206,6 +212,15 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
       bottomNavigationBar: BottomNavBar(
         selectedIndex: _selectedIndex,
         onTabChange: _onTabChange,
+      ),
+      // Add a test button for notifications in development
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Create a test notification to verify it's working
+          NotificationController.createTestNotification();
+        },
+        tooltip: 'Test Notification',
+        child: const Icon(Icons.notification_add),
       ),
     );
   }
