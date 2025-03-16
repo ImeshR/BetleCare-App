@@ -1,9 +1,7 @@
-// notification_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:betlecare/models/notification_model.dart';
 import 'package:betlecare/providers/notification_provider.dart';
-import 'package:betlecare/providers/betel_bed_provider.dart';
 import 'package:intl/intl.dart';
 
 class NotificationScreen extends StatefulWidget {
@@ -14,9 +12,6 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
-  bool _isDevMode = false;
-  int _devModeCounter = 0;
-  
   @override
   void initState() {
     super.initState();
@@ -28,44 +23,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   Widget build(BuildContext context) {
     final notificationProvider = Provider.of<NotificationProvider>(context);
-    final betelBedProvider = Provider.of<BetelBedProvider>(context);
     
     return Scaffold(
       appBar: AppBar(
-        title: GestureDetector(
-          onTap: () {
-            // Secret tap to enable dev mode
-            setState(() {
-              _devModeCounter++;
-              if (_devModeCounter >= 5) {
-                _isDevMode = true;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Developer mode activated!'))
-                );
-              }
-            });
-          },
-          child: Text('දැනුම්දීම් (${notificationProvider.unreadCount})'),
-        ),
+        title: Text('දැනුම්දීම් (${notificationProvider.unreadCount})'),
         actions: [
           if (notificationProvider.notifications.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.done_all),
               onPressed: () => notificationProvider.markAllAsRead(),
               tooltip: 'සියල්ල කියවා ඇති ලෙස සලකුණු කරන්න',
-            ),
-          if (_isDevMode)
-            IconButton(
-              icon: Icon(notificationProvider.demoMode ? 
-                Icons.visibility_off : Icons.visibility),
-              onPressed: () {
-                notificationProvider.setDemoMode(!notificationProvider.demoMode);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(notificationProvider.demoMode ? 
-                    'Demo mode activated!' : 'Demo mode deactivated!'))
-                );
-              },
-              tooltip: notificationProvider.demoMode ? 'Disable Demo Mode' : 'Enable Demo Mode',
             ),
         ],
       ),
@@ -74,14 +41,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
           : notificationProvider.notifications.isEmpty
               ? _buildEmptyState()
               : _buildNotificationList(notificationProvider),
-      // Only show in dev mode
-      floatingActionButton: _isDevMode && notificationProvider.demoMode && betelBedProvider.beds.isNotEmpty
-          ? FloatingActionButton(
-              onPressed: () => _showDemoNotificationMenu(context, betelBedProvider, notificationProvider),
-              child: const Icon(Icons.add_alert),
-              tooltip: 'Create Demo Notification',
-            )
-          : null,
     );
   }
   
@@ -105,7 +64,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {
-              // Fixed - no context parameter
               Provider.of<NotificationProvider>(context, listen: false)
                 .checkAllNotifications();
               ScaffoldMessenger.of(context).showSnackBar(
@@ -222,77 +180,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
             }
           },
         ),
-      ),
-    );
-  }
-  
-  // Show demo notification creation menu
-  void _showDemoNotificationMenu(
-    BuildContext context, 
-    BetelBedProvider bedProvider, 
-    NotificationProvider notificationProvider
-  ) {
-    final bed = bedProvider.beds.isNotEmpty ? bedProvider.beds.first : null;
-    
-    if (bed == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please create a betel bed first'))
-      );
-      return;
-    }
-    
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.umbrella, color: Colors.blue),
-            title: const Text('Heavy Rainfall Warning'),
-            onTap: () {
-              notificationProvider.createDemoNotification(
-                bed,
-                NotificationType.weather,
-                metadata: {'weather_type': 'heavy_rain', 'rainfall': 17.8},
-              );
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.wb_sunny, color: Colors.orange),
-            title: const Text('High Temperature Warning'),
-            onTap: () {
-              notificationProvider.createDemoNotification(
-                bed,
-                NotificationType.weather,
-                metadata: {'weather_type': 'high_temperature', 'temperature': 37.2},
-              );
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.agriculture, color: Colors.green),
-            title: const Text('Harvest Time Reminder'),
-            onTap: () {
-              notificationProvider.createDemoNotification(
-                bed,
-                NotificationType.harvest,
-              );
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.spa, color: Colors.teal),
-            title: const Text('Fertilizing Reminder'),
-            onTap: () {
-              notificationProvider.createDemoNotification(
-                bed,
-                NotificationType.fertilize,
-              );
-              Navigator.pop(context);
-            },
-          ),
-        ],
       ),
     );
   }

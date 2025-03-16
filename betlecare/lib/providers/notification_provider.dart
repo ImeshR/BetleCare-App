@@ -1,4 +1,3 @@
-// notification_provider.dart with improved real-time updates
 import 'package:flutter/material.dart';
 import 'package:betlecare/models/notification_model.dart';
 import 'package:betlecare/models/betel_bed_model.dart';
@@ -21,7 +20,6 @@ class NotificationProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   int get unreadCount => _unreadCount;
   String? get error => _error;
-  bool get demoMode => _notificationService.demoMode;
   
   // Initialize
   Future<void> initialize() async {
@@ -35,23 +33,21 @@ class NotificationProvider with ChangeNotifier {
     await loadNotifications();
     
     // Set up periodic refresh timer as a fallback (every 30 seconds)
-_refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-  debugPrint('🔄 Periodic notification refresh timer fired');
-  refreshUnreadCount();
-  
-  // Explicitly check for reactivated notifications every 30 seconds
-  if (_.tick % 3 == 0) {
-    debugPrint('⚠️ Explicit check for reactivated notifications');
-    _notificationService.checkForReactivatedNotifications();
-  }
-});
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      refreshUnreadCount();
+      
+      // Explicitly check for reactivated notifications every 90 seconds
+      if (_.tick % 3 == 0) {
+        _notificationService.checkForReactivatedNotifications();
+      }
+    });
     
     // Refresh subscription after a delay to ensure connection is stable
     Future.delayed(const Duration(seconds: 5), () {
       _notificationService.refreshSubscription();
     });
     
-    // Check for reactivated notifications (ones that changed from deleted to active)
+    // Check for reactivated notifications
     Future.delayed(const Duration(seconds: 3), () {
       _notificationService.checkForReactivatedNotifications();
     });
@@ -65,31 +61,24 @@ _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
   }
   
   // Refresh just the unread count (lighter operation)
-Future<void> refreshUnreadCount() async {
-  try {
-    final newCount = await _notificationService.getUnreadCount();
-    if (newCount != _unreadCount) {
-      debugPrint('📊 Unread count changed: $_unreadCount -> $newCount');
-      
-      // If count increases, check for reactivated notifications
-      if (newCount > _unreadCount) {
-        debugPrint('⚠️ Notification count increased - checking for reactivated notifications');
-        await _notificationService.checkForReactivatedNotifications();
+  Future<void> refreshUnreadCount() async {
+    try {
+      final newCount = await _notificationService.getUnreadCount();
+      if (newCount != _unreadCount) {
+        debugPrint('📊 Unread count changed: $_unreadCount -> $newCount');
+        
+        // If count increases, check for reactivated notifications
+        if (newCount > _unreadCount) {
+          debugPrint('⚠️ Notification count increased - checking for reactivated notifications');
+          await _notificationService.checkForReactivatedNotifications();
+        }
+        
+        _unreadCount = newCount;
+        notifyListeners();
       }
-      
-      _unreadCount = newCount;
-      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ Error refreshing unread count: $e');
     }
-  } catch (e) {
-    debugPrint('❌ Error refreshing unread count: $e');
-  }
-}
-  
-  // Toggle demo mode
-  Future<void> setDemoMode(bool value) async {
-    await _notificationService.setDemoMode(value);
-    await loadNotifications();
-    notifyListeners();
   }
   
   // Force refresh the notification subscription
@@ -198,22 +187,6 @@ Future<void> refreshUnreadCount() async {
     } catch (e) {
       _error = e.toString();
       debugPrint('❌ Error deleting notification: $_error');
-      notifyListeners();
-    }
-  }
-  
-  // Create demo notification
-  Future<void> createDemoNotification(
-    BetelBed bed, 
-    NotificationType type, 
-    {Map<String, dynamic>? metadata}
-  ) async {
-    try {
-      await _notificationService.createDemoNotification(bed, type, metadata: metadata);
-      await loadNotifications(); // Reload notifications
-    } catch (e) {
-      _error = e.toString();
-      debugPrint('❌ Error creating demo notification: $_error');
       notifyListeners();
     }
   }
