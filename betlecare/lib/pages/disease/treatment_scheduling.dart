@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
-import '../../widgets/bottom_nav_bar.dart';
 
 class TreatmentSchedulingPage extends StatefulWidget {
   const TreatmentSchedulingPage({super.key});
@@ -37,38 +36,28 @@ class _TreatmentSchedulingPageState extends State<TreatmentSchedulingPage> {
   }
 
   Future<void> _loadTreatmentPlans() async {
-    setState(() {
-      _isLoading = true;
-    });
+    final plansResponse = await _supabase.from('treatment_schedules').select();
+    final treatmentsResponse =
+        await _supabase.from('treatment_details').select();
 
-    try {
-      // Get the current user
-      final user = _supabase.auth.currentUser;
-      if (user == null) {
-        throw Exception('User not authenticated');
+    Map<String, List<Map<String, dynamic>>> planTreatments = {};
+
+    for (var treatment in treatmentsResponse) {
+      String planId = treatment['plan_id'];
+      if (!planTreatments.containsKey(planId)) {
+        planTreatments[planId] = [];
       }
-
-      // Fetch treatment plans from the database
-      final response = await _supabase
-          .from('treatment_schedules')
-          .select()
-          .eq('user_id', user.id)
-          .order('date', ascending: true)
-          .order('time', ascending: true);
-
-      setState(() {
-        _treatmentPlans = List<Map<String, dynamic>>.from(response);
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Error loading treatment plans: ${e.toString()}')),
-      );
+      planTreatments[planId]!.add(treatment);
     }
+
+    setState(() {
+      _treatmentPlans = plansResponse.map((plan) {
+        return {
+          ...plan,
+          'treatments': planTreatments[plan['id']] ?? [],
+        };
+      }).toList();
+    });
   }
 
   Future<void> _showDateTimePicker() async {
@@ -97,75 +86,39 @@ class _TreatmentSchedulingPageState extends State<TreatmentSchedulingPage> {
     }
   }
 
-  // Change the _addTreatmentPlan method to match the exact database structure
-  Future<void> _addTreatmentPlan() async {
-    if (_descriptionController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('කරුණාකර ප්‍රතිකාර විස්තරය ඇතුළත් කරන්න')),
-      );
+  Future<void> _addTreatmentPlan(
+      String planTitle, List<Map<String, dynamic>> treatments) async {
+    if (planTitle.isEmpty || treatments.isEmpty) return;
+
+    final response = await _supabase
+        .from('treatment_schedules')
+        .insert({
+          'title': planTitle,
+          'created_at': DateTime.now().toIso8601String()
+        })
+        .select('id')
+        .single();
+
+    if (response == null || response['id'] == null) {
+      print('Error creating treatment plan');
       return;
     }
 
-    final DateTime scheduledDateTime = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      _selectedTime.hour,
-      _selectedTime.minute,
-    );
+    String planId = response['id'];
 
-    if (scheduledDateTime.isBefore(DateTime.now())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('කරුණාකර අනාගත දිනයක් සහ වේලාවක් තෝරන්න')),
-      );
-      return;
-    }
+    List<Map<String, dynamic>> treatmentEntries = treatments.map((treatment) {
+      return {
+        'plan_id': planId,
+        'title': treatment['title'],
+        'date': treatment['date'].toIso8601String(),
+        'time': DateTime(
+                2025, 1, 1, treatment['time'].hour, treatment['time'].minute)
+            .toIso8601String(),
+      };
+    }).toList();
 
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    try {
-      // Get the current user
-      final user = _supabase.auth.currentUser;
-      if (user == null) {
-        throw Exception('User not authenticated');
-      }
-
-      // Add treatment plan to the database - match exact table structure
-      await _supabase.from('treatment_schedules').insert({
-        'user_id': user.id,
-        'description': _descriptionController.text,
-        'date': _selectedDate
-            .toIso8601String()
-            .split('T')[0], // Format as YYYY-MM-DD
-        'time': scheduledDateTime.toIso8601String(), // Full ISO timestamp
-      });
-
-      // Refresh the list
-      await _loadTreatmentPlans();
-
-      setState(() {
-        _isSubmitting = false;
-        _titleController.clear();
-        _descriptionController.clear();
-        _selectedDate = DateTime.now();
-        _selectedTime = TimeOfDay.now();
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ප්‍රතිකාර සැලසුම සාර්ථකව එකතු කරන ලදී')),
-      );
-
-      Navigator.pop(context); // Close the add treatment dialog
-    } catch (e) {
-      setState(() {
-        _isSubmitting = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error adding treatment plan: ${e.toString()}')),
-      );
-    }
+    await _supabase.from('treatment_details').insert(treatmentEntries);
+    _loadTreatmentPlans(); // Refresh UI
   }
 
   Future<void> _toggleTreatmentCompletion(String id, bool currentStatus) async {
@@ -241,53 +194,118 @@ class _TreatmentSchedulingPageState extends State<TreatmentSchedulingPage> {
     );
   }
 
-  // Update the dialog to focus on description only
-  void _showAddTreatmentDialog() {
-    showDialog(
+  Future<void> _showAddTreatmentDialog() async {
+    TextEditingController planTitleController = TextEditingController();
+    List<Map<String, dynamic>> treatments = [];
+
+    void addTreatment() {
+      treatments
+          .add({'title': '', 'date': DateTime.now(), 'time': TimeOfDay.now()});
+    }
+
+    addTreatment(); // Add an initial treatment
+
+    await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('නව ප්‍රතිකාර සැලසුමක් එකතු කරන්න'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'ප්‍රතිකාර විස්තරය',
-                  border: OutlineInputBorder(),
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Add Treatment Plan'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: planTitleController,
+                      decoration: InputDecoration(labelText: 'Plan Title'),
+                    ),
+                    SizedBox(height: 10),
+                    ...treatments.asMap().entries.map((entry) {
+                      int index = entry.key;
+                      var treatment = entry.value;
+                      return Column(
+                        children: [
+                          TextField(
+                            decoration:
+                                InputDecoration(labelText: 'Treatment Title'),
+                            onChanged: (value) {
+                              treatments[index]['title'] = value;
+                            },
+                          ),
+                          Row(
+                            children: [
+                              Text('Date: ${treatment['date'].toLocal()}'),
+                              IconButton(
+                                icon: Icon(Icons.calendar_today),
+                                onPressed: () async {
+                                  DateTime? pickedDate = await showDatePicker(
+                                    context: context,
+                                    initialDate: treatment['date'],
+                                    firstDate: DateTime.now(),
+                                    lastDate: DateTime(2101),
+                                  );
+                                  if (pickedDate != null) {
+                                    setState(() {
+                                      treatments[index]['date'] = pickedDate;
+                                    });
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                  'Time: ${treatment['time'].format(context)}'),
+                              IconButton(
+                                icon: Icon(Icons.access_time),
+                                onPressed: () async {
+                                  TimeOfDay? pickedTime = await showTimePicker(
+                                    context: context,
+                                    initialTime: treatment['time'],
+                                  );
+                                  if (pickedTime != null) {
+                                    setState(() {
+                                      treatments[index]['time'] = pickedTime;
+                                    });
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                          Divider(),
+                        ],
+                      );
+                    }).toList(),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          addTreatment();
+                        });
+                      },
+                      child: Text('Add Another Treatment'),
+                    ),
+                  ],
                 ),
-                maxLines: 3,
               ),
-              const SizedBox(height: 16),
-              ListTile(
-                title: const Text('දිනය සහ වේලාව තෝරන්න'),
-                subtitle: Text(
-                  '${_selectedDate.year}/${_selectedDate.month}/${_selectedDate.day} - ${_selectedTime.format(context)}',
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancel'),
                 ),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: _showDateTimePicker,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('අවලංගු කරන්න'),
-          ),
-          ElevatedButton(
-            onPressed: _isSubmitting ? null : _addTreatmentPlan,
-            child: _isSubmitting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('එකතු කරන්න'),
-          ),
-        ],
-      ),
+                ElevatedButton(
+                  onPressed: () {
+                    _addTreatmentPlan(planTitleController.text, treatments);
+                    Navigator.pop(context);
+                  },
+                  child: Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
