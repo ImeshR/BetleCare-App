@@ -35,14 +35,25 @@ class NotificationProvider with ChangeNotifier {
     await loadNotifications();
     
     // Set up periodic refresh timer as a fallback (every 30 seconds)
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      debugPrint('🔄 Periodic notification refresh timer fired');
-      refreshUnreadCount();
-    });
+_refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+  debugPrint('🔄 Periodic notification refresh timer fired');
+  refreshUnreadCount();
+  
+  // Explicitly check for reactivated notifications every 30 seconds
+  if (_.tick % 3 == 0) {
+    debugPrint('⚠️ Explicit check for reactivated notifications');
+    _notificationService.checkForReactivatedNotifications();
+  }
+});
     
     // Refresh subscription after a delay to ensure connection is stable
     Future.delayed(const Duration(seconds: 5), () {
       _notificationService.refreshSubscription();
+    });
+    
+    // Check for reactivated notifications (ones that changed from deleted to active)
+    Future.delayed(const Duration(seconds: 3), () {
+      _notificationService.checkForReactivatedNotifications();
     });
   }
   
@@ -54,18 +65,25 @@ class NotificationProvider with ChangeNotifier {
   }
   
   // Refresh just the unread count (lighter operation)
-  Future<void> refreshUnreadCount() async {
-    try {
-      final newCount = await _notificationService.getUnreadCount();
-      if (newCount != _unreadCount) {
-        debugPrint('📊 Unread count changed: $_unreadCount -> $newCount');
-        _unreadCount = newCount;
-        notifyListeners();
+Future<void> refreshUnreadCount() async {
+  try {
+    final newCount = await _notificationService.getUnreadCount();
+    if (newCount != _unreadCount) {
+      debugPrint('📊 Unread count changed: $_unreadCount -> $newCount');
+      
+      // If count increases, check for reactivated notifications
+      if (newCount > _unreadCount) {
+        debugPrint('⚠️ Notification count increased - checking for reactivated notifications');
+        await _notificationService.checkForReactivatedNotifications();
       }
-    } catch (e) {
-      debugPrint('❌ Error refreshing unread count: $e');
+      
+      _unreadCount = newCount;
+      notifyListeners();
     }
+  } catch (e) {
+    debugPrint('❌ Error refreshing unread count: $e');
   }
+}
   
   // Toggle demo mode
   Future<void> setDemoMode(bool value) async {

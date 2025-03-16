@@ -1,4 +1,5 @@
 // main.dart
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:betlecare/pages/market/a_market_screen.dart';
 import 'package:betlecare/pages/notification_screen.dart'; // Add this for the notification screen
 import 'package:betlecare/pages/sidebar_menu.dart';
@@ -21,6 +22,7 @@ import 'package:betlecare/supabase_client.dart';
 import 'package:line_icons/line_icons.dart';
 import 'package:betlecare/pages/weather/weather_screen.dart';
 import 'package:betlecare/pages/disease/disease_management_home.dart';
+import 'package:betlecare/services/popup_notification_service.dart';
 import 'dart:async'; // Add this for Timer
 
 // Add a global navigator key
@@ -29,6 +31,43 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   await dotenv.load(fileName: '.env');
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Awesome Notifications
+  await AwesomeNotifications().initialize(
+    null, // no app icon, will use default
+    [
+      NotificationChannel(
+        channelGroupKey: 'basic_channel_group',
+        channelKey: 'basic_channel',
+        channelName: 'Basic Notifications',
+        channelDescription: 'Notification channel for general updates',
+        defaultColor: Colors.teal,
+        ledColor: Colors.teal,
+        importance: NotificationImportance.High,
+      ),
+      NotificationChannel(
+        channelGroupKey: 'alerts_channel_group',
+        channelKey: 'alerts_channel',
+        channelName: 'Alert Notifications',
+        channelDescription: 'Urgent notifications that require attention',
+        defaultColor: Colors.red,
+        ledColor: Colors.red,
+        importance: NotificationImportance.High,
+      ),
+    ],
+    channelGroups: [
+      NotificationChannelGroup(
+        channelGroupKey: 'basic_channel_group',
+        channelGroupName: 'Basic Group',
+      ),
+      NotificationChannelGroup(
+        channelGroupKey: 'alerts_channel_group',
+        channelGroupName: 'Alert Group',
+      ),
+    ],
+    debug: true,
+  );
+  
   await SupabaseClientManager.instance;
 
   final userProvider = UserProvider();
@@ -52,6 +91,16 @@ void main() async {
   );
 }
 
+// This static method is required for handling background/terminated notification actions
+@pragma('vm:entry-point')
+Future<void> onNotificationActionReceived(ReceivedAction receivedAction) async {
+  // Navigate to notification screen when notification is tapped
+  if (receivedAction.channelKey == 'basic_channel' || 
+      receivedAction.channelKey == 'alerts_channel') {
+    navigatorKey.currentState?.pushNamed('/notifications');
+  }
+}
+
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -64,6 +113,23 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _checkAuthState();
+    
+    // Set up notification listeners
+    _setupNotificationListeners();
+  }
+  
+  // Add this function for handling notification actions
+  void _setupNotificationListeners() {
+    // Set up listeners for notification actions in the newer API
+    AwesomeNotifications().setListeners(
+      onActionReceivedMethod: onNotificationActionReceived,
+    );
+  }
+  
+  @override
+  void dispose() {
+    // No need to close action sink in newer version
+    super.dispose();
   }
 
   Future<void> _checkAuthState() async {
@@ -185,8 +251,26 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
     });
   }
 
-  Future<void> _logout(BuildContext context) async {
-    // Existing logout code...
+ Future<void> _logout(BuildContext context) async {
+    try {
+      final supabase = await SupabaseClientManager.instance;
+      await supabase.client.auth.signOut();
+
+      // Delay to ensure session is cleared before navigating
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (supabase.client.auth.currentSession == null) {
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Logout failed. Please try again.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Logout failed: ${e.toString()}')),
+      );
+    }
   }
 
   @override

@@ -1,4 +1,3 @@
-// notification_service.dart with enhanced real-time handling
 import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,6 +9,7 @@ import 'package:betlecare/services/weather_services2.dart';
 import 'package:betlecare/main.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
+import 'package:betlecare/services/popup_notification_service.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -29,6 +29,9 @@ class NotificationService {
   
   // Callback to notify provider of changes
   Function? _onNotificationsChanged;
+
+  // Popup notification service
+  final PopupNotificationService _popupService = PopupNotificationService();
   
   // Toggle demo mode
   Future<void> setDemoMode(bool value) async {
@@ -47,88 +50,146 @@ class NotificationService {
     final deletedKeysJson = prefs.getStringList('deleted_notification_keys') ?? [];
     _deletedNotificationKeys = Set<String>.from(deletedKeysJson);
     
+    // Initialize popup notifications
+    await _popupService.initialize();
+    
     // Start real-time subscription with a delay to ensure auth is ready
     await Future.delayed(const Duration(seconds: 2));
     await _setupRealtimeSubscription();
   }
   
-  // Setup real-time subscription to notifications
-  Future<void> _setupRealtimeSubscription() async {
-    final supabase = await SupabaseClientManager.instance;
-    final user = supabase.client.auth.currentUser;
-    
-    if (user == null) {
-      debugPrint('Cannot setup real-time subscription: User not authenticated');
-      return;
-    }
-    
-    // Close existing subscription if any
-    await _unsubscribeFromNotifications();
-    
-    try {
-      debugPrint('Setting up real-time subscription for user ${user.id}...');
-      
-      // Create channel with a unique name to avoid conflicts
-      final channelName = 'notifications-${user.id.substring(0, 8)}';
-      
-      _notificationSubscription = supabase.client
-        .channel(channelName)
-        .onPostgresChanges(
-          schema: 'public',
-          table: 'notifications',
-          event: PostgresChangeEvent.insert,
-          callback: (payload) {
-            debugPrint('⚡ INSERT notification event received: ${payload.newRecord}');
-            _triggerNotificationRefresh();
-          })
-        .onPostgresChanges(
-          schema: 'public',
-          table: 'notifications',
-          event: PostgresChangeEvent.update,
-          callback: (payload) {
-            debugPrint('⚡ UPDATE notification event received:');
-            debugPrint('  - Old: ${payload.oldRecord}');
-            debugPrint('  - New: ${payload.newRecord}');
-            
-            // Check if status changed to active
-            final Map<String, dynamic> newRecord = payload.newRecord as Map<String, dynamic>;
-            final Map<String, dynamic> oldRecord = payload.oldRecord as Map<String, dynamic>;
-            
-            if (newRecord['status'] == 'active' && oldRecord['status'] == 'deleted') {
-              debugPrint('⚡ Status changed from deleted to active - refreshing notifications');
-              _triggerNotificationRefresh();
-            } else if (newRecord['is_read'] != oldRecord['is_read']) {
-              debugPrint('⚡ Read status changed - refreshing notifications');
-              _triggerNotificationRefresh();
-            } else {
-              debugPrint('⚡ Other update detected - refreshing notifications');
-              _triggerNotificationRefresh();
-            }
-          })
-        .onPostgresChanges(
-          schema: 'public',
-          table: 'notifications',
-          event: PostgresChangeEvent.delete,
-          callback: (payload) {
-            debugPrint('⚡ DELETE notification event received');
-            _triggerNotificationRefresh();
-          });
-    
-      _notificationSubscription = _notificationSubscription!.subscribe((status, error) {
-        if (status == 'SUBSCRIBED') {
-          debugPrint('✅ Successfully subscribed to notification changes');
-        } else if (status == 'CLOSED') {
-          debugPrint('❌ Subscription to notification changes closed');
-        } else if (status == 'CHANNEL_ERROR') {
-          debugPrint('❌ Error in notification subscription: $error');
-        } else {
-          debugPrint('⚠️ Notification subscription status: $status');
-        }
-      });
-    } catch (e) {
-      debugPrint('❌ Error setting up real-time subscription: $e');
-    }
+// Setup real-time subscription to notifications
+Future<void> _setupRealtimeSubscription() async {
+  final supabase = await SupabaseClientManager.instance;
+  final user = supabase.client.auth.currentUser;
+  
+  if (user == null) {
+    debugPrint('Cannot setup real-time subscription: User not authenticated');
+    return;
   }
+  
+  // Close existing subscription if any
+  await _unsubscribeFromNotifications();
+  
+  try {
+    debugPrint('Setting up real-time subscription for user ${user.id}...');
+    
+    // Create channel with a unique name to avoid conflicts
+    final channelName = 'notifications-${user.id.substring(0, 8)}';
+    
+    _notificationSubscription = supabase.client
+      .channel(channelName)
+      .onPostgresChanges(
+        schema: 'public',
+        table: 'notifications',
+        event: PostgresChangeEvent.insert,
+        callback: (payload) {
+          debugPrint('⚡ INSERT notification event received: ${payload.newRecord}');
+          _handleNotificationPayload(payload.newRecord as Map<String, dynamic>);
+          _triggerNotificationRefresh();
+        })
+      .onPostgresChanges(
+        schema: 'public',
+        table: 'notifications',
+        event: PostgresChangeEvent.update,
+        callback: (payload) {
+          debugPrint('⚡ UPDATE notification event received:');
+          debugPrint('  - Old: ${payload.oldRecord}');
+          debugPrint('  - New: ${payload.newRecord}');
+          
+          // Check if status changed to active
+          final Map<String, dynamic> newRecord = payload.newRecord as Map<String, dynamic>;
+          final Map<String, dynamic> oldRecord = payload.oldRecord as Map<String, dynamic>;
+          
+          if (newRecord['status'] == 'active' && oldRecord['status'] == 'deleted') {
+            debugPrint('⚡ Status changed from deleted to active - showing popup notification');
+            
+            // Create a BetelNotification object to show as popup
+            final notification = BetelNotification.fromJson(newRecord);
+            
+            // Only show popup if the notification is not read
+            if (!notification.isRead) {
+              _popupService.showNotification(notification);
+              
+              // Store this notification ID to avoid showing it again later
+              _storeShownNotificationId(notification.id);
+            }
+            
+            _triggerNotificationRefresh();
+          } else if (newRecord['is_read'] != oldRecord['is_read']) {
+            debugPrint('⚡ Read status changed - refreshing notifications');
+            _triggerNotificationRefresh();
+          } else {
+            debugPrint('⚡ Other update detected - refreshing notifications');
+            _triggerNotificationRefresh();
+          }
+        })
+      .onPostgresChanges(
+        schema: 'public',
+        table: 'notifications',
+        event: PostgresChangeEvent.delete,
+        callback: (payload) {
+          debugPrint('⚡ DELETE notification event received');
+          _triggerNotificationRefresh();
+        });
+  
+    _notificationSubscription = _notificationSubscription!.subscribe((status, error) {
+      if (status == 'SUBSCRIBED') {
+        debugPrint('✅ Successfully subscribed to notification changes');
+      } else if (status == 'CLOSED') {
+        debugPrint('❌ Subscription to notification changes closed');
+      } else if (status == 'CHANNEL_ERROR') {
+        debugPrint('❌ Error in notification subscription: $error');
+      } else {
+        debugPrint('⚠️ Notification subscription status: $status');
+      }
+    });
+  } catch (e) {
+    debugPrint('❌ Error setting up real-time subscription: $e');
+  }
+}
+
+  
+ // Helper method to store notification IDs that we've shown popups for
+Future<void> _storeShownNotificationId(String notificationId) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final shownIds = prefs.getStringList('shown_notification_popups') ?? [];
+    
+    if (!shownIds.contains(notificationId)) {
+      shownIds.add(notificationId);
+      await prefs.setStringList('shown_notification_popups', shownIds);
+    }
+  } catch (e) {
+    debugPrint('Error storing shown notification ID: $e');
+  }
+} 
+  
+  
+void _handleNotificationPayload(Map<String, dynamic> notificationData) async {
+  try {
+    // Parse the notification data
+    final notification = BetelNotification.fromJson(notificationData);
+    
+    // Skip if the notification is already read
+    if (notification.isRead) return;
+    
+    // Check if we've already shown a popup for this notification
+    final prefs = await SharedPreferences.getInstance();
+    final shownIds = prefs.getStringList('shown_notification_popups') ?? [];
+    
+    if (!shownIds.contains(notification.id)) {
+      // Show popup notification
+      await _popupService.showNotification(notification);
+      
+      // Add to shown list
+      shownIds.add(notification.id);
+      await prefs.setStringList('shown_notification_popups', shownIds);
+    }
+  } catch (e) {
+    debugPrint('Error handling notification payload: $e');
+  }
+}
   
   // Trigger a notification refresh
   void _triggerNotificationRefresh() {
@@ -303,8 +364,8 @@ class NotificationService {
     }
     
     if (_demoMode) {
-      // In demo mode, just return a fake notification without saving to DB
-      return BetelNotification(
+      // In demo mode, create a fake notification and show popup
+      final notification = BetelNotification(
         id: const Uuid().v4(),
         userId: user.id,
         bedId: bedId,
@@ -315,6 +376,11 @@ class NotificationService {
         metadata: metadata,
         uniqueKey: uniqueKey,
       );
+      
+      // Show popup notification
+      await _popupService.showNotification(notification);
+      
+      return notification;
     }
     
     final notification = {
@@ -341,7 +407,13 @@ class NotificationService {
       
       debugPrint('✅ Notification created with ID: ${response['id']}');
       
-      return BetelNotification.fromJson(response);
+      // Create a BetelNotification object
+      final betelNotification = BetelNotification.fromJson(response);
+      
+      // Show popup notification
+      await _popupService.showNotification(betelNotification);
+      
+      return betelNotification;
     } catch (e) {
       debugPrint('❌ Error creating notification: $e');
       rethrow;
@@ -564,10 +636,55 @@ class NotificationService {
     return await weatherService.fetchWeatherData(district);
   }
   
+// Check for reactivated notifications (that have changed from deleted to active)
+Future<void> checkForReactivatedNotifications() async {
+  final supabase = await SupabaseClientManager.instance;
+  final user = supabase.client.auth.currentUser;
+  
+  if (user == null) return;
+  
+  try {
+    // Get active unread notifications
+    final data = await supabase.client
+      .from('notifications')
+      .select()
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .eq('is_read', false);
+    
+    if (data.isNotEmpty) {
+      debugPrint('Found ${data.length} active unread notifications to check');
+      
+      // Get IDs of notifications we've already shown popups for
+      final prefs = await SharedPreferences.getInstance();
+      final shownNotificationIds = prefs.getStringList('shown_notification_popups') ?? [];
+      
+      // Show popup for each notification that hasn't been shown before
+      for (final notificationData in data) {
+        final notification = BetelNotification.fromJson(notificationData);
+        
+        // Only show popup if we haven't shown it before
+        if (!shownNotificationIds.contains(notification.id)) {
+          debugPrint('Showing popup for notification: ${notification.id}');
+          await _popupService.showNotification(notification);
+          
+          // Add to shown list
+          shownNotificationIds.add(notification.id);
+        }
+      }
+      
+      // Save updated list of shown notification IDs
+      await prefs.setStringList('shown_notification_popups', shownNotificationIds);
+    }
+  } catch (e) {
+    debugPrint('Error checking for reactivated notifications: $e');
+  }
+}
   // Clean up resources
   void dispose() {
     _unsubscribeFromNotifications();
     _onNotificationsChanged = null;
+    _popupService.dispose();
   }
   
   // DEMO MODE METHODS
