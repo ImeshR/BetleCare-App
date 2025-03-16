@@ -1,8 +1,10 @@
+import 'package:betlecare/pages/notification_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:betlecare/models/notification_model.dart';
 import 'package:betlecare/providers/notification_provider.dart';
 import 'package:intl/intl.dart';
+ 
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({Key? key}) : super(key: key);
@@ -28,11 +30,24 @@ class _NotificationScreenState extends State<NotificationScreen> {
       appBar: AppBar(
         title: Text('දැනුම්දීම් (${notificationProvider.unreadCount})'),
         actions: [
+          // Settings icon to navigate to notification preferences
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationPreferencesScreen(),
+                ),
+              );
+            },
+            tooltip: 'දැනුම්දීම් සැකසුම්', // Notification Settings
+          ),
           if (notificationProvider.notifications.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.done_all),
               onPressed: () => notificationProvider.markAllAsRead(),
-              tooltip: 'සියල්ල කියවා ඇති ලෙස සලකුණු කරන්න',
+              tooltip: 'සියල්ල කියවා ඇති ලෙස සලකුණු කරන්න', // Mark all as read
             ),
         ],
       ),
@@ -171,7 +186,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               ? IconButton(
                   icon: const Icon(Icons.mark_email_read, size: 20),
                   onPressed: () => provider.markAsRead(notification.id),
-                  tooltip: 'කියවා ඇති ලෙස සලකුණු කරන්න',
+                  tooltip: 'කියවා ඇති ලෙස සලකුණු කරන්න', // Mark as read
                 )
               : null,
           onTap: () {

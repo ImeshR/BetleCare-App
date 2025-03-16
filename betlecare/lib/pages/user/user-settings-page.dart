@@ -1,5 +1,9 @@
+import 'package:betlecare/pages/notification_preferences.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:betlecare/providers/notification_provider.dart';
+ 
 
 import '../../styles/auth_styles.dart';
 import '../../supabase_client.dart';
@@ -89,6 +93,12 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
           _isNewUser = response['new_user'] ?? true;
           _isLoadingSettings = false;
         });
+        
+        // Update notification provider with the latest setting
+        final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+        await notificationProvider.updateNotificationPreferences(
+          notificationsEnabled: _notificationsEnabled,
+        );
       }
     } catch (e) {
       print('Error loading settings: $e');
@@ -133,7 +143,6 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
       final user = supabase.client.auth.currentUser;
 
       if (user != null) {
-        print('User: ${user.id}');
         await supabase.client
             .from('user_settings')
             .update({'notification_enable': value}).eq('userid', user.id);
@@ -141,6 +150,12 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
         setState(() {
           _notificationsEnabled = value;
         });
+        
+        // Update notification provider with the latest setting
+        final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+        await notificationProvider.updateNotificationPreferences(
+          notificationsEnabled: value,
+        );
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('දැනුම්දීම් සැකසුම් යාවත්කාලීන කරන ලදී')),
@@ -421,6 +436,26 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
               onChanged: (bool value) {
                 _updateNotificationSettings(value);
               },
+            ),
+            SizedBox(height: 8),
+            // Button to navigate to detailed notification settings
+            Center(
+              child: OutlinedButton.icon(
+                icon: Icon(Icons.settings),
+                label: Text('තවත් දැනුම්දීම් සැකසුම්'),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NotificationPreferencesScreen(),
+                    ),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AuthStyles.primaryColor,
+                  side: BorderSide(color: AuthStyles.primaryColor),
+                ),
+              ),
             ),
           ],
         ),

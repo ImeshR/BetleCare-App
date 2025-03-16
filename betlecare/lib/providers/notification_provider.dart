@@ -16,15 +16,32 @@ class NotificationProvider with ChangeNotifier {
   DateTime _lastCheck = DateTime.now().subtract(const Duration(hours: 1)); // Track last check time
   Timer? _refreshTimer; // Add refresh timer
   
+  // Notification preferences
+  bool _notificationsEnabled = true;
+  bool _weatherNotificationsEnabled = true;
+  bool _harvestNotificationsEnabled = true;
+  bool _fertilizeNotificationsEnabled = true;
+  bool _diseaseNotificationsEnabled = true;
+  
   List<BetelNotification> get notifications => _notifications;
   bool get isLoading => _isLoading;
   int get unreadCount => _unreadCount;
   String? get error => _error;
   
+  // Getters for preferences
+  bool get notificationsEnabled => _notificationsEnabled;
+  bool get weatherNotificationsEnabled => _weatherNotificationsEnabled;
+  bool get harvestNotificationsEnabled => _harvestNotificationsEnabled;
+  bool get fertilizeNotificationsEnabled => _fertilizeNotificationsEnabled;
+  bool get diseaseNotificationsEnabled => _diseaseNotificationsEnabled;
+  
   // Initialize
   Future<void> initialize() async {
     debugPrint('Initializing NotificationProvider');
     await _notificationService.initialize();
+    
+    // Load notification preferences
+    await loadNotificationPreferences();
     
     // Register callback for real-time updates
     _notificationService.setNotificationCallback(_onNotificationsChanged);
@@ -51,6 +68,55 @@ class NotificationProvider with ChangeNotifier {
     Future.delayed(const Duration(seconds: 3), () {
       _notificationService.checkForReactivatedNotifications();
     });
+  }
+  
+  // Load notification preferences
+  Future<void> loadNotificationPreferences() async {
+    try {
+      final prefs = await _notificationService.getNotificationPreferences();
+      
+      _notificationsEnabled = prefs['notifications_enabled'] ?? true;
+      _weatherNotificationsEnabled = prefs['weather_notifications'] ?? true;
+      _harvestNotificationsEnabled = prefs['harvest_notifications'] ?? true;
+      _fertilizeNotificationsEnabled = prefs['fertilize_notifications'] ?? true;
+      _diseaseNotificationsEnabled = prefs['disease_notifications'] ?? true;
+      
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading notification preferences: $e');
+    }
+  }
+  
+  // Update notification preferences
+  Future<void> updateNotificationPreferences({
+    bool? notificationsEnabled,
+    bool? weatherNotifications,
+    bool? harvestNotifications,
+    bool? fertilizeNotifications,
+    bool? diseaseNotifications,
+  }) async {
+    try {
+      await _notificationService.updateNotificationPreferences(
+        notificationsEnabled: notificationsEnabled,
+        weatherNotifications: weatherNotifications,
+        harvestNotifications: harvestNotifications,
+        fertilizeNotifications: fertilizeNotifications,
+        diseaseNotifications: diseaseNotifications,
+      );
+      
+      // Update local state if values were provided
+      if (notificationsEnabled != null) _notificationsEnabled = notificationsEnabled;
+      if (weatherNotifications != null) _weatherNotificationsEnabled = weatherNotifications;
+      if (harvestNotifications != null) _harvestNotificationsEnabled = harvestNotifications;
+      if (fertilizeNotifications != null) _fertilizeNotificationsEnabled = fertilizeNotifications;
+      if (diseaseNotifications != null) _diseaseNotificationsEnabled = diseaseNotifications;
+      
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('Error updating notification preferences: $_error');
+      notifyListeners();
+    }
   }
   
   // Callback function for real-time notifications
@@ -158,13 +224,13 @@ class NotificationProvider with ChangeNotifier {
     }
   }
   
-  // Delete notification - fixed version with null safety
+  // Delete notification
   Future<void> deleteNotification(String notificationId) async {
     try {
       // Get the unique key before removing
       String uniqueKey = '';
       
-      // Find the notification without using firstWhere with null
+      // Find the notification
       BetelNotification? foundNotification;
       for (final n in _notifications) {
         if (n.id == notificationId) {
@@ -200,6 +266,12 @@ class NotificationProvider with ChangeNotifier {
       return;
     }
     
+    // Skip if notifications are disabled
+    if (!_notificationsEnabled) {
+      debugPrint('Notifications are disabled, skipping all checks');
+      return;
+    }
+    
     try {
       debugPrint('🔍 Checking for new notifications...');
       _lastCheck = now;
@@ -216,26 +288,9 @@ class NotificationProvider with ChangeNotifier {
         return;
       }
       
-      // Check for weather alerts
-      await _notificationService.checkWeatherAlerts(beds);
+      // Use the service to check all notification types
+      await _notificationService.checkAllNotifications(beds);
       
-      // Check for harvest time alerts
-      await _notificationService.checkHarvestAlerts(beds);
-      
-      // Check for fertilizing alerts
-      for (final bed in beds) {
-        if (bed.daysUntilNextFertilizing <= 3 && bed.daysUntilNextFertilizing > 0) {
-          await _notificationService.createNotification(
-            title: 'පොහොර යෙදීමේ කාලය ළඟයි',
-            message: '${bed.name} සඳහා පොහොර යෙදීම සිදු කිරීමට තව දින ${bed.daysUntilNextFertilizing}ක් පමණි.',
-            type: NotificationType.fertilize,
-            bedId: bed.id,
-            metadata: {'days_until_fertilizing': bed.daysUntilNextFertilizing},
-          );
-        }
-      }
-      
-      // Real-time updates will handle notification refresh
       debugPrint('✅ Notification check completed');
     } catch (e) {
       debugPrint('❌ Error checking for notifications: $e');

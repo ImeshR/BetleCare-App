@@ -25,15 +25,89 @@ class NotificationService {
 
   // Popup notification service
   final PopupNotificationService _popupService = PopupNotificationService();
+
+  // User notification preferences
+  bool _notificationsEnabled = true;
+  bool _weatherNotificationsEnabled = true;
+  bool _harvestNotificationsEnabled = true;
+  bool _fertilizeNotificationsEnabled = true;
+  bool _diseaseNotificationsEnabled = true;
   
   // Initialize the notification service
   Future<void> initialize() async {
     // Initialize popup notifications
     await _popupService.initialize();
     
+    // Load user notification preferences
+    await _loadUserNotificationPreferences();
+    
     // Start real-time subscription with a delay to ensure auth is ready
     await Future.delayed(const Duration(seconds: 2));
     await _setupRealtimeSubscription();
+  }
+
+  // Load user notification preferences from database
+  Future<void> _loadUserNotificationPreferences() async {
+    try {
+      final supabase = await SupabaseClientManager.instance;
+      final user = supabase.client.auth.currentUser;
+      
+      if (user == null) {
+        debugPrint('Cannot load notification preferences: User not authenticated');
+        return;
+      }
+      
+      // Get notification preferences from user_settings table
+      final userSettings = await supabase.client
+          .from('user_settings')
+          .select()
+          .eq('userid', user.id)
+          .maybeSingle();
+
+      if (userSettings != null) {
+        _notificationsEnabled = userSettings['notification_enable'] ?? true;
+        
+        // Get specific notification preferences if they exist
+        final notificationPrefs = await supabase.client
+            .from('notification_preferences')
+            .select()
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        if (notificationPrefs != null) {
+          _weatherNotificationsEnabled = notificationPrefs['weather_notifications'] ?? true;
+          _harvestNotificationsEnabled = notificationPrefs['harvest_notifications'] ?? true;
+          _fertilizeNotificationsEnabled = notificationPrefs['fertilize_notifications'] ?? true;
+          _diseaseNotificationsEnabled = notificationPrefs['disease_notifications'] ?? true;
+        } else {
+          // Create default notification preferences if they don't exist
+          await _createDefaultNotificationPreferences(user.id);
+        }
+      } else {
+        debugPrint('User settings not found for user ${user.id}');
+      }
+    } catch (e) {
+      debugPrint('Error loading notification preferences: $e');
+    }
+  }
+
+  // Create default notification preferences
+  Future<void> _createDefaultNotificationPreferences(String userId) async {
+    try {
+      final supabase = await SupabaseClientManager.instance;
+      
+      await supabase.client.from('notification_preferences').insert({
+        'user_id': userId,
+        'weather_notifications': true,
+        'harvest_notifications': true,
+        'fertilize_notifications': true,
+        'disease_notifications': true,
+      });
+      
+      debugPrint('Created default notification preferences for user $userId');
+    } catch (e) {
+      debugPrint('Error creating default notification preferences: $e');
+    }
   }
   
   // Setup real-time subscription to notifications
@@ -83,8 +157,8 @@ class NotificationService {
               // Create a BetelNotification object to show as popup
               final notification = BetelNotification.fromJson(newRecord);
               
-              // Only show popup if the notification is not read
-              if (!notification.isRead) {
+              // Only show popup if the notification is not read and notifications are enabled
+              if (!notification.isRead && _notificationsEnabled && _isNotificationTypeEnabled(notification.type)) {
                 _popupService.showNotification(notification);
               }
             }
@@ -122,10 +196,28 @@ class NotificationService {
       // Skip if the notification is already read
       if (notification.isRead) return;
       
-      // Show popup notification
-      await _popupService.showNotification(notification);
+      // Only show notification if notifications are enabled and this type is enabled
+      if (_notificationsEnabled && _isNotificationTypeEnabled(notification.type)) {
+        await _popupService.showNotification(notification);
+      }
     } catch (e) {
       debugPrint('Error handling notification payload: $e');
+    }
+  }
+  
+  // Check if specific notification type is enabled
+  bool _isNotificationTypeEnabled(NotificationType type) {
+    switch (type) {
+      case NotificationType.weather:
+        return _weatherNotificationsEnabled;
+      case NotificationType.harvest:
+        return _harvestNotificationsEnabled;
+      case NotificationType.fertilize:
+        return _fertilizeNotificationsEnabled;
+      case NotificationType.system:
+        return true; // System notifications are always enabled
+      default:
+        return true;
     }
   }
   
@@ -267,6 +359,12 @@ class NotificationService {
     String? bedId,
     Map<String, dynamic>? metadata,
   }) async {
+    // First check if notifications are enabled for this type
+    if (!_notificationsEnabled || !_isNotificationTypeEnabled(type)) {
+      debugPrint('Notifications disabled for type $type, skipping creation');
+      return null;
+    }
+    
     final supabase = await SupabaseClientManager.instance;
     final user = supabase.client.auth.currentUser;
     
@@ -394,8 +492,151 @@ class NotificationService {
     }
   }
   
+  // Get notification preferences
+  Future<Map<String, bool>> getNotificationPreferences() async {
+    final supabase = await SupabaseClientManager.instance;
+    final user = supabase.client.auth.currentUser;
+    
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+    
+    try {
+      // Get overall notification setting
+      final userSettings = await supabase.client
+          .from('user_settings')
+          .select('notification_enable')
+          .eq('userid', user.id)
+          .single();
+      
+      _notificationsEnabled = userSettings['notification_enable'] ?? true;
+      
+      // Get specific notification preferences
+      final notificationPrefs = await supabase.client
+          .from('notification_preferences')
+          .select()
+          .eq('user_id', user.id)
+          .maybeSingle();
+      
+      if (notificationPrefs != null) {
+        _weatherNotificationsEnabled = notificationPrefs['weather_notifications'] ?? true;
+        _harvestNotificationsEnabled = notificationPrefs['harvest_notifications'] ?? true;
+        _fertilizeNotificationsEnabled = notificationPrefs['fertilize_notifications'] ?? true;
+        _diseaseNotificationsEnabled = notificationPrefs['disease_notifications'] ?? true;
+      } else {
+        // Create default preferences if they don't exist
+        await _createDefaultNotificationPreferences(user.id);
+      }
+      
+      return {
+        'notifications_enabled': _notificationsEnabled,
+        'weather_notifications': _weatherNotificationsEnabled,
+        'harvest_notifications': _harvestNotificationsEnabled,
+        'fertilize_notifications': _fertilizeNotificationsEnabled,
+        'disease_notifications': _diseaseNotificationsEnabled,
+      };
+    } catch (e) {
+      debugPrint('❌ Error getting notification preferences: $e');
+      
+      // Return default values if there's an error
+      return {
+        'notifications_enabled': true,
+        'weather_notifications': true,
+        'harvest_notifications': true,
+        'fertilize_notifications': true,
+        'disease_notifications': true,
+      };
+    }
+  }
+  
+  // Update notification preferences
+  Future<void> updateNotificationPreferences({
+    bool? notificationsEnabled,
+    bool? weatherNotifications,
+    bool? harvestNotifications,
+    bool? fertilizeNotifications,
+    bool? diseaseNotifications,
+  }) async {
+    final supabase = await SupabaseClientManager.instance;
+    final user = supabase.client.auth.currentUser;
+    
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+    
+    try {
+      // Update main notification setting if provided
+      if (notificationsEnabled != null) {
+        await supabase.client
+            .from('user_settings')
+            .update({'notification_enable': notificationsEnabled})
+            .eq('userid', user.id);
+        
+        _notificationsEnabled = notificationsEnabled;
+      }
+      
+      // Build update object for specific notification types
+      final Map<String, dynamic> prefsUpdate = {};
+      
+      if (weatherNotifications != null) {
+        prefsUpdate['weather_notifications'] = weatherNotifications;
+        _weatherNotificationsEnabled = weatherNotifications;
+      }
+      
+      if (harvestNotifications != null) {
+        prefsUpdate['harvest_notifications'] = harvestNotifications;
+        _harvestNotificationsEnabled = harvestNotifications;
+      }
+      
+      if (fertilizeNotifications != null) {
+        prefsUpdate['fertilize_notifications'] = fertilizeNotifications;
+        _fertilizeNotificationsEnabled = fertilizeNotifications;
+      }
+      
+      if (diseaseNotifications != null) {
+        prefsUpdate['disease_notifications'] = diseaseNotifications;
+        _diseaseNotificationsEnabled = diseaseNotifications;
+      }
+      
+      // Only update if we have values to update
+      if (prefsUpdate.isNotEmpty) {
+        // Check if preferences record exists
+        final existing = await supabase.client
+            .from('notification_preferences')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+        
+        if (existing != null) {
+          // Update existing record
+          await supabase.client
+              .from('notification_preferences')
+              .update(prefsUpdate)
+              .eq('user_id', user.id);
+        } else {
+          // Create new record
+          prefsUpdate['user_id'] = user.id;
+          await supabase.client
+              .from('notification_preferences')
+              .insert(prefsUpdate);
+        }
+      }
+      
+      debugPrint('✅ Notification preferences updated successfully');
+    } catch (e) {
+      debugPrint('❌ Error updating notification preferences: $e');
+      rethrow;
+    }
+  }
+  
   // Weather alert - check forecasted rainfall/temperature and create notifications
   Future<void> checkWeatherAlerts(List<BetelBed> beds) async {
+    // Skip if weather notifications are disabled
+    if (!_notificationsEnabled || !_weatherNotificationsEnabled) {
+      debugPrint('Weather notifications disabled, skipping weather checks');
+      return;
+    }
+    
     for (final bed in beds) {
       // Check if rainfall exceeds threshold (10mm is heavy rain in Sri Lanka)
       final weatherData = await _getWeatherData(bed.district);
@@ -476,6 +717,12 @@ class NotificationService {
   
   // Check for harvest alerts
   Future<void> checkHarvestAlerts(List<BetelBed> beds) async {
+    // Skip if harvest notifications are disabled
+    if (!_notificationsEnabled || !_harvestNotificationsEnabled) {
+      debugPrint('Harvest notifications disabled, skipping harvest checks');
+      return;
+    }
+    
     for (final bed in beds) {
       // First harvest is typically around 105 days (3.5 months) after planting
       final firstHarvestDays = 105;
@@ -523,6 +770,27 @@ class NotificationService {
     }
   }
   
+  // Check for fertilize alerts
+  Future<void> checkFertilizeAlerts(List<BetelBed> beds) async {
+    // Skip if fertilize notifications are disabled
+    if (!_notificationsEnabled || !_fertilizeNotificationsEnabled) {
+      debugPrint('Fertilize notifications disabled, skipping fertilize checks');
+      return;
+    }
+    
+    for (final bed in beds) {
+      if (bed.daysUntilNextFertilizing <= 3 && bed.daysUntilNextFertilizing > 0) {
+        await createNotification(
+          title: 'පොහොර යෙදීමේ කාලය ළඟයි',
+          message: '${bed.name} සඳහා පොහොර යෙදීම සිදු කිරීමට තව දින ${bed.daysUntilNextFertilizing}ක් පමණි.',
+          type: NotificationType.fertilize,
+          bedId: bed.id,
+          metadata: {'days_until_fertilizing': bed.daysUntilNextFertilizing},
+        );
+      }
+    }
+  }
+  
   // Get weather data for a district
   Future<Map<String, dynamic>?> _getWeatherData(String district) async {
     final weatherService = WeatherService();
@@ -536,6 +804,9 @@ class NotificationService {
     
     if (user == null) return;
     
+    // Skip if notifications are disabled
+    if (!_notificationsEnabled) return;
+    
     try {
       // Get active unread notifications
       final data = await supabase.client
@@ -548,10 +819,14 @@ class NotificationService {
       if (data.isNotEmpty) {
         debugPrint('Found ${data.length} active unread notifications to check');
         
-        // Show popup for each unread notification
+        // Show popup for each eligible notification
         for (final notificationData in data) {
           final notification = BetelNotification.fromJson(notificationData);
-          await _popupService.showNotification(notification);
+          
+          // Only show if this notification type is enabled
+          if (_isNotificationTypeEnabled(notification.type)) {
+            await _popupService.showNotification(notification);
+          }
         }
       }
     } catch (e) {
@@ -559,6 +834,25 @@ class NotificationService {
     }
   }
   
+  // Check all notification types
+  Future<void> checkAllNotifications(List<BetelBed> beds) async {
+    if (!_notificationsEnabled) {
+      debugPrint('Notifications are disabled, skipping all checks');
+      return;
+    }
+    
+    // Check for weather alerts
+    await checkWeatherAlerts(beds);
+    
+    // Check for harvest time alerts
+    await checkHarvestAlerts(beds);
+    
+    // Check for fertilizing alerts
+    await checkFertilizeAlerts(beds);
+    
+    // More notification types can be added here as needed
+  }
+
   // Clean up resources
   void dispose() {
     _unsubscribeFromNotifications();

@@ -2,7 +2,7 @@
 
 class ApiConfig {
   // Base URL for all API endpoints
-  static const String apiBaseUrl = 'http://192.168.43.160:5000/api';
+  static const String apiBaseUrl = 'https://b-backend-akzp.onrender.com/api';
   
   // Derived API endpoints
   static String get fertilizingBasePath => '$apiBaseUrl/fertilizing';
