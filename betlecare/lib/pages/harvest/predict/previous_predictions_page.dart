@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+
+import '../../../providers/user_provider.dart';
 
 class PreviousPredictionsPage extends StatefulWidget {
   const PreviousPredictionsPage({super.key});
@@ -20,9 +23,17 @@ class _PreviousPredictionsPageState extends State<PreviousPredictionsPage> {
   }
 
   void _loadPredictions() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final userId = userProvider.user?.id;
+
+    if (userId == null) {
+      throw Exception('User not logged in');
+    }
+
     _predictionsFuture = Supabase.instance.client
         .from('harvest_predict_history')
         .select()
+        .eq('user_id', userId)
         .order('created_at', ascending: false)
         .limit(10);
   }

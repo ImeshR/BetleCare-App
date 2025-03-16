@@ -39,7 +39,7 @@ class _YieldMainPageState extends State<YieldMainPage> {
             _buildCard(
               title: 'අස්වැන්න පිළිබඳ \nසාරාංශය',
               color: Colors.orange.shade100,
-              imagePath: 'assets/images/eshan/summary.png',
+              imagePath: 'assets/images/eshan/LM8.png',
               gradient: LinearGradient(
                 colors: [
                   Colors.orange.shade50,
@@ -60,7 +60,7 @@ class _YieldMainPageState extends State<YieldMainPage> {
             _buildCard(
               title: 'පෙර \nපුරෝකථනයන්',
               color: Colors.teal.shade100,
-              imagePath: 'assets/images/eshan/predictions.png',
+              imagePath: 'assets/images/eshan/LM9.png',
               gradient: LinearGradient(
                 colors: [
                   Colors.teal.shade50,
