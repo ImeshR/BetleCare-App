@@ -136,19 +136,28 @@ class _ProfitableMarketScreenState extends State<ProfitableMarketScreen> {
                         _buildNumberInputField('කොළ ගණන', _quantityController),
                         _buildDropdownField(
                             'කොළ වර්ගය',
-                            ['Peedichcha', 'Korikan', 'Keti', 'Raan Keti'],
+                            [
+                              const MapEntry('පීදිච්ච', 'Peedichcha'),
+                              const MapEntry('කොරිකන්', 'Korikan'),
+                              const MapEntry('කෙටි', 'Keti'),
+                              const MapEntry('රෑන් කෙටි', 'Raan Keti'),
+                            ],
                             (val) => setState(() => _selectedType = val),
                             _selectedType),
                         _buildDropdownField(
                             'කොලයේ ප්‍රමාණය',
-                            ['Small', 'Medium', 'Large'],
+                            [
+                              const MapEntry('කුඩා', 'Small'),
+                              const MapEntry('මධ්‍යම', 'Medium'),
+                              const MapEntry('විශාල', 'Large'),
+                            ],
                             (val) => setState(() => _selectedSize = val),
                             _selectedSize),
                         _buildDropdownField(
                             'ගුණාත්මක මට්ටම',
                             [
-                              'Ash',
-                              'Dark',
+                              const MapEntry('අළු', 'Ash'),
+                              const MapEntry('අදුරැ', 'Dark'),
                             ],
                             (val) => setState(() => _selectedQuality = val),
                             _selectedQuality),
@@ -246,17 +255,47 @@ class _ProfitableMarketScreenState extends State<ProfitableMarketScreen> {
     );
   }
 
-  Widget _buildDropdownField(String title, List<String> options,
-      Function(String?) onChanged, String? selectedValue) {
+  // Widget _buildDropdownField(String title, List<String> options,
+  //     Function(String?) onChanged, String? selectedValue) {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(
+  //       vertical: 8,
+  //     ),
+  //     child: DropdownButtonFormField<String>(
+  //       value: selectedValue,
+  //       items: options
+  //           .map((option) =>
+  //               DropdownMenuItem(value: option, child: Text(option)))
+  //           .toList(),
+  //       onChanged: onChanged,
+  //       decoration: InputDecoration(
+  //         labelText: title,
+  //         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+  //         filled: true,
+  //         fillColor: Colors.green.shade100,
+  //       ),
+  //       dropdownColor: Colors.green.shade50,
+  //       style: const TextStyle(color: Colors.black87, fontSize: 16),
+  //       icon: const Icon(Icons.arrow_drop_down, color: Colors.green),
+  //       validator: (value) => value == null ? 'කරුණාකර මතයක් තෝරන්න' : null,
+  //     ),
+  //   );
+  // }
+
+  Widget _buildDropdownField(
+      String title,
+      List<MapEntry<String, String>> options,
+      Function(String?) onChanged,
+      String? selectedValue) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: 8,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: DropdownButtonFormField<String>(
         value: selectedValue,
         items: options
-            .map((option) =>
-                DropdownMenuItem(value: option, child: Text(option)))
+            .map((entry) => DropdownMenuItem(
+                  value: entry.value,
+                  child: Text(entry.key),
+                ))
             .toList(),
         onChanged: onChanged,
         decoration: InputDecoration(

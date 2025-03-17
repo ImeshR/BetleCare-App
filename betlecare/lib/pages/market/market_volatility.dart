@@ -118,14 +118,24 @@ class _MarketVolatilityScreenState extends State<MarketVolatilityScreen> {
                   _buildDatePicker('අවසන් දිනය', _endDateController),
                   _buildDropdownField(
                       'වෙළඳපොල',
-                      ['Kuliyapitiya', 'Naiwala', 'Apaladeniya'],
+                      [
+                        const MapEntry('කුළියාපිටිය', 'Kuliyapitiya'),
+                        const MapEntry('නයිවල', 'Naiwala'),
+                        const MapEntry('අපලාදෙණිය', 'Apaladeniya'),
+                      ],
                       (val) => setState(() => _selectedMarket = val),
                       _selectedMarket),
                   _buildDropdownField(
                       'කොළ වර්ගය',
-                      ['Peedichcha', 'Korikan', 'Keti', 'Raan Keti'],
+                      [
+                        const MapEntry('පීදිච්ච', 'Peedichcha'),
+                        const MapEntry('කොරිකන්', 'Korikan'),
+                        const MapEntry('කෙටි', 'Keti'),
+                        const MapEntry('රෑන් කෙටි', 'Raan Keti'),
+                      ],
                       (val) => setState(() => _selectedType = val),
                       _selectedType),
+                  const SizedBox(height: 40),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
@@ -137,7 +147,7 @@ class _MarketVolatilityScreenState extends State<MarketVolatilityScreen> {
                     ),
                     onPressed: _submitForm,
                     child: const Text(
-                      'මිල පුරෝකථනය කරන්න',
+                      'විචලනය සොයන්න',
                       style: TextStyle(fontSize: 16, color: Colors.white),
                     ),
                   ),
@@ -192,18 +202,19 @@ class _MarketVolatilityScreenState extends State<MarketVolatilityScreen> {
   }
 
   Widget _buildDropdownField(
-    String title,
-    List<String> options,
-    Function(String?) onChanged,
-    String? selectedValue,
-  ) {
+      String title,
+      List<MapEntry<String, String>> options,
+      Function(String?) onChanged,
+      String? selectedValue) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: DropdownButtonFormField<String>(
         value: selectedValue,
         items: options
-            .map((option) =>
-                DropdownMenuItem(value: option, child: Text(option)))
+            .map((entry) => DropdownMenuItem(
+                  value: entry.value,
+                  child: Text(entry.key),
+                ))
             .toList(),
         onChanged: onChanged,
         decoration: InputDecoration(
@@ -215,9 +226,38 @@ class _MarketVolatilityScreenState extends State<MarketVolatilityScreen> {
         dropdownColor: Colors.green.shade50,
         style: const TextStyle(color: Colors.black87, fontSize: 16),
         icon: const Icon(Icons.arrow_drop_down, color: Colors.green),
+        validator: (value) => value == null ? 'කරුණාකර මතයක් තෝරන්න' : null,
       ),
     );
   }
+
+  // Widget _buildDropdownField(
+  //   String title,
+  //   List<String> options,
+  //   Function(String?) onChanged,
+  //   String? selectedValue,
+  // ) {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(vertical: 8),
+  //     child: DropdownButtonFormField<String>(
+  //       value: selectedValue,
+  //       items: options
+  //           .map((option) =>
+  //               DropdownMenuItem(value: option, child: Text(option)))
+  //           .toList(),
+  //       onChanged: onChanged,
+  //       decoration: InputDecoration(
+  //         labelText: title,
+  //         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+  //         filled: true,
+  //         fillColor: Colors.green.shade100,
+  //       ),
+  //       dropdownColor: Colors.green.shade50,
+  //       style: const TextStyle(color: Colors.black87, fontSize: 16),
+  //       icon: const Icon(Icons.arrow_drop_down, color: Colors.green),
+  //     ),
+  //   );
+  // }
 }
 
 class PriceLineChart extends StatelessWidget {
