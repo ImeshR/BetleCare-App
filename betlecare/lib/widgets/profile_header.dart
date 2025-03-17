@@ -16,9 +16,10 @@ class ProfileHeader extends StatelessWidget {
     // Get current time of the user in the local time zone
     final currentHour = DateTime.now().hour;
 
-    // Determine the greeting based on the time of day
     String greeting = '';
-    if (currentHour < 12) {
+    if (currentHour >= 0 && currentHour < 5) {
+      greeting = 'සුභ රාත්‍රියක්'; // Good night
+    } else if (currentHour < 12) {
       greeting = 'සුභ උදෑසනක්'; // Good morning
     } else if (currentHour < 17) {
       greeting = 'සුභ දවසක්'; // Good afternoon
