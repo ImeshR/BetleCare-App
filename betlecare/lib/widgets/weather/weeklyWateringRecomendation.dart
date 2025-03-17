@@ -468,7 +468,23 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
                               ),
                             ),
                             const SizedBox(height: 4),
-                          
+                            Row(
+                              children: [
+                                Icon(Icons.thermostat, size: 12, color: Colors.grey[600]),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${day['minTemp']}°-${day['maxTemp']}°',
+                                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(Icons.water_drop, size: 12, color: Colors.grey[600]),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${day['rainfall']}mm',
+                                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
                             const SizedBox(height: 4),
                             const Divider(height: 8),
                             const SizedBox(height: 4),

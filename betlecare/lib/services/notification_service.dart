@@ -687,33 +687,184 @@ class NotificationService {
     }
   }
 
-  // Weather alert - check forecasted rainfall/temperature and create notifications
-  Future<void> checkWeatherAlerts(List<BetelBed> beds) async {
-    // Skip completely if notifications are disabled
-    if (!_notificationsEnabled) {
-      debugPrint('Notifications disabled, skipping weather checks entirely');
-      return;
-    }
+// Weather alert - check forecasted rainfall/temperature and create notifications
+// Weather alert - check forecasted rainfall/temperature and create notifications
+Future<void> checkWeatherAlerts(List<BetelBed> beds) async {
+  // Skip completely if notifications are disabled
+  if (!_notificationsEnabled) {
+    debugPrint('Notifications disabled, skipping weather checks entirely');
+    return;
+  }
 
-    // Skip specifically if weather notifications are disabled
-    if (!_weatherNotificationsEnabled) {
-      debugPrint('Weather notifications disabled, skipping weather checks');
-      return;
-    }
+  // Skip specifically if weather notifications are disabled
+  if (!_weatherNotificationsEnabled) {
+    debugPrint('Weather notifications disabled, skipping weather checks');
+    return;
+  }
 
-    for (final bed in beds) {
-      // Check if rainfall exceeds threshold (10mm is heavy rain in Sri Lanka)
-      final weatherData = await _getWeatherData(bed.district);
-
-      if (weatherData == null) continue;
-
-      // Check for heavy rainfall in next 7 days
-      await _checkRainfallAlerts(bed, weatherData);
-
-      // Check for extreme temperatures
-      await _checkTemperatureAlerts(bed, weatherData);
+  // Collect weather data for all beds first
+  Map<String, Map<String, dynamic>> weatherDataMap = {};
+  for (final bed in beds) {
+    final weatherData = await _getWeatherData(bed.district);
+    if (weatherData != null) {
+      weatherDataMap[bed.id] = weatherData;
     }
   }
+
+  if (weatherDataMap.isEmpty) {
+    debugPrint('No weather data available for any beds');
+    return;
+  }
+
+  // Find the bed with highest temperature and create notification for it
+  await _createHighestTemperatureNotification(beds, weatherDataMap);
+  
+  // Create notifications for heavy rainfall days
+  await _createHeavyRainfallNotifications(beds, weatherDataMap);
+}
+
+
+Future<void> _createHighestTemperatureNotification(
+    List<BetelBed> beds, Map<String, Map<String, dynamic>> weatherDataMap) async {
+  
+  // Track highest temperature, corresponding bed and date
+  double highestTemp = 0;
+  BetelBed? hottestBed;
+  String hottestDay = '';
+  
+  // Go through all beds to find the one with highest temperature forecast
+  for (final bed in beds) {
+    if (!weatherDataMap.containsKey(bed.id)) continue;
+    
+    final weatherData = weatherDataMap[bed.id]!;
+    final daily = weatherData['daily'];
+    if (daily == null) continue;
+    
+    // Check each day in forecast
+    for (int i = 0; i < daily['time'].length; i++) {
+      final date = daily['time'][i];
+      final maxTemp = daily['temperature_2m_max'][i].toDouble();
+      
+      // If this is the highest temperature found so far
+      if (maxTemp > highestTemp) {
+        highestTemp = maxTemp;
+        hottestBed = bed;
+        hottestDay = date.toString().substring(0, 10);
+      }
+    }
+  }
+  
+  // Create notification only if we found a high temperature
+  if (hottestBed != null && highestTemp > 33.0) {
+    debugPrint('Creating notification for highest temperature: $highestTemp°C for bed: ${hottestBed.name}');
+    
+    await createNotification(
+      title: 'සතියේ අධික උෂ්ණත්ව අනතුරු ඇඟවීම', // Highest temperature warning of the week
+      message: '${hottestBed.name} සඳහා ${hottestDay} දිනට ඉහළම උෂ්ණත්වය අපේක්ෂා කෙරේ (${highestTemp.toStringAsFixed(1)}°C). ඔබගේ බුලත් පැළවලට හානි නොවන ලෙස නිසි ජල සැපයුමක් පවත්වා ගන්න.',
+      type: NotificationType.weather,
+      bedId: hottestBed.id,
+      metadata: {
+        'temperature': highestTemp,
+        'date': hottestDay,
+        'district': hottestBed.district,
+        'weather_type': 'high_temperature',
+      },
+    );
+  }
+}
+
+Future<void> _createHeavyRainfallNotifications(
+    List<BetelBed> beds, Map<String, Map<String, dynamic>> weatherDataMap) async {
+  
+  // Set threshold for heavy rainfall
+  final heavyRainfallThreshold = 15.0; // Over 15mm is considered heavy rain
+  
+  // Process each bed
+  for (final bed in beds) {
+    if (!weatherDataMap.containsKey(bed.id)) continue;
+    
+    final weatherData = weatherDataMap[bed.id]!;
+    final daily = weatherData['daily'];
+    if (daily == null) continue;
+    
+    // Find days with rainfall exceeding threshold
+    bool notificationCreated = false;
+    
+    for (int i = 0; i < daily['time'].length; i++) {
+      final date = daily['time'][i];
+      final rainfall = daily['precipitation_sum'][i].toDouble();
+      
+      // If rainfall exceeds threshold, create alert
+      if (rainfall >= heavyRainfallThreshold && !notificationCreated) {
+        final formattedDate = date.toString().substring(0, 10);
+        
+        debugPrint('Creating heavy rainfall notification: ${rainfall}mm for bed: ${bed.name} on $formattedDate');
+        
+        await createNotification(
+          title: 'අධික වැසි අනතුරු ඇඟවීම', // Heavy rain warning
+          message: '${bed.name} සඳහා ${formattedDate} දිනට අධික වැසි අපේක්ෂා කෙරේ (${rainfall.toStringAsFixed(1)}mm). ඔබගේ බුලත් වගාව ආරක්ෂා කර ගැනීමට අවශ්‍ය පියවර ගන්න.',
+          type: NotificationType.weather,
+          bedId: bed.id,
+          metadata: {
+            'rainfall': rainfall,
+            'date': formattedDate,
+            'district': bed.district,
+            'weather_type': 'heavy_rain',
+          },
+        );
+        
+        notificationCreated = true;  
+      }
+    }
+  }
+}
+
+
+// Create notifications for days with rainfall less than 15mm
+Future<void> _createRainfallNotifications(
+    List<BetelBed> beds, Map<String, Map<String, dynamic>> weatherDataMap) async {
+  
+  // Set threshold for low rainfall
+  final lowRainfallThreshold = 15.0; // Less than 15mm is considered low
+  
+  // Process each bed
+  for (final bed in beds) {
+    if (!weatherDataMap.containsKey(bed.id)) continue;
+    
+    final weatherData = weatherDataMap[bed.id]!;
+    final daily = weatherData['daily'];
+    if (daily == null) continue;
+    
+    // Find days with rainfall less than threshold
+    for (int i = 0; i < daily['time'].length; i++) {
+      final date = daily['time'][i];
+      final rainfall = daily['precipitation_sum'][i].toDouble();
+      
+      // If rainfall is below threshold, create alert
+      if (rainfall < lowRainfallThreshold) {
+        final formattedDate = date.toString().substring(0, 10);
+        
+        debugPrint('Creating low rainfall notification: ${rainfall}mm for bed: ${bed.name} on $formattedDate');
+        
+        await createNotification(
+          title: 'අඩු වැසි අනතුරු ඇඟවීම', // Low rainfall warning
+          message: '${bed.name} සඳහා ${formattedDate} දිනට අඩු වැසි අපේක්ෂා කෙරේ (${rainfall.toStringAsFixed(1)}mm). ඔබගේ බුලත් වගාවට ප්‍රමාණවත් ජලය සැපයීමට සැලසුම් කරන්න.',
+          type: NotificationType.weather,
+          bedId: bed.id,
+          metadata: {
+            'rainfall': rainfall,
+            'date': formattedDate,
+            'district': bed.district,
+            'weather_type': 'low_rain',
+          },
+        );
+        
+        // Only create one notification per bed for low rainfall
+        break;
+      }
+    }
+  }
+}
 
   // Check for rainfall alerts
   Future<void> _checkRainfallAlerts(
