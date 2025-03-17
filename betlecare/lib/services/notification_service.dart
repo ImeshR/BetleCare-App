@@ -188,23 +188,42 @@ class NotificationService {
     }
   }
   
-  void _handleNotificationPayload(Map<String, dynamic> notificationData) async {
-    try {
-      // Parse the notification data
-      final notification = BetelNotification.fromJson(notificationData);
+void _handleNotificationPayload(Map<String, dynamic> notificationData) async {
+  try {
+    // Parse the notification data
+    final notification = BetelNotification.fromJson(notificationData);
+    
+    // Skip if the notification is already read or popup was already displayed
+    if (notification.isRead || notification.popupDisplayed) return;
+    
+    // Only show notification if notifications are enabled and this type is enabled
+    if (_notificationsEnabled && _isNotificationTypeEnabled(notification.type)) {
+      await _popupService.showNotification(notification);
       
-      // Skip if the notification is already read
-      if (notification.isRead) return;
-      
-      // Only show notification if notifications are enabled and this type is enabled
-      if (_notificationsEnabled && _isNotificationTypeEnabled(notification.type)) {
-        await _popupService.showNotification(notification);
-      }
-    } catch (e) {
-      debugPrint('Error handling notification payload: $e');
+      // After showing popup, update the popup_displayed flag in database
+      await _markPopupDisplayed(notification.id);
     }
+  } catch (e) {
+    debugPrint('Error handling notification payload: $e');
   }
-  
+}
+
+// Add a new method to mark popup as displayed
+Future<void> _markPopupDisplayed(String notificationId) async {
+  try {
+    final supabase = await SupabaseClientManager.instance;
+    
+    await supabase.client
+      .from('notifications')
+      .update({'popup_displayed': true})
+      .eq('id', notificationId);
+    
+    debugPrint('✅ Notification popup_displayed flag updated for ID: $notificationId');
+  } catch (e) {
+    debugPrint('❌ Error updating popup_displayed flag: $e');
+  }
+}
+
   // Check if specific notification type is enabled
   bool _isNotificationTypeEnabled(NotificationType type) {
     switch (type) {
@@ -797,43 +816,46 @@ class NotificationService {
     return await weatherService.fetchWeatherData(district);
   }
   
-  // Check for reactivated notifications (that have changed from deleted to active)
-  Future<void> checkForReactivatedNotifications() async {
-    final supabase = await SupabaseClientManager.instance;
-    final user = supabase.client.auth.currentUser;
+Future<void> checkForReactivatedNotifications() async {
+  final supabase = await SupabaseClientManager.instance;
+  final user = supabase.client.auth.currentUser;
+  
+  if (user == null) return;
+  
+  // Skip if notifications are disabled
+  if (!_notificationsEnabled) return;
+  
+  try {
+    // Get active unread notifications that haven't had their popup displayed yet
+    final data = await supabase.client
+      .from('notifications')
+      .select()
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .eq('is_read', false)
+      .eq('popup_displayed', false); // Only get ones that haven't been displayed
     
-    if (user == null) return;
-    
-    // Skip if notifications are disabled
-    if (!_notificationsEnabled) return;
-    
-    try {
-      // Get active unread notifications
-      final data = await supabase.client
-        .from('notifications')
-        .select()
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .eq('is_read', false);
+    if (data.isNotEmpty) {
+      debugPrint('Found ${data.length} active unread notifications to show popups for');
       
-      if (data.isNotEmpty) {
-        debugPrint('Found ${data.length} active unread notifications to check');
+      // Show popup for each eligible notification
+      for (final notificationData in data) {
+        final notification = BetelNotification.fromJson(notificationData);
         
-        // Show popup for each eligible notification
-        for (final notificationData in data) {
-          final notification = BetelNotification.fromJson(notificationData);
-          
-          // Only show if this notification type is enabled
-          if (_isNotificationTypeEnabled(notification.type)) {
-            await _popupService.showNotification(notification);
-          }
+        // Only show if this notification type is enabled
+        if (_isNotificationTypeEnabled(notification.type)) {
+          await _popupService.showNotification(notification);
+          // Mark as displayed
+          await _markPopupDisplayed(notification.id);
         }
       }
-    } catch (e) {
-      debugPrint('Error checking for reactivated notifications: $e');
     }
+  } catch (e) {
+    debugPrint('Error checking for reactivated notifications: $e');
   }
-  
+}
+
+
   // Check all notification types
   Future<void> checkAllNotifications(List<BetelBed> beds) async {
     if (!_notificationsEnabled) {
