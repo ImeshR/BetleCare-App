@@ -100,6 +100,19 @@ class NotificationPreferencesScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             
+            // Add informational text when notifications are disabled
+            if (!enableToggles)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Text(
+                  'මෙම සැකසුම් සක්‍රිය කිරීමට ප්‍රධාන දැනුම්දීම් සක්‍රිය කරන්න',  // Enable main notifications to activate these settings
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            
             // Weather notifications
             _buildNotificationTypeToggle(
               icon: Icons.cloud,

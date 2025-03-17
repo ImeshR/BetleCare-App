@@ -51,11 +51,13 @@ class NotificationProvider with ChangeNotifier {
     
     // Set up periodic refresh timer as a fallback (every 30 seconds)
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      refreshUnreadCount();
-      
-      // Explicitly check for reactivated notifications every 90 seconds
-      if (_.tick % 3 == 0) {
-        _notificationService.checkForReactivatedNotifications();
+      if (_notificationsEnabled) {
+        refreshUnreadCount();
+        
+        // Explicitly check for reactivated notifications every 90 seconds
+        if (_.tick % 3 == 0) {
+          _notificationService.checkForReactivatedNotifications();
+        }
       }
     });
     
@@ -66,7 +68,9 @@ class NotificationProvider with ChangeNotifier {
     
     // Check for reactivated notifications
     Future.delayed(const Duration(seconds: 3), () {
-      _notificationService.checkForReactivatedNotifications();
+      if (_notificationsEnabled) {
+        _notificationService.checkForReactivatedNotifications();
+      }
     });
   }
   
@@ -105,7 +109,18 @@ class NotificationProvider with ChangeNotifier {
       );
       
       // Update local state if values were provided
-      if (notificationsEnabled != null) _notificationsEnabled = notificationsEnabled;
+      if (notificationsEnabled != null) {
+        _notificationsEnabled = notificationsEnabled;
+        
+        // If turning off main notifications, also set all notification types to false
+        if (!notificationsEnabled) {
+          _weatherNotificationsEnabled = false;
+          _harvestNotificationsEnabled = false;
+          _fertilizeNotificationsEnabled = false;
+          _diseaseNotificationsEnabled = false;
+        }
+      }
+      
       if (weatherNotifications != null) _weatherNotificationsEnabled = weatherNotifications;
       if (harvestNotifications != null) _harvestNotificationsEnabled = harvestNotifications;
       if (fertilizeNotifications != null) _fertilizeNotificationsEnabled = fertilizeNotifications;
@@ -121,6 +136,7 @@ class NotificationProvider with ChangeNotifier {
   
   // Callback function for real-time notifications
   void _onNotificationsChanged() {
+    if (!_notificationsEnabled) return;  // Skip if notifications are disabled
     debugPrint('⚡ Real-time notification update received');
     refreshUnreadCount(); // Just update the count first (faster)
     loadNotifications(); // Then load the full notifications list
@@ -128,6 +144,8 @@ class NotificationProvider with ChangeNotifier {
   
   // Refresh just the unread count (lighter operation)
   Future<void> refreshUnreadCount() async {
+    if (!_notificationsEnabled) return;  // Skip if notifications are disabled
+    
     try {
       final newCount = await _notificationService.getUnreadCount();
       if (newCount != _unreadCount) {
@@ -149,6 +167,8 @@ class NotificationProvider with ChangeNotifier {
   
   // Force refresh the notification subscription
   Future<void> refreshSubscription() async {
+    if (!_notificationsEnabled) return;  // Skip if notifications are disabled
+    
     debugPrint('🔄 Force refreshing notification subscription');
     await _notificationService.refreshSubscription();
     await loadNotifications();
@@ -156,6 +176,14 @@ class NotificationProvider with ChangeNotifier {
   
   // Load notifications
   Future<void> loadNotifications() async {
+    if (!_notificationsEnabled) {
+      // If notifications disabled, clear the list and return
+      _notifications = [];
+      _unreadCount = 0;
+      notifyListeners();
+      return;
+    }
+    
     try {
       if (_isLoading) {
         debugPrint('⚠️ Already loading notifications, skipping');
@@ -183,6 +211,8 @@ class NotificationProvider with ChangeNotifier {
   
   // Mark notification as read
   Future<void> markAsRead(String notificationId) async {
+    if (!_notificationsEnabled) return;  // Skip if notifications are disabled
+    
     try {
       await _notificationService.markAsRead(notificationId);
       
@@ -206,6 +236,8 @@ class NotificationProvider with ChangeNotifier {
   
   // Mark all as read
   Future<void> markAllAsRead() async {
+    if (!_notificationsEnabled) return;  // Skip if notifications are disabled
+    
     try {
       await _notificationService.markAllAsRead();
       
@@ -226,6 +258,8 @@ class NotificationProvider with ChangeNotifier {
   
   // Delete notification
   Future<void> deleteNotification(String notificationId) async {
+    if (!_notificationsEnabled) return;  // Skip if notifications are disabled
+    
     try {
       // Get the unique key before removing
       String uniqueKey = '';
@@ -259,16 +293,16 @@ class NotificationProvider with ChangeNotifier {
   
   // Check all notifications (weather, harvest, fertilize) with debounce
   Future<void> checkAllNotifications() async {
+    // Skip if notifications are disabled
+    if (!_notificationsEnabled) {
+      debugPrint('Notifications are disabled, skipping all checks');
+      return;
+    }
+    
     // Debounce: don't check more often than every 30 minutes
     final now = DateTime.now();
     if (now.difference(_lastCheck).inMinutes < 30) {
       debugPrint('⏳ Notification check debounced - last check was ${now.difference(_lastCheck).inMinutes} minutes ago');
-      return;
-    }
-    
-    // Skip if notifications are disabled
-    if (!_notificationsEnabled) {
-      debugPrint('Notifications are disabled, skipping all checks');
       return;
     }
     
