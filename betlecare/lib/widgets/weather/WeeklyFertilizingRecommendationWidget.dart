@@ -75,12 +75,6 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
         rainfallForecast.add(0.0);
       }
       
-      // Get today's fertilizing recommendation
-      final todayRecommendation = await _fertilizingService.checkTodayFertilizingSuitability(
-        widget.bed.district,
-        currentRainfall,
-      );
-      
       // Create fertilizer history from the bed's history
       final fertilizeHistory = widget.bed.fertilizeHistory.map((record) {
         return {
@@ -96,14 +90,26 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
         fertilizeHistory,
       );
       
+      // Only get today's recommendation if the date is in forecast or it's first time fertilizing
+      final bool isFirstTime = fertilizePlan['recommendation']?['is_first_time'] ?? false;
+      final bool dateInForecast = fertilizePlan['recommendation']?['date_in_forecast'] ?? false;
+      
+      Map<String, dynamic>? todayRecommendation;
+      if (isFirstTime || dateInForecast) {
+        todayRecommendation = await _fertilizingService.checkTodayFertilizingSuitability(
+          widget.bed.district,
+          currentRainfall,
+        );
+      }
+      
       setState(() {
         _todayRecommendation = todayRecommendation;
         _fertilizePlan = fertilizePlan;
         
         // Get the is_after_six_pm value from the API response or use local check
         _isAfterSixPm = fertilizePlan['is_after_six_pm'] ?? 
-                         todayRecommendation['is_after_six_pm'] ?? 
-                         _isAfterSixPm;
+                       (todayRecommendation != null ? todayRecommendation['is_after_six_pm'] : null) ?? 
+                       _isAfterSixPm;
         
         _isLoading = false;
       });
@@ -113,6 +119,17 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
         _errorMessage = e.toString();
         _isLoading = false;
       });
+    }
+  }
+  
+  bool _isDateWithinTwoWeeks(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      final now = DateTime.now();
+      final difference = date.difference(now).inDays;
+      return difference >= 0 && difference <= 14;
+    } catch (e) {
+      return false;
     }
   }
   
@@ -126,7 +143,7 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
       return _buildErrorState();
     }
     
-    if (_todayRecommendation == null || _fertilizePlan == null) {
+    if (_fertilizePlan == null) {
       return _buildUnavailableState();
     }
     
@@ -234,32 +251,39 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
   }
   
   Widget _buildDetailedRecommendationCard() {
-    // Get today's recommendation values
-    final isSuitable = _todayRecommendation!['suitable_for_fertilizing'] as bool;
-    final isAfterSixPm = _isAfterSixPm;
-    
-    // If it's after 6 PM, adjust the recommendation as needed
-    final effectiveIsSuitable = isAfterSixPm ? false : isSuitable;
-    
     // Always use yellow color theme for fertilizing
     final color = Colors.yellow.shade700;
-    final icon = effectiveIsSuitable ? Icons.check_circle : Icons.cancel;
+    
+    // Check if today's recommendation exists (only if date is in forecast or first time)
+    final bool isFirstTime = _fertilizePlan!['recommendation']?['is_first_time'] ?? false;
+    final bool dateInForecast = _fertilizePlan!['recommendation']?['date_in_forecast'] ?? false;
     
     // Get recommendation text based on time and suitability
-    String statusText;
-    if (isAfterSixPm) {
-      statusText = 'අද පොහොර යෙදීමට ප්‍රමාද වැඩිය';  // It's too late for fertilizing today
-    } else {
-      statusText = effectiveIsSuitable 
-          ? 'පොහොර යෙදීමට සුදුසුයි' 
-          : 'පොහොර යෙදීමට සුදුසු නැත';
+    String statusText = '';
+    IconData statusIcon = Icons.info;
+    bool showTodayStatus = false;
+    
+    if (_todayRecommendation != null) {
+      final isSuitable = _todayRecommendation!['suitable_for_fertilizing'] as bool? ?? false;
+      final effectiveIsSuitable = _isAfterSixPm ? false : isSuitable;
+      
+      statusIcon = effectiveIsSuitable ? Icons.check_circle : Icons.cancel;
+      
+      if (_isAfterSixPm) {
+        statusText = 'අද පොහොර යෙදීමට ප්‍රමාද වැඩිය';  // It's too late for fertilizing today
+      } else {
+        statusText = effectiveIsSuitable 
+            ? 'පොහොර යෙදීමට සුදුසුයි' 
+            : 'පොහොර යෙදීමට සුදුසු නැත';
+      }
+      
+      showTodayStatus = true;
     }
     
-    // Get detailed fertilizing plan if available
+    // Get detailed fertilizing plan
     String nextDate = '';
     String nextFertilizer = '';
     bool hasRecommendation = false;
-    bool isFirstTime = false;
     String firstTimeMessage = '';
     String message = '';
     
@@ -272,10 +296,8 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
       final recommendation = _fertilizePlan!['recommendation'];
       
       // Check if this is the first time (no history)
-      isFirstTime = recommendation['is_first_time'] ?? false;
-      
       if (isFirstTime) {
-        firstTimeMessage = isAfterSixPm 
+        firstTimeMessage = _isAfterSixPm 
             ? 'පොහොර යෙදීම හෙටින් ආරම්භ කරන්න'  // Start fertilizing from tomorrow
             : 'පොහොර යෙදීම අදින් ආරම්භ කරන්න';   // Start fertilizing from today
       } 
@@ -291,8 +313,8 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
         }
       }
       
-      // Look for suitable days in the weather forecast
-      if (recommendation['weather_forecast'] != null && recommendation['weather_forecast'] is List) {
+      // Only look for suitable days if date is in forecast
+      if (dateInForecast && recommendation['weather_forecast'] != null && recommendation['weather_forecast'] is List) {
         final forecast = recommendation['weather_forecast'] as List;
         for (var day in forecast) {
           if (day is Map && day['suitable_for_fertilizing'] == true) {
@@ -300,6 +322,12 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
           }
         }
       }
+    }
+    
+    // Check if next fertilizing date is within next 2 weeks (but after 7 days)
+    bool showPrepareMessage = false;
+    if (hasRecommendation && !dateInForecast && _isDateWithinTwoWeeks(nextDate)) {
+      showPrepareMessage = true;
     }
     
     return Container(
@@ -340,32 +368,34 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
           ),
           const SizedBox(height: 12),
           
-          // Today's status
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.yellow.shade300, width: 1),
-            ),
-            child: Row(
-              children: [
-                Icon(icon, color: color),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    statusText,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: color,
+          // Today's status - only if date is in forecast or first time
+          if (showTodayStatus)
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.yellow.shade300, width: 1),
+              ),
+              child: Row(
+                children: [
+                  Icon(statusIcon, color: color),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      statusText,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          
-          const SizedBox(height: 12),
+            
+          if (showTodayStatus)
+            const SizedBox(height: 12),
           
           // First time message or next fertilizing plan - Always show this in collapsed or expanded mode
           if (isFirstTime) 
@@ -383,6 +413,17 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
               color: Colors.yellow.shade700
             ),
             
+          // Preparation message if next fertilizing is within 2 weeks
+          if (showPrepareMessage) ...[
+            const SizedBox(height: 12),
+            _buildInfoSection(
+              title: 'සූදානම් වන්න',
+              content: 'මීළඟ පොහොර යෙදීමට සූදානම් වන්න. ඔබට තව දින 14ක් ඇතුළත පොහොර යෙදීමට නියමිතයි.',
+              icon: Icons.notification_important,
+              color: Colors.yellow.shade700
+            ),
+          ],
+            
           // Expanded content - only show when expanded
           if (_isExpanded) ...[
             const SizedBox(height: 12),
@@ -398,8 +439,8 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
               
             const SizedBox(height: 12),
             
-            // List of suitable days in the next 7 days
-            if (suitableDays.isNotEmpty) ...[
+            // List of suitable days in the next 7 days - only if date is in forecast
+            if (dateInForecast && suitableDays.isNotEmpty) ...[
               Text(
                 'ඉදිරි දින 7 තුළ පොහොර යෙදීමට සුදුසු දින:',
                 style: TextStyle(
@@ -467,19 +508,6 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
                 ),
               ),
             ],
-          ],
-          
-          // If expanded and no detailed content is available, show a message
-          if (_isExpanded && 
-              message.isEmpty && 
-              suitableDays.isEmpty) ...[
-            const SizedBox(height: 12),
-            _buildInfoSection(
-              title: 'අමතර තොරතුරු',
-              content: 'ඉදිරි දින 7 තුළ පොහොර යෙදීමට සුදුසු දින නොමැත. ඔබේ මීළඟ පොහොර යෙදීම සඳහා දිනය ඔබවෙත ඉක්මනින් දැනුම් දීමක් සිදුවෙයි',
-              icon: Icons.info_outline,
-              color: Colors.yellow.shade700
-            ),
           ],
         ],
       ),
