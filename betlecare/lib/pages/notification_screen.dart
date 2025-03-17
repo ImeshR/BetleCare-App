@@ -1,10 +1,12 @@
+import 'package:betlecare/models/betel_bed_model.dart';
 import 'package:betlecare/pages/notification_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:betlecare/models/notification_model.dart';
 import 'package:betlecare/providers/notification_provider.dart';
+import 'package:betlecare/pages/beds/bed_detail_screen.dart';
+import 'package:betlecare/providers/betel_bed_provider.dart';
 import 'package:intl/intl.dart';
- 
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({Key? key}) : super(key: key);
@@ -93,12 +95,26 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
   
   Widget _buildNotificationList(NotificationProvider provider) {
+    // Filter notifications to only show those from the last 3 days
+    final DateTime thresholdDate = DateTime.now().subtract(const Duration(days: 3));
+    
+    final filteredNotifications = provider.notifications
+        .where((notification) => notification.createdAt.isAfter(thresholdDate))
+        .toList();
+    
+    // Sort notifications by date (newest first)
+    filteredNotifications.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    
+    if (filteredNotifications.isEmpty) {
+      return _buildEmptyState();
+    }
+    
     return RefreshIndicator(
       onRefresh: () => provider.loadNotifications(),
       child: ListView.builder(
-        itemCount: provider.notifications.length,
+        itemCount: filteredNotifications.length,
         itemBuilder: (context, index) {
-          final notification = provider.notifications[index];
+          final notification = filteredNotifications[index];
           return _buildNotificationItem(notification, provider);
         },
       ),
@@ -143,10 +159,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return Dismissible(
       key: Key(notification.id),
       background: Container(
-        color: Colors.red,
+        color: Colors.grey.shade200,
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: Icon(Icons.delete, color: Colors.grey.shade700),
       ),
       direction: DismissDirection.endToStart,
       onDismissed: (direction) {
@@ -189,9 +205,47 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   tooltip: 'කියවා ඇති ලෙස සලකුණු කරන්න', // Mark as read
                 )
               : null,
-          onTap: () {
+          onTap: () async {
+            // Mark as read if it's unread
             if (isUnread) {
               provider.markAsRead(notification.id);
+            }
+            
+            // If notification is related to a bed, navigate to that bed's detail screen
+            if (notification.bedId != null && notification.bedId!.isNotEmpty) {
+              // Get the bed provider to find the bed by ID
+              final betelBedProvider = Provider.of<BetelBedProvider>(context, listen: false);
+              
+              // Find the bed that matches the bedId
+              final beds = betelBedProvider.beds;
+              BetelBed? targetBed;
+              
+              for (var bed in beds) {
+                if (bed.id == notification.bedId) {
+                  targetBed = bed;
+                  break;
+                }
+              }
+              
+              // If the bed is found, navigate to its detail screen
+              if (targetBed != null) {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => BedDetailScreen(bed: targetBed!),
+                  ),
+                );
+                
+                // If returning from the bed detail screen with changes, refresh notifications
+                if (result == true) {
+                  provider.loadNotifications();
+                }
+              } else {
+                // If bed not found, show a message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('මෙම වගාව තවදුරටත් පවතින්නේ නැත')), // This bed no longer exists
+                );
+              }
             }
           },
         ),

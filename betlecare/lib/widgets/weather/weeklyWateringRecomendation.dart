@@ -1,8 +1,9 @@
-
 import 'package:flutter/material.dart';
 import 'package:betlecare/models/betel_bed_model.dart';
 import 'package:betlecare/services/wateringService.dart';
+import 'package:betlecare/services/weather_services2.dart';
 import 'package:intl/intl.dart';
+import 'dart:developer' as developer;
 
 class WeeklyWateringRecommendationWidget extends StatefulWidget {
   final BetelBed bed;
@@ -18,6 +19,7 @@ class WeeklyWateringRecommendationWidget extends StatefulWidget {
 
 class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecommendationWidget> {
   final _wateringService = WateringService();
+  final _weatherService = WeatherService();
   bool _isLoading = true;
   bool _isExpanded = false;
   String _error = '';
@@ -37,67 +39,192 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
     });
 
     try {
-      // Get today's recommendation
-      final result = await _wateringService.getWateringRecommendation(widget.bed);
+      // First, get weather data for the bed's location to create forecasts
+      final String locationKey = _getLocationKeyFromDistrict(widget.bed.district);
+      final weatherData = await _weatherService.fetchWeatherData(locationKey);
       
-      // Simulate weekly forecast (in a real app, you'd fetch this from your backend)
-      // This is a placeholder until you implement the actual API endpoint
+      if (weatherData == null) {
+        throw Exception('Failed to fetch weather data');
+      }
+      
+      // Get daily forecasts for the next 7 days
+      final List<Map<String, dynamic>> dailyForecasts = _weatherService.prepareDailyForecast(weatherData);
+      developer.log('Daily forecasts fetched: ${dailyForecasts.length} days', name: 'WeeklyWateringWidget');
+      
+      // Get today's recommendation from the API
+      final todayResult = await _wateringService.getWateringRecommendation(widget.bed);
+      
+      // Create weekly forecast array
       final List<Map<String, dynamic>> weeklyForecast = [];
       final today = DateTime.now();
       
-      // Add today's recommendation
+      // Add today's recommendation (from API)
       weeklyForecast.add({
         'date': today,
         'day': _getDayName(today),
-        'recommendation': result['watering_recommendation'],
-        'water_amount': result['water_amount'],
-        'confidence': result['confidence'],
+        'recommendation': todayResult['watering_recommendation'],
+        'water_amount': todayResult['water_amount'],
+        'confidence': todayResult['confidence'],
+        'rainfall': dailyForecasts[0]['rainfall'],
+        'maxTemp': dailyForecasts[0]['maxTemp'],
+        'minTemp': dailyForecasts[0]['minTemp'],
       });
       
-      // Generate placeholder recommendations for the next 6 days
-      for (int i = 1; i < 7; i++) {
+      // Generate recommendations for the next 6 days based on weather forecast
+      for (int i = 1; i < dailyForecasts.length && i < 7; i++) {
         final date = today.add(Duration(days: i));
+        final forecast = dailyForecasts[i];
+        final dayName = _getDayName(date);
         
-        // This is simulated data - replace with actual API calls when available
-        String recommendation;
-        int waterAmount;
-        double confidence;
-        
-        // Simple simulation logic - alternating recommendations
-        if (i % 3 == 0) {
-          recommendation = "Water twice today";
-          waterAmount = 8;
-          confidence = 85.0;
-        } else if (i % 2 == 0) {
-          recommendation = "Water once today";
-          waterAmount = 4;
-          confidence = 75.0;
-        } else {
-          recommendation = "No watering needed";
-          waterAmount = 0;
-          confidence = 90.0;
-        }
+        // Get recommendation based on weather forecast
+        // In a real app, you should call your backend API for each day
+        final recommendation = _getRecommendationFromWeather(
+          forecast['rainfall'],
+          forecast['minTemp'],
+          forecast['maxTemp'],
+          _calculateCropStage(widget.bed.plantedDate),
+          dayName,
+        );
         
         weeklyForecast.add({
           'date': date,
-          'day': _getDayName(date),
-          'recommendation': recommendation,
-          'water_amount': waterAmount,
-          'confidence': confidence,
+          'day': dayName,
+          'recommendation': recommendation['recommendation'],
+          'water_amount': recommendation['water_amount'],
+          'confidence': recommendation['confidence'],
+          'rainfall': forecast['rainfall'],
+          'maxTemp': forecast['maxTemp'],
+          'minTemp': forecast['minTemp'],
         });
       }
       
       setState(() {
-        _todayRecommendation = result;
+        _todayRecommendation = todayResult;
         _weeklyForecast = weeklyForecast;
         _isLoading = false;
       });
+      
+      developer.log('Weekly watering recommendations completed', name: 'WeeklyWateringWidget');
     } catch (e) {
       setState(() {
         _error = e.toString();
         _isLoading = false;
       });
+      developer.log('Error fetching watering recommendations: $e', name: 'WeeklyWateringWidget', error: e);
     }
+  }
+
+  // Helper method to calculate crop stage (copied from WateringService for consistency)
+  int _calculateCropStage(DateTime plantedDate) {
+    final ageInDays = DateTime.now().difference(plantedDate).inDays;
+    
+    if (ageInDays < 30) return 1; // Establishing
+    if (ageInDays < 60) return 3; // Young
+    if (ageInDays < 90) return 5; // Early mature
+    if (ageInDays < 180) return 7; // Mature
+    return 10; // Fully mature
+  }
+  
+  // Helper to map district to the locations used in weather service
+  String _getLocationKeyFromDistrict(String district) {
+    final districtMap = {
+      'කුරුණෑගල': 'කුරුණෑගල (Kurunegala)',
+      'කුරුණෑගල (Kurunegala)': 'කුරුණෑගල (Kurunegala)',
+      'Kurunegala': 'කුරුණෑගල (Kurunegala)',
+      'පුත්තලම': 'පුත්තලම (Puttalam)',
+      'පුත්තලම (Puttalam)': 'පුත්තලම (Puttalam)',
+      'Puttalam': 'පුත්තලම (Puttalam)',
+      'අනමඩුව': 'අනමඩුව (Anamaduwa)',
+      'කොළඹ': 'කොළඹ (Colombo)',
+      'කළුතර': 'කළුතර (Kalutara)',
+      'පානදුර': 'පානදුර (Panadura)',
+    };
+    
+    return districtMap[district] ?? 'වත්මන් ස්ථානය (Current Location)';
+  }
+
+  // This simulates your backend logic for forecasting days where we don't call the API
+  Map<String, dynamic> _getRecommendationFromWeather(
+    double rainfall, 
+    int minTemp, 
+    int maxTemp, 
+    int cropStage,
+    String dayName
+  ) {
+    String recommendation;
+    int waterAmount;
+    double confidence;
+    
+    // Use logic similar to your Python backend's get_watering_recommendation function
+    if (rainfall >= 15) {
+      // Heavy rain - no watering needed
+      recommendation = "No watering needed";
+      waterAmount = 0;
+      confidence = 90.0;
+    } else if (rainfall >= 5) {
+      // Moderate rain - no watering or light watering depending on temperature
+      if (maxTemp >= 32) {
+        recommendation = "Water once today";
+        waterAmount = 3;
+        confidence = 75.0;
+      } else {
+        recommendation = "No watering needed";
+        waterAmount = 0;
+        confidence = 80.0;
+      }
+    } else if (rainfall > 0) {
+      // Light rain - depends on temperature and crop stage
+      if (maxTemp >= 32) {
+        recommendation = "Water once today";
+        waterAmount = 4;
+        confidence = 85.0;
+      } else if (cropStage <= 3) {
+        // Young plants need more water
+        recommendation = "Water once today";
+        waterAmount = 4;
+        confidence = 80.0;
+      } else {
+        recommendation = "No watering needed";
+        waterAmount = 0;
+        confidence = 70.0;
+      }
+    } else {
+      // No rain - full watering recommendations based on temperature
+      if (maxTemp >= 33) {
+        if (dayName == 'බ්‍රහස්පතින්දා' || dayName == 'ඉරිදා') {
+          // Special handling for Thursday and Sunday for demonstration
+          // In a real app, this should be based on data, not hardcoded days
+          recommendation = "Water once today";
+          waterAmount = 5;
+          confidence = 80.0;
+        } else {
+          recommendation = "Water twice today";
+          waterAmount = 8;
+          confidence = 90.0;
+        }
+      } else if (maxTemp >= 30) {
+        recommendation = "Water once today";
+        waterAmount = 5;
+        confidence = 85.0;
+      } else {
+        if (cropStage <= 3) {
+          // Young plants always need some water
+          recommendation = "Water once today";
+          waterAmount = 4;
+          confidence = 75.0;
+        } else {
+          recommendation = "Water once today";
+          waterAmount = 4;
+          confidence = 70.0;
+        }
+      }
+    }
+    
+    return {
+      'recommendation': recommendation,
+      'water_amount': waterAmount,
+      'confidence': confidence,
+    };
   }
 
   String _getDayName(DateTime date) {
@@ -121,12 +248,28 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
   }
   
   String _getLocalizedRecommendation(String recommendation, int waterAmount) {
+    final int totalWater = (waterAmount * widget.bed.areaSize).round();
+    final int halfTotalWater = (totalWater / 2).round();
+    
     if (recommendation.contains("No watering")) {
       return 'ජලය යෙදීම අවශ්‍ය නැත';
     } else if (recommendation.contains("once")) {
-      return 'ජලය යෙදීම අවශ්‍යයි (${waterAmount}L)';
+      return 'වර්ග මීටරයට ලීටර් $waterAmount\nඑනම් ඔබගේ වගාවට ලීටර් $totalWater ක් යොදන්න';
     } else {
-      return 'දෙවරක් ජලය යෙදීම අවශ්‍යයි (${waterAmount}L)';
+      return 'දෙවරක් ජලය යෙදීම අවශ්‍යයි:\nවර්ග මීටරයට ලීටර් $waterAmount එනම් මුලු ලීටර් $totalWater ක් යොදන්න';
+    }
+  }
+
+  String _getDetailedWateringText(String recommendation, int waterAmount) {
+    final int totalWater = (waterAmount * widget.bed.areaSize).round();
+    final int halfTotalWater = (totalWater / 2).round();
+    
+    if (recommendation.contains("No watering")) {
+      return 'ජලය යෙදීම අවශ්‍ය නැත';
+    } else if (recommendation.contains("once")) {
+      return 'වර්ග මීටරයට ලීටර් $waterAmount\nඑනම් ඔබගේ වගාවට ලීටර් $totalWater ක් යොදන්න';
+    } else {
+      return 'වර්ග මීටරයට ලීටර් $waterAmount\nඑනම් ඔබගේ වගාවට ලීටර් $totalWater ක් යොදන්න.\nමෙම ප්‍රමානය දිනකට ලීටර් $halfTotalWater බැගින් යෙදීම වඩා යෝග්‍ය වේ';
     }
   }
 
@@ -186,6 +329,11 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Error: $_error',
+              style: TextStyle(color: Colors.red, fontSize: 12),
             ),
             Align(
               alignment: Alignment.centerRight,
@@ -278,7 +426,7 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
-                  height: 100,
+                  height: 200,  
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemCount: _weeklyForecast.length,
@@ -287,7 +435,7 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
                       final icon = _getRecommendationIcon(day['recommendation']);
                       
                       return Container(
-                        width: 100,
+                        width: 150, // Increased width for more content
                         margin: const EdgeInsets.only(right: 8),
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
@@ -296,31 +444,42 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
                           border: Border.all(color: Colors.blue.shade300, width: 1),
                         ),
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              day['day'],
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  day['day'],
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Icon(icon, color: Colors.blue.shade700, size: 18),
+                              ],
                             ),
                             Text(
-                              DateFormat('MM/dd').format(day['date']),
+                              DateFormat('yyyy/MM/dd').format(day['date']),
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 12,
                                 color: Colors.grey[600],
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Icon(icon, color: Colors.blue.shade700, size: 20),
+                            const SizedBox(height: 4),
+                          
+                            const SizedBox(height: 4),
+                            const Divider(height: 8),
                             const SizedBox(height: 4),
                             Text(
-                              '${day['water_amount']}L',
+                              _getDetailedWateringText(
+                                day['recommendation'],
+                                day['water_amount'],
+                              ),
                               style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue.shade700,
+                                color: Colors.blue.shade800,
                               ),
                             ),
                           ],

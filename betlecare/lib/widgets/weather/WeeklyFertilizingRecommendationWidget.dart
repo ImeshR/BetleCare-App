@@ -476,7 +476,7 @@ class _WeeklyFertilizingRecommendationWidgetState extends State<WeeklyFertilizin
             const SizedBox(height: 12),
             _buildInfoSection(
               title: 'අමතර තොරතුරු',
-              content: 'ඉදිරි දින 7 තුළ පොහොර යෙදීමට සුදුසු දින නොමැත. ඔබේ මීළඟ පොහොර යෙදීම සඳහා දිනය තහවුරු කර ගන්න.',
+              content: 'ඉදිරි දින 7 තුළ පොහොර යෙදීමට සුදුසු දින නොමැත. ඔබේ මීළඟ පොහොර යෙදීම සඳහා දිනය ඔබවෙත ඉක්මනින් දැනුම් දීමක් සිදුවෙයි',
               icon: Icons.info_outline,
               color: Colors.yellow.shade700
             ),

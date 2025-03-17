@@ -3,6 +3,7 @@ import 'package:betlecare/config/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:betlecare/models/betel_bed_model.dart';
 import 'package:betlecare/services/weather_services2.dart';
+import 'dart:developer' as developer;
 
 class WateringService {
   static final WateringService _instance = WateringService._internal();
@@ -12,8 +13,7 @@ class WateringService {
   final String baseUrl = ApiConfig.wateringCheckUrl;
   
   // ========== DEVELOPMENT TOGGLE ==========
-  // Set to TRUE to use hardcoded data (no API calls)
-  // Set to FALSE to use real API data
+  // Set to FALSE to use real API data - IMPORTANT!
   final bool _useHardcodedData = false;
   // =======================================
   
@@ -49,6 +49,7 @@ class WateringService {
       'කොළඹ': 'PUTTALAM',        // Default to nearest location
       'කළුතර': 'PUTTALAM',       // Default to nearest location
       'පානදුර': 'PUTTALAM',       // Default to nearest location
+      'අනමඩුව': 'PUTTALAM',      // Anamaduwa is in Puttalam district
     };
     
     return districtMap[district] ?? 'PUTTALAM'; // Default to PUTTALAM if not found
@@ -56,6 +57,15 @@ class WateringService {
   
   // Get watering recommendation for a betel bed
   Future<Map<String, dynamic>> getWateringRecommendation(BetelBed bed) async {
+    // Log request data for debugging
+    developer.log('*** WATER RECOMMENDATION REQUEST ***', name: 'WateringService');
+    developer.log('Bed ID: ${bed.id}', name: 'WateringService');
+    developer.log('District: ${bed.district}', name: 'WateringService');
+    developer.log('Betel Type: ${bed.betelType}', name: 'WateringService');
+    developer.log('Area Size: ${bed.areaSize}', name: 'WateringService');
+    developer.log('Age in Days: ${bed.ageInDays}', name: 'WateringService');
+    developer.log('Crop Stage: ${_calculateCropStage(bed.plantedDate)}', name: 'WateringService');
+    
     // If using hardcoded data, return mock data immediately
     if (_useHardcodedData) {
       // Calculate crop stage for more realistic hardcoded recommendations
@@ -63,16 +73,21 @@ class WateringService {
       
       // Return hardcoded data with a small delay to simulate network request
       await Future.delayed(const Duration(milliseconds: 500));
-      return _getHardcodedWateringRecommendation(bed.district, cropStage);
+      final result = _getHardcodedWateringRecommendation(bed.district, cropStage);
+      developer.log('Using hardcoded data: $result', name: 'WateringService');
+      return result;
     }
     
     // ========== ACTUAL API CALL CODE (will only run if _useHardcodedData = false) ==========
     try {
       // First, get weather data for the bed's location
       final String locationKey = _getLocationKeyFromDistrict(bed.district);
+      developer.log('Getting weather data for location: $locationKey', name: 'WateringService');
+      
       final weatherData = await _weatherService.fetchWeatherData(locationKey);
       
       if (weatherData == null) {
+        developer.log('Failed to fetch weather data', name: 'WateringService', error: 'Weather data is null');
         throw Exception('Failed to fetch weather data');
       }
       
@@ -101,6 +116,8 @@ class WateringService {
         'month': DateTime.now().month
       };
       
+      developer.log('API request body: $requestBody', name: 'WateringService');
+      
       // Call backend API for watering recommendation
       final response = await http.post(
         Uri.parse('$baseUrl/predict'),
@@ -109,12 +126,15 @@ class WateringService {
       );
       
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final result = jsonDecode(response.body);
+        developer.log('API response: $result', name: 'WateringService');
+        return result;
       } else {
+        developer.log('API request failed: ${response.statusCode}', name: 'WateringService', error: response.body);
         throw Exception('Failed to get watering recommendation: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error getting watering recommendation: $e');
+      developer.log('Error getting watering recommendation: $e', name: 'WateringService', error: e);
       // Return a default recommendation if the backend is unavailable
       return {
         'watering_recommendation': 'Water once today',
