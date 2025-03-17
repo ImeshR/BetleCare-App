@@ -184,7 +184,7 @@ class _LeafHarvestingCalculatorPageState
                   Icon(Icons.eco, color: Colors.green),
                   SizedBox(width: 8),
                   Text(
-                    "කොළ ප්‍රමාණය ඇතුලත් කරන්න",
+                    "කොළ ප්‍රමාණය ඇතුලත් \nකරන්න",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ],

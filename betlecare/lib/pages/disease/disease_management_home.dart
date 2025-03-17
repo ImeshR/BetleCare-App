@@ -4,6 +4,7 @@ import '../../widgets/profile_header.dart';
 import 'disease_detection.dart';
 import 'pestpage.dart';
 import 'treatment_scheduling.dart';
+import 'disease_spread_map.dart';
 
 class DiseaseManagementScreen extends StatelessWidget {
   const DiseaseManagementScreen({super.key});
@@ -47,7 +48,13 @@ class DiseaseManagementScreen extends StatelessWidget {
                 ],
               ),
               onTap: () {
-                //navigation
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ChildPageWrapper(
+                        child: TreatmentSchedulingPage()),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 16),
@@ -62,7 +69,13 @@ class DiseaseManagementScreen extends StatelessWidget {
                 ],
               ),
               onTap: () {
-                // Navigation will be added later
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const ChildPageWrapper(child: DiseaseReportPage()),
+                  ),
+                );
               },
             ),
           ],
@@ -151,7 +164,7 @@ class ChildPageWrapper extends StatelessWidget {
           Expanded(child: child),
         ],
       ),
-        bottomNavigationBar: BottomNavBar(
+      bottomNavigationBar: BottomNavBar(
         selectedIndex: 3,
         onTabChange: (index) {
           if (index != 3) {

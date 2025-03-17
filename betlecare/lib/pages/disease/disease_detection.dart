@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -167,11 +168,13 @@ class _DiseasePhotoManagementPageState
 
   Future<void> _sendImageForPrediction(XFile imageFile) async {
     try {
-      // Create multipart request
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('http://127.0.0.1:5000/predict'),
-      );
+      // Create multipart request with the new API endpoint
+      final apiUrl = dotenv.env['DISEASE_PREDICT']?.trim();
+        if (apiUrl == null || apiUrl.isEmpty) {
+          throw Exception('API URL is missing');
+        }
+        
+      final request = http.MultipartRequest('POST', Uri.parse(apiUrl));
 
       // Get file extension
       final String fileExtension = imageFile.path.split('.').last.toLowerCase();
@@ -184,7 +187,7 @@ class _DiseasePhotoManagementPageState
       // Add file to request
       request.files.add(
         await http.MultipartFile.fromPath(
-          'image',
+          'image', // Keep the field name as 'image' as specified
           imageFile.path,
           contentType: MediaType.parse(mimeType),
         ),
@@ -195,22 +198,23 @@ class _DiseasePhotoManagementPageState
 
       // Get response
       final responseData = await response.stream.bytesToString();
-
+      print("Test response, $responseData");
       if (response.statusCode == 200) {
         // Parse response
         final Map<String, dynamic> result = json.decode(responseData);
 
-        // Ensure we have a disease_name field
-        if (result.containsKey('disease_name')) {
+        // Ensure we have a predicted_class field
+        if (result.containsKey('predicted_class')) {
           setState(() {
             _predictionResult = result;
             _isLoading = false;
           });
         } else {
-          throw Exception('Invalid response format: missing disease_name');
+          throw Exception('Invalid response format: missing predicted_class');
         }
       } else {
-        throw Exception('Failed to predict disease: ${response.statusCode}');
+        throw Exception(
+            'Failed to predict disease: ${response.statusCode} - ${responseData}');
       }
     } catch (e) {
       setState(() {
@@ -227,7 +231,7 @@ class _DiseasePhotoManagementPageState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('රෝග ඡායාරූප'),
+        title: const Text('රෝග හඳුනාගැනීම'),
         backgroundColor: Colors.green.shade100,
       ),
       body: _capturedImagePath != null &&
@@ -256,7 +260,7 @@ class _DiseasePhotoManagementPageState
               title: 'ඡායාරූපයක් ගන්න',
               description: 'ඔබගේ ශාකයේ රෝග ලක්ෂණ ඡායාරූපයක් ගන්න',
               color: Colors.green.shade100,
-              imagePath: 'assets/images/disease/camera.png',
+              imagePath: 'assets/images/disease/DD4.png',
               gradient: LinearGradient(
                 colors: [
                   Colors.green.shade50,
@@ -271,7 +275,7 @@ class _DiseasePhotoManagementPageState
               title: 'ඡායාරූපයක් උඩුගත කරන්න',
               description: 'ඔබගේ ගැලරියෙන් ඡායාරූපයක් තෝරන්න',
               color: Colors.purple.shade100,
-              imagePath: 'assets/images/disease/gallery.png',
+              imagePath: 'assets/images/disease/DD5.png',
               gradient: LinearGradient(
                 colors: [
                   Colors.purple.shade50,
@@ -490,7 +494,7 @@ class _DiseasePhotoManagementPageState
 
   Widget _buildResultCard() {
     // Extract prediction data
-    final String? diseaseName = _predictionResult?['disease_name'];
+    final String? diseaseName = _predictionResult?['predicted_class'];
     final double confidence =
         _predictionResult?['confidence']?.toDouble() ?? 95.0;
 

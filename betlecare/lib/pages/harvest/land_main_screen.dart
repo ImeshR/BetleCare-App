@@ -1,7 +1,10 @@
 import 'package:betlecare/pages/harvest/land_details_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../providers/user_provider.dart';
 import '../../widgets/appbar/app_bar.dart';
+import '../user/user-settings-page.dart';
 import 'harvest_screen.dart';
 import 'land_measurement_screen.dart';
 import 'manual_land_measurement_page.dart';
@@ -12,7 +15,6 @@ class LandMainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: const BasicAppbar(),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -32,16 +34,69 @@ class LandMainScreen extends StatelessWidget {
                           context, const ManualLandMeasurementPage()),
                     ),
                     const SizedBox(height: 16),
-                    _buildCard(
-                      title: 'GPS මත පදනම්\n වූ ඉඩම් මැනීම',
-                      color: Colors.purple.shade100,
-                      imagePath: 'assets/images/eshan/LM6.png',
-                      gradient: LinearGradient(
-                        colors: [Colors.purple.shade50, Colors.purple.shade100],
-                      ),
-                      onTap: () =>
-                          _navigateTo(context, const LandMeasurementScreen()),
+
+                    /// Check payment status using Consumer
+                    Consumer<UserProvider>(
+                      builder: (context, userProvider, child) {
+                        final userProvider = Provider.of<UserProvider>(context);
+                        final userSettings = userProvider.userSettings;
+                        bool isPaid = userSettings?['payment_status'] ?? false;
+
+                        return Opacity(
+                          opacity: isPaid ? 1.0 : 0.5, // Dim if not paid
+                          child: Stack(
+                            children: [
+                              IgnorePointer(
+                                ignoring: !isPaid, // Disable tap if not paid
+                                child: _buildCard(
+                                  title: 'GPS මත පදනම්\n වූ ඉඩම් මැනීම',
+                                  color: Colors.purple.shade100,
+                                  imagePath: 'assets/images/eshan/LM6.png',
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.purple.shade50,
+                                      Colors.purple.shade100
+                                    ],
+                                  ),
+                                  onTap: () => _navigateTo(
+                                      context, const LandMeasurementScreen()),
+                                ),
+                              ),
+                              if (!isPaid)
+                                Positioned.fill(
+                                  child: Container(
+                                    color: Colors.black.withOpacity(
+                                        0.4), // Overlay for dimming
+                                    alignment: Alignment.center,
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          '🌟 මෙය ප්‍රිමියම් විශේෂාංගයකි!',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        SizedBox(height: 8),
+                                        ElevatedButton(
+                                          onPressed: () => _navigateTo(
+                                              context, UserSettingsPage()),
+                                          child:
+                                              Text('මාසික පැකේජය මිලදී ගන්න'),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
+
                     const SizedBox(height: 16),
                     _buildCard(
                       title: 'ඉඩම් විස්තර',
