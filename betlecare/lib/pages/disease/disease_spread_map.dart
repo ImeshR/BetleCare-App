@@ -6,7 +6,7 @@ import 'package:betlecare/providers/user_provider.dart';
 import 'package:betlecare/services/supabase_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:async';
-import 'package:geocoding/geocoding.dart'; // Add geocoding package
+import 'package:geocoding/geocoding.dart';
 
 class DiseaseReportPage extends StatefulWidget {
   const DiseaseReportPage({Key? key}) : super(key: key);
