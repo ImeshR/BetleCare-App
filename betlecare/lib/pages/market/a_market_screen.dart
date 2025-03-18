@@ -79,26 +79,6 @@ class MarketsScreen extends StatelessWidget {
               },
             ),
             const SizedBox(height: 16),
-            _buildCard(
-              title: 'අධික අවශ්‍යතාව කාල සීමා',
-              color: Colors.green.shade200,
-              imagePath: 'assets/images/market/demand.png',
-              gradient: LinearGradient(
-                colors: [
-                  Colors.green.shade100,
-                  Colors.green.shade200,
-                ],
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const ChildPageWrapper(child: MarketDemandScreen()),
-                  ),
-                );
-              },
-            ),
           ],
         ),
       ),
@@ -185,7 +165,7 @@ class ChildPageWrapper extends StatelessWidget {
           Expanded(child: child),
         ],
       ),
-     bottomNavigationBar: BottomNavBar(
+      bottomNavigationBar: BottomNavBar(
         selectedIndex: 1,
         onTabChange: (index) {
           if (index != 1) {
