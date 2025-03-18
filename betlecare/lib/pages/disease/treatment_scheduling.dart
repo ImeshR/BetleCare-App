@@ -278,7 +278,7 @@ class _TreatmentSchedulingPageState extends State<TreatmentSchedulingPage> {
     if (_scheduleDescriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('කරුණාකර ප්‍රතිකාර සැලසුම් විස්තරය ඇතුළත් කරන්න')),
+            content: Text('කරුණාකර ප්‍රතිකාර සැලසුමේ නම ඇතුළත් කරන්න')),
       );
       return;
     }

@@ -26,14 +26,14 @@ class _DiseasePhotoManagementPageState
   // Disease information map
   final Map<String, Map<String, dynamic>> _diseaseInfo = {
     'Bacterial leaf blight': {
-      'sinhalaName': 'බැක්ටීරියා පත්‍ර අංගමාරය',
+      'sinhalaName': 'පත්‍ර කුණු වීමේ රෝගය',
       'description':
-          'බැක්ටීරියා පත්‍ර අංගමාරය යනු බැක්ටීරියා මගින් ඇති වන රෝගයකි. මෙය වී වගාවට බරපතල හානි සිදු කරයි. පත්‍ර මත කහ පැහැති ඉරි ඇති වීමෙන් මෙය හඳුනාගත හැකිය.',
+          'පත්‍ර කුණු වීමේ රෝගය යනු Xanthomonas campestris betlicola බැක්ටීරියාව මගින් ඇති වන රෝගයකි. මෙය බුලත් වගාවට බරපතල හානි සිදු කරයි. පත්‍ර මත කලු පැහැති තිත් හා පත්‍ර වලට සිදුවන දැඩි හානි වලින් මෙය හඳුනාගත හැකිය.',
       'treatments': [
-        'රෝගයට ඔරොත්තු දෙන වී ප්‍රභේද වගා කරන්න',
-        'නයිට්‍රජන් පොහොර භාවිතය අඩු කරන්න',
-        'කොපර් පදනම් කරගත් දිලීර නාශක යොදන්න',
-        'රෝගී ශාක ඉවත් කර විනාශ කරන්න'
+        'ආසාදනය වූ කොල කඩා ඉවත් කර විනාශ කර දමන්න.',
+        'උඩින් වතුර ඉසීම නවතා දමන්න.',
+        'Pseudomonas fluorescens හෝ Trichoderma harzianum යන ජෛවකාරක දෙකෙන් එකක් දින 14කට වරක් භාවිතා කරන්න (උදෑසන හෝ සවස).',
+        'සෑම උදෑසනකම හෝ සවසකම Copper Oxychloride හෝ Copper Hydroxide නියමිත ප්‍රමාණයට මිශ්‍ර කර කොල වල හොඳින් තවරන්න (දින 7කට වරක්) (මිශ්‍රණය: Copper Oxychloride හෝ Copper Hydroxide ග්‍රෑ.3-4ක් වතුර ලීටර් 1කට)'
       ],
       'color': Colors.orange,
       'icon': Icons.grass,
@@ -41,24 +41,23 @@ class _DiseasePhotoManagementPageState
     'Brown Spots': {
       'sinhalaName': 'දුඹුරු පැල්ලම්',
       'description':
-          'දුඹුරු පැල්ලම් රෝගය දිලීර මගින් ඇති වන රෝගයකි. පත්‍ර මත දුඹුරු පැහැති, රවුම් හෝ ඉලිප්සාකාර පැල්ලම් ඇති වීමෙන් මෙය හඳුනාගත හැකිය.',
+          'දුඹුරු පැල්ලම් රෝගය Phytopthora, Coletotricum සහ Sercusphora යන දිලීර මගින් ඇති වන රෝගයකි. පත්‍ර මත දුඹුරු පැහැති, රවුම් හෝ ඉලිප්සාකාර පැල්ලම් ඇති වීමෙන් මෙය හඳුනාගත හැකිය.',
       'treatments': [
         'රෝගී පත්‍ර ඉවත් කර විනාශ කරන්න',
-        'දිලීර නාශක යොදන්න',
-        'ශාක අතර වාතාශ්‍රය වැඩි කරන්න',
-        'පත්‍ර තෙමීම වළක්වන්න'
+        'සෑම සති 2කට වරක්ම Trichoderma harzianum හෝ Bacillus subtilis යන ජෛවකාරක දෙකෙන් එකක් භාවිතා කරන්න.',
+        'සෑම උදෑසනකම හෝ සවස් කාලයේ Mancozeb දිලීර නාශක‍ය නියමිත ප්‍රමාණයට මිශ්‍රකර ආසාදනය වූ කොල වලට හොඳින් ඉසින්න (දින 10 කට වරක්) (මිශ්‍රණය: Mancozeb ග්‍රෑ. 2-3ක් වතුර ලීටර් 1කට_',
+        'සුව වීම වේගවත් වීමට සින්ක්(zinc) හෝ පොටෑසියම්(potassium) දින 10-15කට වරක් පසට එක් කරන්න.'
       ],
       'color': Colors.brown,
       'icon': Icons.blur_circular,
     },
     'Firefly disease': {
-      'sinhalaName': 'විදුරුමස්සා රෝගය',
-      'description':
-          'විදුරුමස්සා රෝගය වෛරස් මගින් ඇති වන රෝගයකි. පත්‍ර මත කහ පැහැති පැල්ලම් සහ ශාකයේ වර්ධනය අඩාල වීමෙන් මෙය හඳුනාගත හැකිය.',
+      'sinhalaName': 'කණාමැදිරි රෝගය',
+      'description': 'කණාමැදිරි රෝගය කණාමැදිරියාගෙන් ඇති වන පළිබෝධ රෝගයකි',
       'treatments': [
         'රෝගී ශාක ඉවත් කර විනාශ කරන්න',
-        'කෘමි නාශක භාවිතයෙන් වාහක පාලනය කරන්න',
-        'රෝගයට ඔරොත්තු දෙන ප්‍රභේද වගා කරන්න',
+        'වගාවට Bacillus thuringiensis (Bt) පළිබෝධනාශකය හෝ කොහොඹ තෙල් සබන් මිශ්‍රනය ඉසින්න (දින 7-10කට වරක්). ',
+        'සෑම උදෑසනකම හෝ සවස් කාලයේ Chlorpyrifos හෝ Imidacloprid නියමිත ප්‍රමාණයට මිශ්‍ර කර කොල වල හොඳින් තවරන්න (දින 5කට වරක්) (මිශ්‍රණය: Chlorpyrifos මි.ලී 2.5ක් වතුර ලිට‍ර් 1කට / Imidacloprid මි.ලී 0.5ක් වතුර ලීටර් 1කට)',
         'ශාක අතර ප්‍රමාණවත් පරතරයක් තබා ගන්න'
       ],
       'color': Colors.amber,
@@ -78,14 +77,14 @@ class _DiseasePhotoManagementPageState
       'icon': Icons.check_circle,
     },
     'Red spider mite': {
-      'sinhalaName': 'රතු මකුළු මයිටාව',
+      'sinhalaName': 'මකුළු රෝගය',
       'description':
-          'රතු මකුළු මයිටාව ශාක පත්‍ර වල රස උරා බොන කුඩා කෘමියෙකි. පත්‍ර මත කහ පැහැති තිත් සහ සියුම් දැල් ඇති වීමෙන් මෙය හඳුනාගත හැකිය.',
+          'පත්‍ර මත කහ පැහැති තිත් සහ සියුම් දැල් ඇති වීමෙන් මෙය හඳුනාගත හැකිය.',
       'treatments': [
-        'සබන් දිය ස්ප්‍රේ කිරීම',
-        'නීම් තෙල් භාවිතා කිරීම',
+        'කොහොඹ තෙල් සබන් මිශ්‍රණය දින 10ක් යනතුරු කොල වලට යොදන්න (මිශ්‍රණය: කොහොඹ තෙල් මි.ලී 5ක් හා සබන් මි.ලී 2ක් වතුර ලීටර් 1කට).',
+        'Beauveria bassiana හෝ Verticillium lecanii ජෛව කාරකය දින 7කට වරක් කොල වලට යොදන්න.',
         'ජෛව පාලන ක්‍රම භාවිතා කිරීම',
-        'අධික ලෙස හානි වූ පත්‍ර ඉවත් කිරීම'
+        'ජෛව පළිබෝධනාශක වලින් ආසාදනය පාලනය කිරීමට නොහැකිනම් පමණක් Abamectin හෝ Fenpyroximate යන මයිටානාශක දෙකෙන් එකක් දින 5කට වරක් භාවිතා කරන්න. /n (මිශ්‍රණය: Abamectin මි.ලී. 1ක් වතුර ලීටර් 1කට/ Fenpyroximate මි.ලී. 2ක් වතුර ලීටර් 1කට).'
       ],
       'color': Colors.red,
       'icon': Icons.bug_report,
@@ -170,10 +169,10 @@ class _DiseasePhotoManagementPageState
     try {
       // Create multipart request with the new API endpoint
       final apiUrl = dotenv.env['DISEASE_PREDICT']?.trim();
-        if (apiUrl == null || apiUrl.isEmpty) {
-          throw Exception('API URL is missing');
-        }
-        
+      if (apiUrl == null || apiUrl.isEmpty) {
+        throw Exception('API URL is missing');
+      }
+
       final request = http.MultipartRequest('POST', Uri.parse(apiUrl));
 
       // Get file extension
@@ -502,7 +501,8 @@ class _DiseasePhotoManagementPageState
     final diseaseInfo = diseaseName != null ? _diseaseInfo[diseaseName] : null;
 
     // Set default values if disease not found in our map
-    final String sinhalaName = diseaseInfo?['sinhalaName'] ?? 'නොදන්නා රෝගය';
+    final String sinhalaName =
+        diseaseInfo?['sinhalaName'] ?? 'අපැහැදිලි ඡායාරූපයකි නැවත උත්සහ කරන්න.';
     final String description = diseaseInfo?['description'] ?? 'විස්තරයක් නොමැත';
     final List<dynamic> treatments =
         diseaseInfo?['treatments'] ?? ['නිර්දේශිත ප්‍රතිකාර නොමැත'];
