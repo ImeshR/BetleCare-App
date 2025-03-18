@@ -218,10 +218,10 @@ class _DiseaseReportPageState extends State<DiseaseReportPage> {
                     border: OutlineInputBorder(),
                   ),
                   items: [
-                    'Bacterial leaf blight',
-                    'Brown Spots',
-                    'Firefly disease',
-                    'Red spider mite'
+                    'පත්‍ර කුණු වීමේ රෝගය',
+                    'දුඹුරු පැල්ලම්',
+                    'කණාමැදිරි රෝගය',
+                    'මකුළු රෝගය'
                   ].map((disease) {
                     return DropdownMenuItem<String>(
                       value: disease,
