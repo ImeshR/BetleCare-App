@@ -10,10 +10,6 @@ class PestPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('රෝග හඳුනාගැනීම'),
-        backgroundColor: Colors.green.shade100,
-      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),

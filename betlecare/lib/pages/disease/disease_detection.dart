@@ -501,7 +501,8 @@ class _DiseasePhotoManagementPageState
     final diseaseInfo = diseaseName != null ? _diseaseInfo[diseaseName] : null;
 
     // Set default values if disease not found in our map
-    final String sinhalaName = diseaseInfo?['sinhalaName'] ?? 'නොදන්නා රෝගය';
+    final String sinhalaName =
+        diseaseInfo?['sinhalaName'] ?? 'අපැහැදිලි ඡායාරූපයකි නැවත උත්සහ කරන්න.';
     final String description = diseaseInfo?['description'] ?? 'විස්තරයක් නොමැත';
     final List<dynamic> treatments =
         diseaseInfo?['treatments'] ?? ['නිර්දේශිත ප්‍රතිකාර නොමැත'];
