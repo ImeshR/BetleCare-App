@@ -87,7 +87,9 @@ class PestPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     const Center(
-                      child: CircularProgressIndicator(),
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Text(

@@ -54,7 +54,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
         ],
       ),
       body: notificationProvider.isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+          ))
           : notificationProvider.notifications.isEmpty
               ? _buildEmptyState()
               : _buildNotificationList(notificationProvider),

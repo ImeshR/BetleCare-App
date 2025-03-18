@@ -213,7 +213,9 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircularProgressIndicator(),
+                  const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'බුලත් වගාව සුරකිමින්...',

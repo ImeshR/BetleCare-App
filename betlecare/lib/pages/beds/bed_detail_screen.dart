@@ -61,7 +61,9 @@ class _BedDetailScreenState extends State<BedDetailScreen> {
           if (_isLoading)
             Container(
               color: Colors.black.withOpacity(0.3),
-              child: const Center(child: CircularProgressIndicator()),
+              child: const Center(child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+              )),
             ),
         ],
       ),
