@@ -99,6 +99,7 @@ flutter:
     - assets/images/disease/DD3.png
     - assets/images/disease/DD4.png
     - assets/images/betel_leaf.png
+    - assets/images/disease/DD5.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
