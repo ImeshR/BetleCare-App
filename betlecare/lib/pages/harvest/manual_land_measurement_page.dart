@@ -6,8 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:betlecare/providers/user_provider.dart';
 import 'package:betlecare/services/supabase_service.dart';
 
-import '../../widgets/appbar/app_bar.dart';
-
 class ManualLandMeasurementPage extends StatefulWidget {
   const ManualLandMeasurementPage({Key? key}) : super(key: key);
 
@@ -27,7 +25,17 @@ class _ManualLandMeasurementPageState extends State<ManualLandMeasurementPage> {
   LatLng? _currentLocation;
 
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _locationController = TextEditingController();
+
+  // Location dropdown data
+  String? _selectedLocation;
+
+  // Map of locations with Sinhala display names and English values
+  final Map<String, String> _locations = {
+    'Puttalam': 'පුත්තලම',
+    'Anamaduwa': 'අනමඩුව',
+    'Kurunegala': 'කුරුණෑගල',
+    // Add more locations as needed
+  };
 
   @override
   void initState() {
@@ -38,7 +46,6 @@ class _ManualLandMeasurementPageState extends State<ManualLandMeasurementPage> {
   @override
   void dispose() {
     _nameController.dispose();
-    _locationController.dispose();
     super.dispose();
   }
 
@@ -159,9 +166,27 @@ class _ManualLandMeasurementPageState extends State<ManualLandMeasurementPage> {
                   controller: _nameController,
                   decoration: const InputDecoration(labelText: 'ඉඩමේ නම'),
                 ),
-                TextField(
-                  controller: _locationController,
-                  decoration: const InputDecoration(labelText: 'ස්ථානය'),
+                SizedBox(height: 16),
+                // Dropdown for location selection
+                DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    labelText: 'ස්ථානය',
+                    border: OutlineInputBorder(),
+                  ),
+                  value: _selectedLocation,
+                  hint: Text('ස්ථානය තෝරන්න'),
+                  isExpanded: true,
+                  items: _locations.entries.map((entry) {
+                    return DropdownMenuItem<String>(
+                      value: entry.key, // English value
+                      child: Text(entry.value), // Sinhala display name
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedLocation = value;
+                    });
+                  },
                 ),
                 const SizedBox(height: 16),
                 Text('වර්ගඵලය: ${_area!.toStringAsFixed(2)} අක්කර'),
@@ -192,6 +217,13 @@ class _ManualLandMeasurementPageState extends State<ManualLandMeasurementPage> {
       return;
     }
 
+    if (_selectedLocation == null || _selectedLocation!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('කරුණාකර ස්ථානයක් තෝරන්න.')),
+      );
+      return;
+    }
+
     try {
       final supabaseService = await SupabaseService.init();
       final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -208,7 +240,7 @@ class _ManualLandMeasurementPageState extends State<ManualLandMeasurementPage> {
       final landData = {
         'user_id': userId,
         'name': _nameController.text,
-        'location': _locationController.text,
+        'location': _selectedLocation, // Use the English value from dropdown
         'area': _area,
         'coordinates': _polygonPoints
             .map((point) => [point.latitude, point.longitude])
@@ -226,7 +258,7 @@ class _ManualLandMeasurementPageState extends State<ManualLandMeasurementPage> {
 
       setState(() {
         _nameController.clear();
-        _locationController.clear();
+        _selectedLocation = null;
         _resetMeasurement();
       });
 

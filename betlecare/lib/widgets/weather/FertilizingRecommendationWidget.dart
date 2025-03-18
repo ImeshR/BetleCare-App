@@ -255,8 +255,8 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
       statusText = 'අද පොහොර යෙදීමට ප්‍රමාද වැඩිය';  // It's too late for fertilizing today
     } else {
       statusText = effectiveIsSuitable 
-          ? 'පොහොර යෙදීමට සුදුසුයි' 
-          : 'පොහොර යෙදීමට සුදුසු නැත';
+          ? 'පොහොර යෙදීමට සුදුසු කාලගුණ තත්වයක් අද ඇත' 
+          : 'පොහොර යෙදීමට කාළගුණ තත්වයක් අද නැත';
     }
     
     // Get next recommended date and fertilizer type from plan if available

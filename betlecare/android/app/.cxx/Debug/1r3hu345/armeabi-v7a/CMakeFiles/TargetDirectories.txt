@@ -1,0 +1,2 @@
+C:/Users/eshan/Documents/GitHub/Research_project/BetleCare-App/betlecare/android/app/.cxx/Debug/1r3hu345/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/eshan/Documents/GitHub/Research_project/BetleCare-App/betlecare/android/app/.cxx/Debug/1r3hu345/armeabi-v7a/CMakeFiles/rebuild_cache.dir

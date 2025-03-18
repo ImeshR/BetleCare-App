@@ -27,24 +27,35 @@ class _EditBedScreenState extends State<EditBedScreen> {
   File? _imageFile;
   String? _existingImagePath;
   bool _isLoading = false;
-  
+
   final _betelBedService = BetelBedService();
-  
-  final List<String> _betelTypes = ['රතු බුලත්', 'කොළ බුලත්', 'සුදු බුලත්', 'මිශ්‍ර බුලත්', 'හයිබ්‍රිඩ් බුලත්'];
+
+  final List<String> _betelTypes = [
+    'රට දළු',
+    'මනේරු',
+    'රතු බුලත්',
+  ];
   String? _selectedBetelType;
-  
-  final List<String> _districts = ['පුත්තලම (Puttalam)', 'අනමඩුව (Anamaduwa)', 'කුරුණෑගල (Kurunegala)'];
+
+  final List<String> _districts = [
+    'පුත්තලම (Puttalam)',
+    'අනමඩුව (Anamaduwa)',
+    'කුරුණෑගල (Kurunegala)'
+  ];
   String? _selectedDistrict;
-  
+
   @override
   void initState() {
     super.initState();
     // Initialize controllers with existing data
     _nameController = TextEditingController(text: widget.bed.name);
     _addressController = TextEditingController(text: widget.bed.address);
-    _areaSizeController = TextEditingController(text: widget.bed.areaSize.toString());
-    _plantCountController = TextEditingController(text: widget.bed.plantCount.toString());
-    _sameBedCountController = TextEditingController(text: widget.bed.sameBedCount.toString());
+    _areaSizeController =
+        TextEditingController(text: widget.bed.areaSize.toString());
+    _plantCountController =
+        TextEditingController(text: widget.bed.plantCount.toString());
+    _sameBedCountController =
+        TextEditingController(text: widget.bed.sameBedCount.toString());
     _plantedDate = widget.bed.plantedDate;
     _selectedBetelType = widget.bed.betelType;
     _selectedDistrict = widget.bed.district;
@@ -64,8 +75,9 @@ class _EditBedScreenState extends State<EditBedScreen> {
   Future<void> _pickImage() async {
     try {
       final ImagePicker imagePicker = ImagePicker();
-      final XFile? pickedFile = await imagePicker.pickImage(source: ImageSource.gallery);
-      
+      final XFile? pickedFile =
+          await imagePicker.pickImage(source: ImageSource.gallery);
+
       if (pickedFile != null) {
         setState(() {
           _imageFile = File(pickedFile.path);
@@ -98,7 +110,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
         );
       },
     );
-    
+
     if (picked != null && picked != _plantedDate) {
       setState(() {
         _plantedDate = picked;
@@ -117,7 +129,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
           );
           return false;
         }
-        
+
         // Check if betel type is selected
         if (_selectedBetelType == null) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -125,7 +137,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
           );
           return false;
         }
-        
+
         return true;
       } else {
         // No image selected
@@ -144,14 +156,15 @@ class _EditBedScreenState extends State<EditBedScreen> {
         setState(() {
           _isLoading = true;
         });
-        
+
         // Create an updated BetelBed object
         final updatedBed = BetelBed(
           id: widget.bed.id,
           name: _nameController.text,
           address: _addressController.text,
           district: _selectedDistrict!,
-          imageUrl: _existingImagePath ?? '',  // Will be updated if new image is uploaded
+          imageUrl: _existingImagePath ??
+              '', // Will be updated if new image is uploaded
           plantedDate: _plantedDate,
           betelType: _selectedBetelType!,
           areaSize: double.parse(_areaSizeController.text),
@@ -161,33 +174,36 @@ class _EditBedScreenState extends State<EditBedScreen> {
           harvestHistory: widget.bed.harvestHistory,
           status: widget.bed.status,
         );
-        
+
         // Update the bed data in the database
         if (_imageFile != null) {
           // If there's a new image, upload it first and get the new URL
           // This is a theoretical implementation - your actual service might work differently
-          final updatedBedWithImage = await _betelBedService.updateBedWithImage(updatedBed, _imageFile!);
-          
+          final updatedBedWithImage = await _betelBedService.updateBedWithImage(
+              updatedBed, _imageFile!);
+
           // Update the provider if used
           await _updateProvider();
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('බුලත් වගාව සාර්ථකව යාවත්කාලීන කරන ලදී')),
+            const SnackBar(
+                content: Text('බුලත් වගාව සාර්ථකව යාවත්කාලීන කරන ලදී')),
           );
-          
+
           // Return true to indicate successful update
           Navigator.pop(context, true);
         } else {
           // No new image, just update the bed data
           await _betelBedService.updateBed(updatedBed);
-          
+
           // Update the provider if used
           await _updateProvider();
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('බුලත් වගාව සාර්ථකව යාවත්කාලීන කරන ලදී')),
+            const SnackBar(
+                content: Text('බුලත් වගාව සාර්ථකව යාවත්කාලීන කරන ලදී')),
           );
-          
+
           // Return true to indicate successful update
           Navigator.pop(context, true);
         }
@@ -203,11 +219,12 @@ class _EditBedScreenState extends State<EditBedScreen> {
       }
     }
   }
-  
+
   Future<void> _updateProvider() async {
     try {
       // If you're using a provider to manage state, update it
-      final betelBedProvider = Provider.of<BetelBedProvider>(context, listen: false);
+      final betelBedProvider =
+          Provider.of<BetelBedProvider>(context, listen: false);
       await betelBedProvider.loadBeds();
     } catch (e) {
       print('Error updating provider: $e');
@@ -263,7 +280,8 @@ class _EditBedScreenState extends State<EditBedScreen> {
                                     child: Image.network(
                                       _existingImagePath!,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) {
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
                                         return Center(
                                           child: Icon(
                                             Icons.broken_image,
@@ -295,7 +313,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Form Fields
                     const Text(
                       'මූලික තොරතුරු',
@@ -305,7 +323,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Name Field
                     TextFormField(
                       controller: _nameController,
@@ -324,7 +342,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // District Dropdown
                     DropdownButtonFormField<String>(
                       value: _selectedDistrict,
@@ -354,7 +372,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Address Field
                     TextFormField(
                       controller: _addressController,
@@ -373,7 +391,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Betel Type Dropdown
                     DropdownButtonFormField<String>(
                       value: _selectedBetelType,
@@ -403,7 +421,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Date Picker
                     InkWell(
                       onTap: () => _selectDate(context),
@@ -421,7 +439,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Additional Details
                     const Text(
                       'අමතර තොරතුරු',
@@ -431,7 +449,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Area Size Field
                     TextFormField(
                       controller: _areaSizeController,
@@ -454,7 +472,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Plant Count Field
                     TextFormField(
                       controller: _plantCountController,
@@ -477,7 +495,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Similar Bed Count Field
                     TextFormField(
                       controller: _sameBedCountController,
@@ -500,7 +518,7 @@ class _EditBedScreenState extends State<EditBedScreen> {
                       },
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Update Button
                     SizedBox(
                       width: double.infinity,
@@ -514,7 +532,8 @@ class _EditBedScreenState extends State<EditBedScreen> {
                           ),
                         ),
                         child: _isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? const CircularProgressIndicator(
+                                color: Colors.white)
                             : const Text(
                                 'යාවත්කාලීන කරන්න',
                                 style: TextStyle(
@@ -540,15 +559,23 @@ class _EditBedScreenState extends State<EditBedScreen> {
             ),
         ],
       ),
-          bottomNavigationBar: BottomNavBar(
-        selectedIndex: 2,
+      bottomNavigationBar: BottomNavBar(
+        selectedIndex: 2, // Home is selected
         onTabChange: (index) {
           if (index != 2) {
-            Navigator.pop(context);
+            // If not clicking the current tab
+            // Create a replacement route to the MainPage with the correct tab index
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              // First pop back to the main screen
+              Navigator.of(context).pop();
+
+              // Then push a replacement to force refresh the main page with the new index
+              Navigator.of(context)
+                  .pushReplacementNamed('/main', arguments: index);
+            });
           }
         },
       ),
-    
     );
   }
 }

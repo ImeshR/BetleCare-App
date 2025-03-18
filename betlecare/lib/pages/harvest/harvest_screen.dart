@@ -1,8 +1,10 @@
 import 'package:betlecare/pages/harvest/predict/add_prediction_page.dart';
+import 'package:betlecare/pages/harvest/predict/yiled_main_page.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/profile_header.dart';
 import 'land_main_screen.dart';
+import 'leaf-quantity-conversion.dart';
 
 class HarvestScreen extends StatelessWidget {
   const HarvestScreen({super.key});
@@ -57,28 +59,7 @@ class HarvestScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _buildCard(
-              title: 'කොළ ප්‍රමාණ\nපරිවර්තනය',
-              color: Colors.blue.shade100,
-              imagePath: 'assets/images/eshan/LM3.png',
-              gradient: LinearGradient(
-                colors: [
-                  Colors.blue.shade50,
-                  Colors.blue.shade100,
-                ],
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const ChildPageWrapper(child: LandMainScreen()),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            _buildCard(
-              title: 'අස්වැන්න පිළිබඳ \nසාරාංශය',
+              title: 'අස්වැන්න පිළිබඳ \nසාරාංශය හා පෙර \nපුරෝකථනයන්',
               color: Colors.amber.shade100,
               imagePath: 'assets/images/eshan/LM4.png',
               gradient: LinearGradient(
@@ -92,7 +73,28 @@ class HarvestScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        const ChildPageWrapper(child: LandMainScreen()),
+                        const ChildPageWrapper(child: YieldMainPage()),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            _buildCard(
+              title: 'කොළ ප්‍රමාණ\nපරිවර්තනය',
+              color: Colors.blue.shade100,
+              imagePath: 'assets/images/eshan/LM3.png',
+              gradient: LinearGradient(
+                colors: [
+                  Colors.blue.shade50,
+                  Colors.blue.shade100,
+                ],
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ChildPageWrapper(
+                        child: LeafHarvestingCalculatorPage()),
                   ),
                 );
               },
@@ -185,10 +187,17 @@ class ChildPageWrapper extends StatelessWidget {
           Expanded(child: child),
         ],
       ),
-      bottomNavigationBar: BottomNavBar(
+       bottomNavigationBar: BottomNavBar(
         selectedIndex: 0,
         onTabChange: (index) {
-          Navigator.pop(context);
+          if (index != 0) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.of(context).pop();
+
+              Navigator.of(context)
+                  .pushReplacementNamed('/main', arguments: index);
+            });
+          }
         },
       ),
     );

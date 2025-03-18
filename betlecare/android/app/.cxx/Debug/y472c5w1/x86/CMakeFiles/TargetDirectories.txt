@@ -1,0 +1,2 @@
+C:/Users/hansi/Desktop/final project/betlecare/android/app/.cxx/Debug/y472c5w1/x86/CMakeFiles/edit_cache.dir
+C:/Users/hansi/Desktop/final project/betlecare/android/app/.cxx/Debug/y472c5w1/x86/CMakeFiles/rebuild_cache.dir

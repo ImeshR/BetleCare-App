@@ -8,6 +8,7 @@ import 'package:betlecare/providers/betel_bed_provider.dart';
 import 'package:betlecare/widgets/weather/weeklyWateringRecomendation.dart';
 import 'package:betlecare/widgets/weather/WeeklyFertilizingRecommendationWidget.dart';
 import 'package:betlecare/widgets/weather/WeeklyProtectionRecommendationWidget.dart';
+
 class BedDetailScreen extends StatefulWidget {
   final BetelBed bed;
   const BedDetailScreen({super.key, required this.bed});
@@ -43,10 +44,14 @@ class _BedDetailScreenState extends State<BedDetailScreen> {
                     _buildRecommendationsSection(),
                     _buildDetailsSection(),
                     _buildActionCards(),
-                    _buildHistorySection('පොහොර යෙදීම් ඉතිහාසය', Icons.water_drop, bed.fertilizeHistory.isEmpty),
-                    if (bed.fertilizeHistory.isNotEmpty) _buildFertilizeHistoryList(),
-                    _buildHistorySection('අස්වනු ඉතිහාසය', Icons.shopping_basket, bed.harvestHistory.isEmpty),
-                    if (bed.harvestHistory.isNotEmpty) _buildHarvestHistoryList(),
+                    _buildHistorySection('පොහොර යෙදීම් ඉතිහාසය',
+                        Icons.water_drop, bed.fertilizeHistory.isEmpty),
+                    if (bed.fertilizeHistory.isNotEmpty)
+                      _buildFertilizeHistoryList(),
+                    _buildHistorySection('අස්වනු ඉතිහාසය',
+                        Icons.shopping_basket, bed.harvestHistory.isEmpty),
+                    if (bed.harvestHistory.isNotEmpty)
+                      _buildHarvestHistoryList(),
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -56,7 +61,9 @@ class _BedDetailScreenState extends State<BedDetailScreen> {
           if (_isLoading)
             Container(
               color: Colors.black.withOpacity(0.3),
-              child: const Center(child: CircularProgressIndicator()),
+              child: const Center(child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+              )),
             ),
         ],
       ),
@@ -65,55 +72,62 @@ class _BedDetailScreenState extends State<BedDetailScreen> {
         backgroundColor: Colors.green.shade700,
         child: const Icon(Icons.add),
       ),
-         bottomNavigationBar: BottomNavBar(
-        selectedIndex: 2,
+      bottomNavigationBar: BottomNavBar(
+        selectedIndex: 2, // Home is selected
         onTabChange: (index) {
           if (index != 2) {
-            Navigator.pop(context);
+            // If not clicking the current tab
+            // Create a replacement route to the MainPage with the correct tab index
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              // First pop back to the main screen
+              Navigator.of(context).pop();
+
+              // Then push a replacement to force refresh the main page with the new index
+              Navigator.of(context)
+                  .pushReplacementNamed('/main', arguments: index);
+            });
           }
         },
       ),
-    
     );
   }
 
-Widget _buildRecommendationsSection() {
-  return Padding(
-    padding: const EdgeInsets.all(16.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.tips_and_updates, size: 20, color: Colors.grey[700]),
-            const SizedBox(width: 8),
-            const Text(
-              ' නිර්දේශ',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        
-        // Weather-based protection recommendation widget
-        WeeklyProtectionRecommendationWidget(bed: bed),
-        
-        // Consistent 12px gap between all recommendation widgets
-        const SizedBox(height: 12),
-        
-        // Weekly watering recommendation widget
-        WeeklyWateringRecommendationWidget(bed: bed),
-        
-        // Consistent 12px gap between all recommendation widgets
-        const SizedBox(height: 12),
-        
-        // Fertilizing recommendation widget
-        WeeklyFertilizingRecommendationWidget(bed: bed),
-      ],
-    ),
-  );
-}
+  Widget _buildRecommendationsSection() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.tips_and_updates, size: 20, color: Colors.grey[700]),
+              const SizedBox(width: 8),
+              const Text(
+                ' නිර්දේශ',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
 
+          // Weather-based protection recommendation widget
+          WeeklyProtectionRecommendationWidget(bed: bed),
+
+          // Consistent 12px gap between all recommendation widgets
+          const SizedBox(height: 12),
+
+          // Weekly watering recommendation widget
+          WeeklyWateringRecommendationWidget(bed: bed),
+
+          // Consistent 12px gap between all recommendation widgets
+          const SizedBox(height: 12),
+
+          // Fertilizing recommendation widget
+          WeeklyFertilizingRecommendationWidget(bed: bed),
+        ],
+      ),
+    );
+  }
 
   Widget _buildPlaceholderCard({
     required String title,
@@ -173,7 +187,12 @@ Widget _buildRecommendationsSection() {
           style: const TextStyle(
             color: Color.fromARGB(255, 255, 255, 255),
             fontWeight: FontWeight.bold,
-            shadows: [Shadow(offset: Offset(0, 1), blurRadius: 3.0, color: Color.fromARGB(255, 0, 0, 0))],
+            shadows: [
+              Shadow(
+                  offset: Offset(0, 1),
+                  blurRadius: 3.0,
+                  color: Color.fromARGB(255, 0, 0, 0))
+            ],
           ),
         ),
         background: Stack(
@@ -185,7 +204,10 @@ Widget _buildRecommendationsSection() {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color.fromARGB(0, 226, 220, 220), Color.fromARGB(137, 226, 220, 220)],
+                  colors: [
+                    Color.fromARGB(0, 226, 220, 220),
+                    Color.fromARGB(137, 226, 220, 220)
+                  ],
                 ),
               ),
             ),
@@ -214,7 +236,9 @@ Widget _buildRecommendationsSection() {
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) => Container(
         color: Colors.green.shade200,
-        child: const Center(child: Icon(Icons.image_not_supported, size: 50, color: Colors.white)),
+        child: const Center(
+            child:
+                Icon(Icons.image_not_supported, size: 50, color: Colors.white)),
       ),
       loadingBuilder: (context, child, loadingProgress) {
         if (loadingProgress == null) return child;
@@ -223,7 +247,8 @@ Widget _buildRecommendationsSection() {
           child: Center(
             child: CircularProgressIndicator(
               value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
                   : null,
             ),
           ),
@@ -234,7 +259,7 @@ Widget _buildRecommendationsSection() {
 
   Widget _buildStatusCard() {
     final statusInfo = _getStatusInfo(bed.status);
-    
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -253,10 +278,14 @@ Widget _buildRecommendationsSection() {
               children: [
                 Text(
                   bed.nextAction,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: statusInfo.color),
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: statusInfo.color),
                 ),
                 const SizedBox(height: 4),
-                Text(_getStatusDescription(), style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                Text(_getStatusDescription(),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600])),
               ],
             ),
           ),
@@ -268,27 +297,44 @@ Widget _buildRecommendationsSection() {
   Widget _buildDetailsSection() {
     final detailItems = [
       {'icon': Icons.spa, 'label': 'බුලත් වර්ගය', 'value': bed.betelType},
-      {'icon': Icons.calendar_today, 'label': 'වගා කළ දිනය', 'value': _formatDate(bed.plantedDate)},
+      {
+        'icon': Icons.calendar_today,
+        'label': 'වගා කළ දිනය',
+        'value': _formatDate(bed.plantedDate)
+      },
       {'icon': Icons.timer, 'label': 'වයස', 'value': '${bed.ageInDays} දින'},
-      {'icon': Icons.straighten, 'label': 'ප්‍රමාණය', 'value': '${bed.areaSize} m²'},
-      {'icon': Icons.grass, 'label': 'පැළ ගණන', 'value': bed.plantCount.toString()},
+      {
+        'icon': Icons.straighten,
+        'label': 'ප්‍රමාණය',
+        'value': '${bed.areaSize} m²'
+      },
+      {
+        'icon': Icons.grass,
+        'label': 'පැළ ගණන',
+        'value': bed.plantCount.toString()
+      },
       {'icon': Icons.location_city, 'label': 'ප්‍රදේශය', 'value': bed.district},
       {'icon': Icons.home, 'label': 'ලිපිනය', 'value': bed.address},
-      {'icon': Icons.grid_view, 'label': 'සමාන වගාවන් ගණන', 'value': bed.sameBedCount.toString()},
+      {
+        'icon': Icons.grid_view,
+        'label': 'සමාන වගාවන් ගණන',
+        'value': bed.sameBedCount.toString()
+      },
     ];
-    
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('විස්තර', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('විස්තර',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           ...detailItems.map((item) => _buildDetailItem(
-            item['icon'] as IconData, 
-            item['label'] as String, 
-            item['value'] as String,
-          )),
+                item['icon'] as IconData,
+                item['label'] as String,
+                item['value'] as String,
+              )),
         ],
       ),
     );
@@ -301,8 +347,14 @@ Widget _buildRecommendationsSection() {
         children: [
           Icon(icon, size: 20, color: Colors.grey[600]),
           const SizedBox(width: 12),
-          SizedBox(width: 120, child: Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[700]))),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
+          SizedBox(
+              width: 120,
+              child: Text(label,
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]))),
+          Expanded(
+              child: Text(value,
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w500))),
         ],
       ),
     );
@@ -362,7 +414,8 @@ Widget _buildRecommendationsSection() {
                 const SizedBox(height: 8),
                 Text(
                   title,
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color),
+                  style: TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.bold, color: color),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -383,7 +436,9 @@ Widget _buildRecommendationsSection() {
             children: [
               Icon(icon, size: 20, color: Colors.grey[700]),
               const SizedBox(width: 8),
-              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(title,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
             ],
           ),
         ),
@@ -393,7 +448,10 @@ Widget _buildRecommendationsSection() {
             child: Center(
               child: Text(
                 'තවම වාර්තා කර නැත',
-                style: TextStyle(fontSize: 14, color: Colors.grey[500], fontStyle: FontStyle.italic),
+                style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[500],
+                    fontStyle: FontStyle.italic),
               ),
             ),
           ),
@@ -401,38 +459,53 @@ Widget _buildRecommendationsSection() {
     );
   }
 
-  Widget _buildFertilizeHistoryList() {
-    final sortedHistory = List<FertilizeRecord>.from(bed.fertilizeHistory)
-      ..sort((a, b) => b.date.compareTo(a.date));
-    
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: sortedHistory.length,
-      itemBuilder: (context, index) {
-        final record = sortedHistory[index];
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundColor: Colors.blue.shade100,
-            child: Icon(Icons.water_drop, color: Colors.blue.shade700, size: 18),
-          ),
-          title: Text(record.fertilizerType),
-          subtitle: Text('${_formatDate(record.date)} • ${record.quantity}kg'),
-          trailing: record.notes.isNotEmpty 
-              ? IconButton(
-                  icon: const Icon(Icons.info_outline, size: 20),
-                  onPressed: () => _showNotesDialog(record.notes),
-                )
-              : null,
-        );
-      },
-    );
-  }
+Widget _buildFertilizeHistoryList() {
+  final sortedHistory = List<FertilizeRecord>.from(bed.fertilizeHistory)
+    ..sort((a, b) => b.date.compareTo(a.date));
+
+  // Map for translating English fertilizer types back to Sinhala
+  final Map<String, String> fertilizerTypesEnglishToSinhala = {
+    'Gliricidia leaves': 'ග්ලිරිසීඩියා කොල',
+    'Cow dung': 'ගොම පොහොර',
+    'NPK (10-10-10)': 'NPK 10 අනුපාතයට',
+    'Chicken manure': 'කුකුල් පොහොර',
+    'Poultry manure': 'කුකුල් පොහොර',  // Alternative name
+    'Compost': 'කොම්පෝස්ට්',
+  };
+
+  return ListView.builder(
+    shrinkWrap: true,
+    physics: const NeverScrollableScrollPhysics(),
+    itemCount: sortedHistory.length,
+    itemBuilder: (context, index) {
+      final record = sortedHistory[index];
+      
+      // Translate English fertilizer type to Sinhala or keep original if translation not found
+      final sinhalaFertilizerType = fertilizerTypesEnglishToSinhala[record.fertilizerType] ?? record.fertilizerType;
+      
+      return ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.blue.shade100,
+          child: Icon(Icons.water_drop, color: Colors.blue.shade700, size: 18),
+        ),
+        title: Text(sinhalaFertilizerType),  // Display the Sinhala name
+        subtitle: Text('${_formatDate(record.date)} • ${record.quantity}kg'),
+        trailing: record.notes.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.info_outline, size: 20),
+                onPressed: () => _showNotesDialog(record.notes),
+              )
+            : null,
+      );
+    },
+  );
+}
+
 
   Widget _buildHarvestHistoryList() {
     final sortedHistory = List<HarvestRecord>.from(bed.harvestHistory)
       ..sort((a, b) => b.date.compareTo(a.date));
-    
+
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -442,10 +515,12 @@ Widget _buildRecommendationsSection() {
         return ListTile(
           leading: CircleAvatar(
             backgroundColor: Colors.green.shade100,
-            child: Icon(Icons.shopping_basket, color: Colors.green.shade700, size: 18),
+            child: Icon(Icons.shopping_basket,
+                color: Colors.green.shade700, size: 18),
           ),
           title: Text('${harvest.leavesCount} කොළ • ${harvest.weight}kg'),
-          subtitle: Text('${_formatDate(harvest.date)} • රු.${harvest.revenueEarned.toStringAsFixed(2)}'),
+          subtitle: Text(
+              '${_formatDate(harvest.date)} • රු.${harvest.revenueEarned.toStringAsFixed(2)}'),
           trailing: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
@@ -454,7 +529,8 @@ Widget _buildRecommendationsSection() {
             ),
             child: Text(
               harvest.quality,
-              style: TextStyle(color: Colors.green.shade800, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: Colors.green.shade800, fontWeight: FontWeight.bold),
             ),
           ),
         );
@@ -481,16 +557,17 @@ Widget _buildRecommendationsSection() {
   Future<void> _refreshBedData() async {
     try {
       setState(() => _isLoading = true);
-      
-      final betelBedProvider = Provider.of<BetelBedProvider>(context, listen: false);
+
+      final betelBedProvider =
+          Provider.of<BetelBedProvider>(context, listen: false);
       await betelBedProvider.loadBeds();
-      
+
       // Find the current bed in the updated list
       final updatedBed = betelBedProvider.beds.firstWhere(
         (b) => b.id == bed.id,
         orElse: () => bed,
       );
-      
+
       setState(() {
         bed = updatedBed;
         _isLoading = false;
@@ -519,7 +596,8 @@ Widget _buildRecommendationsSection() {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => EditBedScreen(bed: bed)),
+                  MaterialPageRoute(
+                      builder: (context) => EditBedScreen(bed: bed)),
                 ).then((_) => _refreshBedData());
               },
             ),
@@ -572,7 +650,8 @@ Widget _buildRecommendationsSection() {
           children: [
             const Padding(
               padding: EdgeInsets.all(16.0),
-              child: Text('ක්‍රියාමාර්ග', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text('ක්‍රියාමාර්ග',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ),
             _buildMenuOption(
               icon: Icons.water_drop,
@@ -609,27 +688,54 @@ Widget _buildRecommendationsSection() {
 
   void _showStatusUpdateDialog() {
     final statusOptions = [
-      {'status': BetelBedStatus.healthy, 'title': 'හොඳ තත්ත්වයේ පවතී', 'icon': Icons.check_circle, 'color': Colors.green},
-      {'status': BetelBedStatus.needsWatering, 'title': 'ජලය යෙදීම අවශ්‍යයි', 'icon': Icons.water_drop, 'color': Colors.blue},
-      {'status': BetelBedStatus.needsFertilizing, 'title': 'පොහොර යෙදීම අවශ්‍යයි', 'icon': Icons.grass, 'color': Colors.orange},
-      {'status': BetelBedStatus.readyToHarvest, 'title': 'අස්වනු නෙලීමට සූදානම්', 'icon': Icons.shopping_basket, 'color': Colors.green.shade700},
-      {'status': BetelBedStatus.diseased, 'title': 'රෝගී තත්වයේ පවතී', 'icon': Icons.sick, 'color': Colors.red},
+      {
+        'status': BetelBedStatus.healthy,
+        'title': 'හොඳ තත්ත්වයේ පවතී',
+        'icon': Icons.check_circle,
+        'color': Colors.green
+      },
+      {
+        'status': BetelBedStatus.needsWatering,
+        'title': 'ජලය යෙදීම අවශ්‍යයි',
+        'icon': Icons.water_drop,
+        'color': Colors.blue
+      },
+      {
+        'status': BetelBedStatus.needsFertilizing,
+        'title': 'පොහොර යෙදීම අවශ්‍යයි',
+        'icon': Icons.grass,
+        'color': Colors.orange
+      },
+      {
+        'status': BetelBedStatus.readyToHarvest,
+        'title': 'අස්වනු නෙලීමට සූදානම්',
+        'icon': Icons.shopping_basket,
+        'color': Colors.green.shade700
+      },
+      {
+        'status': BetelBedStatus.diseased,
+        'title': 'රෝගී තත්වයේ පවතී',
+        'icon': Icons.sick,
+        'color': Colors.red
+      },
     ];
-    
+
     showDialog(
       context: context,
       builder: (context) => SimpleDialog(
         title: Text('${bed.name} - තත්ත්වය යාවත්කාලීන කරන්න'),
-        children: statusOptions.map((option) => _buildStatusOption(
-          status: option['status'] as BetelBedStatus,
-          title: option['title'] as String,
-          icon: option['icon'] as IconData,
-          color: option['color'] as Color,
-        )).toList(),
+        children: statusOptions
+            .map((option) => _buildStatusOption(
+                  status: option['status'] as BetelBedStatus,
+                  title: option['title'] as String,
+                  icon: option['icon'] as IconData,
+                  color: option['color'] as Color,
+                ))
+            .toList(),
       ),
     );
   }
-  
+
   Widget _buildStatusOption({
     required BetelBedStatus status,
     required String title,
@@ -641,10 +747,10 @@ Widget _buildRecommendationsSection() {
         try {
           Navigator.pop(context);
           setState(() => _isLoading = true);
-          
+
           await _betelBedService.updateBedStatus(bed.id, status);
           await _refreshBedData();
-          
+
           _showSuccessSnackBar('තත්ත්වය සාර්ථකව යාවත්කාලීන කරන ලදී');
         } catch (e) {
           setState(() => _isLoading = false);
@@ -661,91 +767,93 @@ Widget _buildRecommendationsSection() {
     );
   }
 
-void _showAddFertilizeDialog() {
-  final dateController = TextEditingController(text: _getTodayFormatted());
-  // Map of fertilizer types (Sinhala to English)
-  final Map<String, String> fertilizerTypes = {
-    'ග්ලිරිසීඩියා කොල': 'Gliricidia leaves',
-    'ගොම පොහොර': 'Cow dung',
-    'NPK 10 අනුපාතයට': 'NPK (10-10-10)',
-    'කුකුල් පොහොර': 'Chicken manure',
-    'කොම්පෝස්ට්': 'Compost',
-  };
-  
-  // Initialize with the first Sinhala fertilizer type
-  String selectedFertilizerSinhala = fertilizerTypes.keys.first;
-  final quantityController = TextEditingController();
-  final notesController = TextEditingController();
-  
-  _showFormDialog(
-    title: 'නව පොහොර යෙදීමක් එක් කරන්න',
-    fields: [
-      _buildDateField(dateController),
-      // Dropdown for fertilizer types in Sinhala
-      DropdownButtonFormField<String>(
-        value: selectedFertilizerSinhala,
-        decoration: const InputDecoration(labelText: 'පොහොර වර්ගය'),
-        items: fertilizerTypes.keys.map((sinhalaName) => DropdownMenuItem<String>(
-          value: sinhalaName,
-          child: Text(sinhalaName),
-        )).toList(),
-        onChanged: (value) {
-          if (value != null) {
-            selectedFertilizerSinhala = value;
+  void _showAddFertilizeDialog() {
+    final dateController = TextEditingController(text: _getTodayFormatted());
+    // Map of fertilizer types (Sinhala to English)
+    final Map<String, String> fertilizerTypes = {
+      'ග්ලිරිසීඩියා කොල': 'Gliricidia leaves',
+      'ගොම පොහොර': 'Cow dung',
+      'NPK 10 අනුපාතයට': 'NPK (10-10-10)',
+      'කුකුල් පොහොර': 'Chicken manure',
+      'කොම්පෝස්ට්': 'Compost',
+    };
+
+    // Initialize with the first Sinhala fertilizer type
+    String selectedFertilizerSinhala = fertilizerTypes.keys.first;
+    final quantityController = TextEditingController();
+    final notesController = TextEditingController();
+
+    _showFormDialog(
+      title: 'නව පොහොර යෙදීමක් එක් කරන්න',
+      fields: [
+        _buildDateField(dateController),
+        // Dropdown for fertilizer types in Sinhala
+        DropdownButtonFormField<String>(
+          value: selectedFertilizerSinhala,
+          decoration: const InputDecoration(labelText: 'පොහොර වර්ගය'),
+          items: fertilizerTypes.keys
+              .map((sinhalaName) => DropdownMenuItem<String>(
+                    value: sinhalaName,
+                    child: Text(sinhalaName),
+                  ))
+              .toList(),
+          onChanged: (value) {
+            if (value != null) {
+              selectedFertilizerSinhala = value;
+            }
+          },
+        ),
+        TextField(
+          controller: quantityController,
+          decoration: const InputDecoration(labelText: 'ප්‍රමාණය (kg)'),
+          keyboardType: TextInputType.number,
+        ),
+        TextField(
+          controller: notesController,
+          decoration: const InputDecoration(labelText: 'සටහන්'),
+          maxLines: 2,
+        ),
+      ],
+      onSave: () async {
+        try {
+          if (quantityController.text.isEmpty) {
+            _showErrorSnackBar('කරුණාකර ප්‍රමාණය ඇතුලත් කරන්න');
+            return;
           }
-        },
-      ),
-      TextField(
-        controller: quantityController,
-        decoration: const InputDecoration(labelText: 'ප්‍රමාණය (kg)'),
-        keyboardType: TextInputType.number,
-      ),
-      TextField(
-        controller: notesController,
-        decoration: const InputDecoration(labelText: 'සටහන්'),
-        maxLines: 2,
-      ),
-    ],
-    onSave: () async {
-      try {
-        if (quantityController.text.isEmpty) {
-          _showErrorSnackBar('කරුණාකර ප්‍රමාණය ඇතුලත් කරන්න');
-          return;
-        }
-        
-        final quantity = double.tryParse(quantityController.text);
-        if (quantity == null) {
-          _showErrorSnackBar('වලංගු ප්‍රමාණයක් ඇතුළත් කරන්න');
-          return;
-        }
-        
-        // Convert Sinhala fertilizer name to English for backend
-        final englishFertilizerName = fertilizerTypes[selectedFertilizerSinhala]!;
-        
-        final date = DateTime.parse(dateController.text);
-        final record = FertilizeRecord(
-          date: date,
-          fertilizerType: englishFertilizerName, // Use English name for backend
-          quantity: quantity,
-          notes: notesController.text,
-        );
-        
-        Navigator.pop(context);
-        setState(() => _isLoading = true);
-        
-        await _betelBedService.addFertilizeRecord(bed.id, record);
-        _showSuccessSnackBar('පොහොර යෙදීම සාර්ථකව එකතු කරන ලදී');
-        
-        await _refreshBedData();
-      } catch (e) {
-        setState(() => _isLoading = false);
-        _showErrorSnackBar('දෝෂයකි: ${e.toString()}');
-      }
-    },
-  );
-}
 
+          final quantity = double.tryParse(quantityController.text);
+          if (quantity == null) {
+            _showErrorSnackBar('වලංගු ප්‍රමාණයක් ඇතුළත් කරන්න');
+            return;
+          }
 
+          // Convert Sinhala fertilizer name to English for backend
+          final englishFertilizerName =
+              fertilizerTypes[selectedFertilizerSinhala]!;
+
+          final date = DateTime.parse(dateController.text);
+          final record = FertilizeRecord(
+            date: date,
+            fertilizerType:
+                englishFertilizerName, // Use English name for backend
+            quantity: quantity,
+            notes: notesController.text,
+          );
+
+          Navigator.pop(context);
+          setState(() => _isLoading = true);
+
+          await _betelBedService.addFertilizeRecord(bed.id, record);
+          _showSuccessSnackBar('පොහොර යෙදීම සාර්ථකව එකතු කරන ලදී');
+
+          await _refreshBedData();
+        } catch (e) {
+          setState(() => _isLoading = false);
+          _showErrorSnackBar('දෝෂයකි: ${e.toString()}');
+        }
+      },
+    );
+  }
 
   void _showAddHarvestDialog() {
     final dateController = TextEditingController(text: _getTodayFormatted());
@@ -754,7 +862,7 @@ void _showAddFertilizeDialog() {
     final revenueController = TextEditingController();
     final qualityController = TextEditingController(text: 'A');
     final notesController = TextEditingController();
-    
+
     _showFormDialog(
       title: 'නව අස්වැන්නක් එක් කරන්න',
       fields: [
@@ -777,10 +885,12 @@ void _showAddFertilizeDialog() {
         DropdownButtonFormField<String>(
           value: qualityController.text,
           decoration: const InputDecoration(labelText: 'තත්ත්වය'),
-          items: ['A', 'B', 'C', 'D'].map((quality) => DropdownMenuItem<String>(
-            value: quality,
-            child: Text(quality),
-          )).toList(),
+          items: ['A', 'B', 'C', 'D']
+              .map((quality) => DropdownMenuItem<String>(
+                    value: quality,
+                    child: Text(quality),
+                  ))
+              .toList(),
           onChanged: (value) => qualityController.text = value!,
         ),
         TextField(
@@ -791,20 +901,22 @@ void _showAddFertilizeDialog() {
       ],
       onSave: () async {
         try {
-          if (leavesController.text.isEmpty || weightController.text.isEmpty || revenueController.text.isEmpty) {
+          if (leavesController.text.isEmpty ||
+              weightController.text.isEmpty ||
+              revenueController.text.isEmpty) {
             _showErrorSnackBar('කරුණාකර අවශ්‍ය තොරතුරු පුරවන්න');
             return;
           }
-          
+
           final leaves = int.tryParse(leavesController.text);
           final weight = double.tryParse(weightController.text);
           final revenue = double.tryParse(revenueController.text);
-          
+
           if (leaves == null || weight == null || revenue == null) {
             _showErrorSnackBar('වලංගු අගයන් ඇතුළත් කරන්න');
             return;
           }
-          
+
           final date = DateTime.parse(dateController.text);
           final record = HarvestRecord(
             date: date,
@@ -814,13 +926,13 @@ void _showAddFertilizeDialog() {
             quality: qualityController.text,
             notes: notesController.text,
           );
-          
+
           Navigator.pop(context);
           setState(() => _isLoading = true);
-          
+
           await _betelBedService.addHarvestRecord(bed.id, record);
           _showSuccessSnackBar('අස්වැන්න සාර්ථකව එකතු කරන ලදී');
-          
+
           await _refreshBedData();
         } catch (e) {
           setState(() => _isLoading = false);
@@ -829,157 +941,161 @@ void _showAddFertilizeDialog() {
       },
     );
   }
-Widget _buildDateField(TextEditingController controller) {
-  return TextField(
-    controller: controller,
-    decoration: const InputDecoration(labelText: 'දිනය (YYYY-MM-DD)'),
-    readOnly: true,
-    onTap: () async {
-      final date = await showDatePicker(
-        context: context,
-        initialDate: DateTime.now(),
-        firstDate: DateTime(2020),
-        lastDate: DateTime.now(),
-      );
-      
-      if (date != null) {
-        controller.text = _formatDate(date);
-      }
-    },
-  );
-}
 
-void _showFormDialog({
-  required String title,
-  required List<Widget> fields,
-  required VoidCallback onSave,
-}) {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(title),
-      content: SingleChildScrollView(
-        child: Column(mainAxisSize: MainAxisSize.min, children: fields),
+  Widget _buildDateField(TextEditingController controller) {
+    return TextField(
+      controller: controller,
+      decoration: const InputDecoration(labelText: 'දිනය (YYYY-MM-DD)'),
+      readOnly: true,
+      onTap: () async {
+        final date = await showDatePicker(
+          context: context,
+          initialDate: DateTime.now(),
+          firstDate: DateTime(2020),
+          lastDate: DateTime.now(),
+        );
+
+        if (date != null) {
+          controller.text = _formatDate(date);
+        }
+      },
+    );
+  }
+
+  void _showFormDialog({
+    required String title,
+    required List<Widget> fields,
+    required VoidCallback onSave,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: SingleChildScrollView(
+          child: Column(mainAxisSize: MainAxisSize.min, children: fields),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('අවලංගු කරන්න'),
+          ),
+          ElevatedButton(
+            onPressed: onSave,
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade700),
+            child: const Text('සුරකින්න'),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('අවලංගු කරන්න'),
-        ),
-        ElevatedButton(
-          onPressed: onSave,
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700),
-          child: const Text('සුරකින්න'),
-        ),
-      ],
-    ),
-  );
-}
+    );
+  }
 
-void _showDeleteConfirmation() {
-  showDialog(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: const Text('වගාව මකන්නද?'),
-      content: const Text('මෙම බුලත් වගාව සහ එයට අදාළ සියලුම දත්ත මකා දැමෙනු ඇත. මෙය ආපසු හැරවිය නොහැක.'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext),
-          child: const Text('අවලංගු කරන්න'),
-        ),
-        TextButton(
-          onPressed: () async {
-            try {
-              // First close the dialog
-              Navigator.pop(dialogContext);
-              
-              // Then show loading indicator
-              setState(() => _isLoading = true);
-              
-              // Get the provider and delete the bed
-              final betelBedProvider = Provider.of<BetelBedProvider>(context, listen: false);
-              await betelBedProvider.deleteBed(bed.id);
-              
-              // Show success message and pop with successful deletion result
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('බුලත් වගාව සාර්ථකව මකා දමන ලදී'))
-              );
-              
-              // Important: Pop the current screen AFTER deletion is complete
-              // and pass true to indicate a refresh is needed
-              if (mounted) {
-                Navigator.of(context).pop(true);
+  void _showDeleteConfirmation() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('වගාව මකන්නද?'),
+        content: const Text(
+            'මෙම බුලත් වගාව සහ එයට අදාළ සියලුම දත්ත මකා දැමෙනු ඇත. මෙය ආපසු හැරවිය නොහැක.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('අවලංගු කරන්න'),
+          ),
+          TextButton(
+            onPressed: () async {
+              try {
+                // First close the dialog
+                Navigator.pop(dialogContext);
+
+                // Then show loading indicator
+                setState(() => _isLoading = true);
+
+                // Get the provider and delete the bed
+                final betelBedProvider =
+                    Provider.of<BetelBedProvider>(context, listen: false);
+                await betelBedProvider.deleteBed(bed.id);
+
+                // Show success message and pop with successful deletion result
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('බුලත් වගාව සාර්ථකව මකා දමන ලදී')));
+
+                // Important: Pop the current screen AFTER deletion is complete
+                // and pass true to indicate a refresh is needed
+                if (mounted) {
+                  Navigator.of(context).pop(true);
+                }
+              } catch (e) {
+                if (mounted) {
+                  setState(() => _isLoading = false);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('දෝෂයකි: ${e.toString()}')));
+                }
               }
-            } catch (e) {
-              if (mounted) {
-                setState(() => _isLoading = false);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('දෝෂයකි: ${e.toString()}'))
-                );
-              }
-            }
-          },
-          style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
-          child: const Text('මකන්න'),
-        ),
-      ],
-    ),
-  );
-}
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
+            child: const Text('මකන්න'),
+          ),
+        ],
+      ),
+    );
+  }
 
 // Helper methods
-String _formatDate(DateTime date) => 
-    '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  String _formatDate(DateTime date) =>
+      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
-String _getTodayFormatted() => _formatDate(DateTime.now());
+  String _getTodayFormatted() => _formatDate(DateTime.now());
 
-void _showSuccessSnackBar(String message) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-}
-
-void _showErrorSnackBar(String message) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-}
-
-String _getStatusDescription() {
-  switch (bed.status) {
-    case BetelBedStatus.needsFertilizing:
-      return 'ඉදිරි දින ${bed.daysUntilNextFertilizing.abs()} තුළ පොහොර යෙදිය යුතුයි';
-    case BetelBedStatus.readyToHarvest:
-      return 'අස්වනු නෙලීමට සූදානම්. ඉදිරි දින 2ක් තුළ අස්වනු නෙලන්න';
-    case BetelBedStatus.needsWatering:
-      return 'පැළවලට ජලය අවශ්‍ය වෙයි';
-    case BetelBedStatus.recentlyFertilized:
-      return 'පසුගිය දින ${bed.daysUntilNextFertilizing + 30} කදී පොහොර යොදා ඇත';
-    case BetelBedStatus.recentlyHarvested:
-      return 'තව දින ${bed.daysUntilNextHarvesting}කින් නැවත අස්වනු නෙළිය හැක';
-    case BetelBedStatus.diseased:
-      return 'රෝග ලක්ෂණ දක්නට ලැබේ. ඉක්මනින් ප්‍රතිකාර කරන්න';
-    case BetelBedStatus.healthy:
-    default:
-      return 'පැළ හොඳ තත්වයේ පවතී';
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
-}
 
-StatusInfo _getStatusInfo(BetelBedStatus status) {
-  switch (status) {
-    case BetelBedStatus.needsFertilizing:
-      return StatusInfo(Colors.orange, Icons.water_drop);
-    case BetelBedStatus.readyToHarvest:
-      return StatusInfo(Colors.green.shade700, Icons.shopping_basket);
-    case BetelBedStatus.needsWatering:
-      return StatusInfo(Colors.blue, Icons.water);
-    case BetelBedStatus.diseased:
-      return StatusInfo(Colors.red, Icons.healing);
-    default:
-      return StatusInfo(Colors.teal, Icons.check_circle);
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
-}
+
+  String _getStatusDescription() {
+    switch (bed.status) {
+      case BetelBedStatus.needsFertilizing:
+        return 'ඉදිරි දින ${bed.daysUntilNextFertilizing.abs()} තුළ පොහොර යෙදිය යුතුයි';
+      case BetelBedStatus.readyToHarvest:
+        return 'අස්වනු නෙලීමට සූදානම්. ඉදිරි දින 2ක් තුළ අස්වනු නෙලන්න';
+      case BetelBedStatus.needsWatering:
+        return 'පැළවලට ජලය අවශ්‍ය වෙයි';
+      case BetelBedStatus.recentlyFertilized:
+        return 'පසුගිය දින ${bed.daysUntilNextFertilizing + 30} කදී පොහොර යොදා ඇත';
+      case BetelBedStatus.recentlyHarvested:
+        return 'තව දින ${bed.daysUntilNextHarvesting}කින් නැවත අස්වනු නෙළිය හැක';
+      case BetelBedStatus.diseased:
+        return 'රෝග ලක්ෂණ දක්නට ලැබේ. ඉක්මනින් ප්‍රතිකාර කරන්න';
+      case BetelBedStatus.healthy:
+      default:
+        return 'පැළ හොඳ තත්වයේ පවතී';
+    }
+  }
+
+  StatusInfo _getStatusInfo(BetelBedStatus status) {
+    switch (status) {
+      case BetelBedStatus.needsFertilizing:
+        return StatusInfo(Colors.orange, Icons.water_drop);
+      case BetelBedStatus.readyToHarvest:
+        return StatusInfo(Colors.green.shade700, Icons.shopping_basket);
+      case BetelBedStatus.needsWatering:
+        return StatusInfo(Colors.blue, Icons.water);
+      case BetelBedStatus.diseased:
+        return StatusInfo(Colors.red, Icons.healing);
+      default:
+        return StatusInfo(Colors.teal, Icons.check_circle);
+    }
+  }
 }
 
 class StatusInfo {
   final Color color;
   final IconData icon;
-  
+
   StatusInfo(this.color, this.icon);
 }

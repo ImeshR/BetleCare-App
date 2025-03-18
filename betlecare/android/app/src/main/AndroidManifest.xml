@@ -2,9 +2,12 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
-            android:label="betlecare"
+            android:label="BetelCare"
             android:name="${applicationName}"
             android:icon="@mipmap/ic_launcher"
             android:usesCleartextTraffic="true">
@@ -12,7 +15,7 @@
         <!-- Google Maps API Key -->
         <meta-data
                 android:name="com.google.android.geo.API_KEY"
-                android:value="API KEY" />
+                android:value="AIzaSyDZOh3BY64_4fphkD2pvKTOTj5xu9D8yKw" />
 
         <activity
                 android:name=".MainActivity"
@@ -40,6 +43,21 @@
         <meta-data
                 android:name="flutterEmbedding"
                 android:value="2" />
+
+        <!-- Add for awesome_notifications -->
+        <receiver android:name="me.carda.awesome_notifications.notifications.broadcastReceivers.DismissedNotificationReceiver" />
+        <receiver android:name="me.carda.awesome_notifications.notifications.broadcastReceivers.ScheduledNotificationReceiver" />
+        <receiver android:name="me.carda.awesome_notifications.notifications.broadcastReceivers.KeepOnTopNotificationReceiver" />
+        <receiver android:name="me.carda.awesome_notifications.notifications.broadcastReceivers.ActionButtonsReceiver" />
+        
+        <receiver android:exported="true" android:name="me.carda.awesome_notifications.notifications.broadcastReceivers.AwesomeNotificationsReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
     <!-- Required to query activities that can process text -->

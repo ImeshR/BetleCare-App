@@ -24,7 +24,16 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
   double? _area;
 
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _locationController = TextEditingController();
+
+  String? _selectedLocation;
+
+  // Map of locations with Sinhala display names and English values
+  final Map<String, String> _locations = {
+    'Puttalam': 'පුත්තලම',
+    'Anamaduwa': 'අනමඩුව',
+    'Kurunegala': 'කුරුණෑගල',
+    // Add more locations as needed
+  };
 
   @override
   void initState() {
@@ -39,7 +48,6 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
     _positionStreamSubscription?.cancel();
     _mapController?.dispose();
     _nameController.dispose();
-    _locationController.dispose();
     super.dispose();
   }
 
@@ -191,6 +199,13 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
       return;
     }
 
+    if (_selectedLocation == null || _selectedLocation!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('කරුණාකර ස්ථානයක් තෝරන්න.')),
+      );
+      return;
+    }
+
     try {
       final supabaseService = await SupabaseService.init();
       final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -207,7 +222,7 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
       final landData = {
         'user_id': userId,
         'name': _nameController.text,
-        'location': _locationController.text,
+        'location': _selectedLocation,
         'area': _area!.toStringAsFixed(2),
         'coordinates': _polygonPoints
             .map((point) => [point.latitude, point.longitude])
@@ -223,7 +238,6 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
 
       setState(() {
         _nameController.clear();
-        _locationController.clear();
         _polygonPoints.clear();
         _polygons.clear();
         _polylines.clear();
@@ -260,9 +274,27 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
                   controller: _nameController,
                   decoration: const InputDecoration(labelText: 'ඉඩමේ නම'),
                 ),
-                TextField(
-                  controller: _locationController,
-                  decoration: const InputDecoration(labelText: 'ස්ථානය'),
+                SizedBox(height: 16),
+                // Dropdown for location selection
+                DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    labelText: 'ස්ථානය',
+                    border: OutlineInputBorder(),
+                  ),
+                  value: _selectedLocation,
+                  hint: Text('ස්ථානය තෝරන්න'),
+                  isExpanded: true,
+                  items: _locations.entries.map((entry) {
+                    return DropdownMenuItem<String>(
+                      value: entry.key, // English value
+                      child: Text(entry.value), // Sinhala display name
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedLocation = value;
+                    });
+                  },
                 ),
                 const SizedBox(height: 16),
                 Text('වර්ගඵලය: ${_area!.toStringAsFixed(2)} අක්කර'),

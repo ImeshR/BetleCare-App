@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:developer' as dev;
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class PriceForecastScreen extends StatefulWidget {
   const PriceForecastScreen({super.key});
@@ -17,43 +21,53 @@ class _PriceForecastScreenState extends State<PriceForecastScreen> {
   String? _selectedSize;
   String? _selectedQuality;
   String? _selectedMarket;
+  // String? _selectedSeason;
 
   bool _isLoading = false;
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
 
-      //! Remove the below log statements
-      dev.log('Form Submitted');
-      dev.log(
-        'Date: ${_dateController.text}',
-      );
-      dev.log('Quantity: ${_quantityController.text}');
-      dev.log('Type: $_selectedType');
-      dev.log(
-        'Size: $_selectedSize',
-      );
-      dev.log(
-        'Quality: $_selectedQuality',
-      );
-      dev.log(
-        'Market: $_selectedMarket',
+      final requestBody = {
+        'Date': _dateController.text,
+        'Leaf_Type': _selectedType,
+        'Leaf_Size': _selectedSize,
+        'Quality_Grade': _selectedQuality,
+        'No_of_Leaves': _quantityController.text,
+        'Location': _selectedMarket,
+        // 'Season': _selectedSeason,
+      };
+
+      final apiUrl = '${dotenv.env['MARKET_PREDICT_BASE_URL']!}/predict-price';
+      // Make the API call
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(requestBody),
       );
 
-      Future.delayed(const Duration(seconds: 3), () {
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final price = data['price'];
         setState(() {
           _isLoading = false;
         });
-
-        _showPopup();
-      });
+        _showPopup(price);
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+        dev.log('Error: ${response.statusCode}');
+      }
     }
   }
 
-  void _showPopup() {
+  void _showPopup(price) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -66,8 +80,8 @@ class _PriceForecastScreenState extends State<PriceForecastScreen> {
             children: [
               Image.asset('assets/images/eshan/LM1.png', height: 150),
               const SizedBox(height: 16),
-              const Text(
-                '2025/04/02 දිනට බුලත් කොලයක මිල: 12.50',
+              Text(
+                '${_dateController.text} දිනට බුලත් කොලයක මිල: $price',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
@@ -95,6 +109,7 @@ class _PriceForecastScreenState extends State<PriceForecastScreen> {
     _selectedSize = null;
     _selectedQuality = null;
     _selectedMarket = null;
+    // _selectedSeason = null;
   }
 
   @override
@@ -124,25 +139,46 @@ class _PriceForecastScreenState extends State<PriceForecastScreen> {
                         _buildDatePicker('දිනය', _dateController),
                         _buildDropdownField(
                             'කොළ වර්ගය',
-                            ['Type 1', 'Type 2', 'Type 3'],
+                            [
+                              const MapEntry('පීදිච්ච', 'Peedichcha'),
+                              const MapEntry('කොරිකන්', 'Korikan'),
+                              const MapEntry('කෙටි', 'Keti'),
+                              const MapEntry('රෑන් කෙටි', 'Raan Keti'),
+                            ],
                             (val) => setState(() => _selectedType = val),
                             _selectedType),
                         _buildDropdownField(
                             'කොලයේ ප්‍රමාණය',
-                            ['Small', 'Medium', 'Large'],
+                            [
+                              const MapEntry('කුඩා', 'Small'),
+                              const MapEntry('මධ්‍යම', 'Medium'),
+                              const MapEntry('විශාල', 'Large'),
+                            ],
                             (val) => setState(() => _selectedSize = val),
                             _selectedSize),
                         _buildDropdownField(
                             'ගුණාත්මක මට්ටම',
-                            ['Low', 'Medium', 'High'],
+                            [
+                              const MapEntry('අළු', 'Ash'),
+                              const MapEntry('අදුරැ', 'Dark'),
+                            ],
                             (val) => setState(() => _selectedQuality = val),
                             _selectedQuality),
                         _buildNumberInputField('කොළ ගණන', _quantityController),
                         _buildDropdownField(
                             'වෙළඳපොල',
-                            ['Panadura', 'Colombo', 'Nugegoda'],
+                            [
+                              const MapEntry('කුළියාපිටිය', 'Kuliyapitiya'),
+                              const MapEntry('නයිවල', 'Naiwala'),
+                              const MapEntry('අපලාදෙණිය', 'Apaladeniya'),
+                            ],
                             (val) => setState(() => _selectedMarket = val),
                             _selectedMarket),
+                        // _buildDropdownField(
+                        //     'වාරය',
+                        //     ['Dry', 'Wet'],
+                        //     (val) => setState(() => _selectedSeason = val),
+                        //     _selectedSeason),
                       ],
                     ),
                   ),
@@ -180,31 +216,6 @@ class _PriceForecastScreenState extends State<PriceForecastScreen> {
       ],
     );
   }
-
-  // Widget _buildMarketInputField(
-  //     String title, TextEditingController controller) {
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(vertical: 8),
-  //     child: TextFormField(
-  //       controller: controller,
-  //       decoration: InputDecoration(
-  //         labelText: title,
-  //         border: OutlineInputBorder(
-  //           borderRadius: BorderRadius.circular(8),
-  //         ),
-  //         filled: true,
-  //         fillColor: Colors.green.shade100,
-  //       ),
-  //       keyboardType: TextInputType.text,
-  //       validator: (value) {
-  //         if (value == null || value.isEmpty) {
-  //           return 'කරුණාකර වටිනාකමක් ඇතුළත් කරන්න';
-  //         }
-  //         return null;
-  //       },
-  //     ),
-  //   );
-  // }
 
   Widget _buildDatePicker(String title, TextEditingController controller) {
     return Padding(
@@ -262,17 +273,47 @@ class _PriceForecastScreenState extends State<PriceForecastScreen> {
     );
   }
 
-  Widget _buildDropdownField(String title, List<String> options,
-      Function(String?) onChanged, String? selectedValue) {
+  // Widget _buildDropdownField(String title, List<String> options,
+  //     Function(String?) onChanged, String? selectedValue) {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(
+  //       vertical: 8,
+  //     ),
+  //     child: DropdownButtonFormField<String>(
+  //       value: selectedValue,
+  //       items: options
+  //           .map((option) =>
+  //               DropdownMenuItem(value: option, child: Text(option)))
+  //           .toList(),
+  //       onChanged: onChanged,
+  //       decoration: InputDecoration(
+  //         labelText: title,
+  //         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+  //         filled: true,
+  //         fillColor: Colors.green.shade100,
+  //       ),
+  //       dropdownColor: Colors.green.shade50,
+  //       style: const TextStyle(color: Colors.black87, fontSize: 16),
+  //       icon: const Icon(Icons.arrow_drop_down, color: Colors.green),
+  //       validator: (value) => value == null ? 'කරුණාකර මතයක් තෝරන්න' : null,
+  //     ),
+  //   );
+  // }
+
+  Widget _buildDropdownField(
+      String title,
+      List<MapEntry<String, String>> options,
+      Function(String?) onChanged,
+      String? selectedValue) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: 8,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: DropdownButtonFormField<String>(
         value: selectedValue,
         items: options
-            .map((option) =>
-                DropdownMenuItem(value: option, child: Text(option)))
+            .map((entry) => DropdownMenuItem(
+                  value: entry.value,
+                  child: Text(entry.key),
+                ))
             .toList(),
         onChanged: onChanged,
         decoration: InputDecoration(

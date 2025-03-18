@@ -1,0 +1,2 @@
+C:/Users/Kavindi/Desktop/BetleCare-App/betlecare/android/app/.cxx/Debug/1t3t343q/x86/CMakeFiles/edit_cache.dir
+C:/Users/Kavindi/Desktop/BetleCare-App/betlecare/android/app/.cxx/Debug/1t3t343q/x86/CMakeFiles/rebuild_cache.dir
