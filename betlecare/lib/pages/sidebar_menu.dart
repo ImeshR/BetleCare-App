@@ -74,33 +74,49 @@ class SidebarMenu extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(LineIcons.home),
-            title: const Text('Home'),
+            title: const Text('මුල් පිටුව'),  // Home in Sinhala
             onTap: () {
               Navigator.pop(context);
               onTabChange(2);
             },
           ),
           ListTile(
-            leading: const Icon(LineIcons.leaf),
-            title: const Text('Harvest'),
+            leading: const Icon(LineIcons.seedling),  // Changed to seedling icon
+            title: const Text('අස්වැන්න'),  // Harvest in Sinhala
             onTap: () {
               Navigator.pop(context);
               onTabChange(0);
             },
           ),
-          // ListTile(
-          //   leading: const Icon(LineIcons.user),
-          //   title: const Text('Profile'),
-          //   onTap: () {
-          //     Navigator.pop(context);
-          //     onTabChange(1);
-          //   },
-          // ),
+          ListTile(
+            leading: const Icon(LineIcons.bug),  // Disease icon
+            title: const Text('රෝග හඳුනා ගැනීම'),  // Disease identification in Sinhala
+            onTap: () {
+              Navigator.pop(context);
+              onTabChange(3);
+            },
+          ),
+          ListTile(
+            leading: const Icon(LineIcons.cloudWithRain),  // Weather icon
+            title: const Text('කාලගුණය'),  // Weather in Sinhala
+            onTap: () {
+              Navigator.pop(context);
+              onTabChange(4);
+            },
+          ),
+          ListTile(
+            leading: const Icon(LineIcons.store),  // Market icon
+            title: const Text('වෙළඳපොල'),  // Market in Sinhala
+            onTap: () {
+              Navigator.pop(context);
+              onTabChange(1);
+            },
+          ),
           const Divider(),
           ListTile(
             leading: const Icon(LineIcons.alternateSignOut, color: Colors.red),
             title: const Text(
-              'Logout',
+              'ඉවත් වන්න',  // Logout in Sinhala
               style: TextStyle(color: Colors.red),
             ),
             onTap: () => _logout(context),
