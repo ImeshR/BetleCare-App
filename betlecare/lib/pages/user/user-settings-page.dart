@@ -1,9 +1,9 @@
 import 'package:betlecare/pages/notification_preferences.dart';
+import 'package:betlecare/pages/user/stripe_payment_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:betlecare/providers/notification_provider.dart';
- 
 
 import '../../styles/auth_styles.dart';
 import '../../supabase_client.dart';
@@ -93,9 +93,10 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
           _isNewUser = response['new_user'] ?? true;
           _isLoadingSettings = false;
         });
-        
+
         // Update notification provider with the latest setting
-        final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+        final notificationProvider =
+            Provider.of<NotificationProvider>(context, listen: false);
         await notificationProvider.updateNotificationPreferences(
           notificationsEnabled: _notificationsEnabled,
         );
@@ -150,9 +151,10 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
         setState(() {
           _notificationsEnabled = value;
         });
-        
+
         // Update notification provider with the latest setting
-        final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+        final notificationProvider =
+            Provider.of<NotificationProvider>(context, listen: false);
         await notificationProvider.updateNotificationPreferences(
           notificationsEnabled: value,
         );
@@ -543,7 +545,11 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
                     Center(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          // Navigate to payment page
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => StripePaymentPage()),
+                          );
                         },
                         icon: Icon(Icons.credit_card),
                         label: Text('දැන් ගෙවන්න'),
