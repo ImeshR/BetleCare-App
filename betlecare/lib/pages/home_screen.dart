@@ -1,3 +1,4 @@
+import 'package:betlecare/pages/home/tips_and_advice.dart';
 import 'package:flutter/material.dart';
 import 'package:betlecare/models/betel_bed_model.dart';
 import 'package:betlecare/pages/beds/my_beds_screen.dart';
@@ -23,13 +24,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadData() async {
-    final betelBedProvider = Provider.of<BetelBedProvider>(context, listen: false);
-    
+    final betelBedProvider =
+        Provider.of<BetelBedProvider>(context, listen: false);
+
     setState(() {
       _isLoading = true;
       _error = null;
     });
-    
+
     try {
       await betelBedProvider.loadBeds();
     } catch (e) {
@@ -54,7 +56,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+                        Icon(Icons.error_outline,
+                            size: 48, color: Colors.red[300]),
                         const SizedBox(height: 16),
                         Text(
                           'දත්ත ලබා ගැනීමේ දෝෂයකි',
@@ -79,14 +82,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 8.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Welcome Card
-                         
+
                             const SizedBox(height: 16),
-                            
+
                             // Section Title
                             Text(
                               'ප්‍රධාන කාර්යයන්',
@@ -97,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            
+
                             // My Beds Card - Main feature card
                             _buildFeatureCard(
                               context: context,
@@ -116,8 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               },
                             ),
                             const SizedBox(height: 12),
-                            
-                            // Tips and Advice Card
+
                             _buildFeatureCard(
                               context: context,
                               title: 'උපදෙස් සහ ඉඟි',
@@ -127,13 +130,19 @@ class _HomeScreenState extends State<HomeScreen> {
                               imagePath: 'assets/images/tips.png',
                               onTap: () {
                                 // Navigate to tips screen
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const TipsScreen(),
+                                  ),
+                                );
                               },
                             ),
-                            
+
                             const SizedBox(height: 16),
                             // Quick Stats Section
                             _buildQuickStatsSection(context),
-                            
+
                             // Add more space at the bottom
                             const SizedBox(height: 24),
                           ],
@@ -145,8 +154,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-
-
   Widget _buildFeatureCard({
     required BuildContext context,
     required String title,
@@ -155,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required Color color,
     required String imagePath,
     required VoidCallback onTap,
-    double height = 110, // Default height with option to override
+    double height = 110,
   }) {
     return Container(
       width: double.infinity,
@@ -237,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildQuickStatsSection(BuildContext context) {
     // Get data from provider
     final betelBedProvider = Provider.of<BetelBedProvider>(context);
-    
+
     // Calculate stats
     final totalBeds = betelBedProvider.totalBeds;
     final bedsNeedingAttention = betelBedProvider.bedsNeedingAttention;

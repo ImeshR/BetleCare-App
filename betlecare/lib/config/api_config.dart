@@ -2,8 +2,10 @@
 
 class ApiConfig {
   // Base URL for all API endpoints
+
   static const String apiBaseUrl =
       'https://web-production-d34d.up.railway.app/api';
+
 
   // Derived API endpoints
   static String get fertilizingBasePath => '$apiBaseUrl/fertilizing';

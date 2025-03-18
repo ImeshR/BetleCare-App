@@ -12,22 +12,20 @@ class WeatherService {
   
   final Map<String, Map<String, double>> locations = {
     'වත්මන් ස්ථානය (Current Location)': {'lat': 0, 'lon': 0}, // Placeholder values, will be updated with actual location
-    'කොළඹ (Colombo)': {'lat': 6.9271, 'lon': 79.8612},
+   
     'කුරුණෑගල (Kurunegala)': {'lat': 7.4867, 'lon': 80.3647},
     'පුත්තලම (Puttalam)': {'lat': 8.0408, 'lon': 79.8358},
     'අනමඩුව (Anamaduwa)': {'lat': 8.0364, 'lon': 80.0105},
-    'කළුතර (Kalutara)': {'lat': 6.5854, 'lon': 79.9607},
-    'පානදුර (Panadura)': {'lat': 6.7130, 'lon': 79.9073},
+    
   };
 
   // Map of city names for Weatherbit API
   final Map<String, String> cityNames = {
-    'කොළඹ (Colombo)': 'Colombo',
+    
     'කුරුණෑගල (Kurunegala)': 'Kurunegala',
     'පුත්තලම (Puttalam)': 'Puttalam',
     'අනමඩුව (Anamaduwa)': 'Anamaduwa',
-    'කළුතර (Kalutara)': 'Kalutara',
-    'පානදුර (Panadura)': 'Panadura',
+     
   };
 
   // Added locationName to store the actual location name when using current location

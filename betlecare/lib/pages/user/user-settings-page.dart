@@ -1,9 +1,10 @@
-import 'package:betlecare/pages/user/stripe_payment_page.dart';
+import 'package:betlecare/pages/notification_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:betlecare/providers/notification_provider.dart';
+ 
 
-import '../../providers/user_provider.dart';
 import '../../styles/auth_styles.dart';
 import '../../supabase_client.dart';
 
@@ -92,6 +93,12 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
           _isNewUser = response['new_user'] ?? true;
           _isLoadingSettings = false;
         });
+        
+        // Update notification provider with the latest setting
+        final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+        await notificationProvider.updateNotificationPreferences(
+          notificationsEnabled: _notificationsEnabled,
+        );
       }
     } catch (e) {
       print('Error loading settings: $e');
@@ -136,7 +143,6 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
       final user = supabase.client.auth.currentUser;
 
       if (user != null) {
-        print('User: ${user.id}');
         await supabase.client
             .from('user_settings')
             .update({'notification_enable': value}).eq('userid', user.id);
@@ -144,6 +150,12 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
         setState(() {
           _notificationsEnabled = value;
         });
+        
+        // Update notification provider with the latest setting
+        final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+        await notificationProvider.updateNotificationPreferences(
+          notificationsEnabled: value,
+        );
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('දැනුම්දීම් සැකසුම් යාවත්කාලීන කරන ලදී')),
@@ -208,16 +220,10 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final userSettings =
-        userProvider.userData?['settings']; // Retrieve user settings
-    print('User Settings: $userSettings');
-
     return Scaffold(
       appBar: AppBar(
         title: Text('පරිශීලක සැකසුම්'),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
+        backgroundColor: Colors.transparent,
       ),
       body: _isLoadingSettings
           ? Center(child: CircularProgressIndicator())
@@ -431,6 +437,26 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
                 _updateNotificationSettings(value);
               },
             ),
+            SizedBox(height: 8),
+            // Button to navigate to detailed notification settings
+            Center(
+              child: OutlinedButton.icon(
+                icon: Icon(Icons.settings),
+                label: Text('තවත් දැනුම්දීම් සැකසුම්'),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NotificationPreferencesScreen(),
+                    ),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AuthStyles.primaryColor,
+                  side: BorderSide(color: AuthStyles.primaryColor),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -438,10 +464,6 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
   }
 
   Widget _buildPaymentStatusCard() {
-    final userProvider = Provider.of<UserProvider>(context);
-    final userSettings = userProvider.userSettings;
-    final paymentStatus = userSettings?['payment_status'] ?? false;
-
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -454,7 +476,7 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
               children: [
                 Icon(
                   Icons.payment,
-                  color: paymentStatus ? Colors.green : Colors.orange,
+                  color: _paymentStatus ? Colors.green : Colors.orange,
                 ),
                 SizedBox(width: 8),
                 Text(
@@ -471,12 +493,12 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
               width: double.infinity,
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: paymentStatus
+                color: _paymentStatus
                     ? Colors.green.shade50
                     : Colors.orange.shade50,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: paymentStatus
+                  color: _paymentStatus
                       ? Colors.green.shade200
                       : Colors.orange.shade200,
                 ),
@@ -487,16 +509,18 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
                   Row(
                     children: [
                       Icon(
-                        paymentStatus ? Icons.check_circle : Icons.info,
-                        color: paymentStatus ? Colors.green : Colors.orange,
+                        _paymentStatus ? Icons.check_circle : Icons.info,
+                        color: _paymentStatus ? Colors.green : Colors.orange,
                       ),
                       SizedBox(width: 8),
                       Text(
-                        paymentStatus ? 'ගෙවීම් සම්පූර්ණයි' : 'ගෙවීම් අවශ්‍යයි',
+                        _paymentStatus
+                            ? 'ගෙවීම් සම්පූර්ණයි'
+                            : 'ගෙවීම් අවශ්‍යයි',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: paymentStatus
+                          color: _paymentStatus
                               ? Colors.green.shade800
                               : Colors.orange.shade800,
                         ),
@@ -505,34 +529,26 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    paymentStatus
+                    _paymentStatus
                         ? 'ඔබගේ ගිණුම සක්‍රීයයි. සියලුම විශේෂාංග භාවිතා කිරීමට ඔබට ප්‍රවේශය ඇත.'
                         : 'සියලුම විශේෂාංග භාවිතා කිරීමට ඔබගේ දායකත්වය යාවත්කාලීන කරන්න.',
                     style: TextStyle(
-                      color: paymentStatus
+                      color: _paymentStatus
                           ? Colors.green.shade700
                           : Colors.orange.shade700,
                     ),
                   ),
-                  if (!paymentStatus) ...[
+                  if (!_paymentStatus) ...[
                     SizedBox(height: 16),
                     Center(
                       child: ElevatedButton.icon(
-                        onPressed: paymentStatus
-                            ? null // Disable the button if payment is complete
-                            : () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => StripePaymentPage(),
-                                  ),
-                                );
-                              },
+                        onPressed: () {
+                          // Navigate to payment page
+                        },
                         icon: Icon(Icons.credit_card),
                         label: Text('දැන් ගෙවන්න'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              paymentStatus ? Colors.grey : Colors.orange,
+                          backgroundColor: Colors.orange,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(
                               horizontal: 16, vertical: 12),
