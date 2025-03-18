@@ -63,8 +63,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
   
-  Widget _buildEmptyState() {
-    return Center(
+Widget _buildEmptyState() {
+  return Center(
+    child: Container(
+      width: double.infinity,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -75,10 +77,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
-          Text(
-            'ඔබට නව දැනුම්දීමක් ලැබුණු විට එය මෙහි පෙන්වනු ඇත',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-            textAlign: TextAlign.center,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Text(
+              'ඔබට නව දැනුම්දීමක් ලැබුණු විට එය මෙහි පෙන්වනු ඇත',
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              textAlign: TextAlign.center,
+            ),
           ),
           const SizedBox(height: 24),
           ElevatedButton(
@@ -89,13 +94,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 const SnackBar(content: Text('Checking for new notifications...'))
               );
             },
-            child: const Text('Check for Notifications'),
+            child: const Text('දැනුම්දීම් පරීක්ශා කරන්න'),
           ),
         ],
       ),
-    );
-  }
-  
+    ),
+  );
+}
+
   Widget _buildNotificationList(NotificationProvider provider) {
     // Filter notifications to only show those from the last 3 days
     final DateTime thresholdDate = DateTime.now().subtract(const Duration(days: 3));
