@@ -31,11 +31,9 @@ class _EditBedScreenState extends State<EditBedScreen> {
   final _betelBedService = BetelBedService();
 
   final List<String> _betelTypes = [
+    'රට දළු',
+    'මනේරු',
     'රතු බුලත්',
-    'කොළ බුලත්',
-    'සුදු බුලත්',
-    'මිශ්‍ර බුලත්',
-    'හයිබ්‍රිඩ් බුලත්'
   ];
   String? _selectedBetelType;
 

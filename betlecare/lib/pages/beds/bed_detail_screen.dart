@@ -457,34 +457,48 @@ class _BedDetailScreenState extends State<BedDetailScreen> {
     );
   }
 
-  Widget _buildFertilizeHistoryList() {
-    final sortedHistory = List<FertilizeRecord>.from(bed.fertilizeHistory)
-      ..sort((a, b) => b.date.compareTo(a.date));
+Widget _buildFertilizeHistoryList() {
+  final sortedHistory = List<FertilizeRecord>.from(bed.fertilizeHistory)
+    ..sort((a, b) => b.date.compareTo(a.date));
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: sortedHistory.length,
-      itemBuilder: (context, index) {
-        final record = sortedHistory[index];
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundColor: Colors.blue.shade100,
-            child:
-                Icon(Icons.water_drop, color: Colors.blue.shade700, size: 18),
-          ),
-          title: Text(record.fertilizerType),
-          subtitle: Text('${_formatDate(record.date)} • ${record.quantity}kg'),
-          trailing: record.notes.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.info_outline, size: 20),
-                  onPressed: () => _showNotesDialog(record.notes),
-                )
-              : null,
-        );
-      },
-    );
-  }
+  // Map for translating English fertilizer types back to Sinhala
+  final Map<String, String> fertilizerTypesEnglishToSinhala = {
+    'Gliricidia leaves': 'ග්ලිරිසීඩියා කොල',
+    'Cow dung': 'ගොම පොහොර',
+    'NPK (10-10-10)': 'NPK 10 අනුපාතයට',
+    'Chicken manure': 'කුකුල් පොහොර',
+    'Poultry manure': 'කුකුල් පොහොර',  // Alternative name
+    'Compost': 'කොම්පෝස්ට්',
+  };
+
+  return ListView.builder(
+    shrinkWrap: true,
+    physics: const NeverScrollableScrollPhysics(),
+    itemCount: sortedHistory.length,
+    itemBuilder: (context, index) {
+      final record = sortedHistory[index];
+      
+      // Translate English fertilizer type to Sinhala or keep original if translation not found
+      final sinhalaFertilizerType = fertilizerTypesEnglishToSinhala[record.fertilizerType] ?? record.fertilizerType;
+      
+      return ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.blue.shade100,
+          child: Icon(Icons.water_drop, color: Colors.blue.shade700, size: 18),
+        ),
+        title: Text(sinhalaFertilizerType),  // Display the Sinhala name
+        subtitle: Text('${_formatDate(record.date)} • ${record.quantity}kg'),
+        trailing: record.notes.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.info_outline, size: 20),
+                onPressed: () => _showNotesDialog(record.notes),
+              )
+            : null,
+      );
+    },
+  );
+}
+
 
   Widget _buildHarvestHistoryList() {
     final sortedHistory = List<HarvestRecord>.from(bed.harvestHistory)
