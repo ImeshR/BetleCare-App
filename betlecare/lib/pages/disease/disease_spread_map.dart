@@ -35,6 +35,7 @@ class _DiseaseReportPageState extends State<DiseaseReportPage> {
     super.initState();
     _mapApiKey = dotenv.env['MAP_API_KEY'];
     _getUserLocation();
+    // Load disease reports immediately, don't wait for location
     _loadDiseaseReports();
   }
 
@@ -44,6 +45,7 @@ class _DiseaseReportPageState extends State<DiseaseReportPage> {
     super.dispose();
   }
 
+// Update the _loadDiseaseReports method to fetch all disease reports and create more informative markers
   Future<void> _loadDiseaseReports() async {
     try {
       final supabaseService = await SupabaseService.init();
@@ -56,14 +58,41 @@ class _DiseaseReportPageState extends State<DiseaseReportPage> {
         _markers = reports.map((report) {
           final LatLng position =
               LatLng(report['latitude'], report['longitude']);
+
+          // Create a custom marker with disease information
+          final String disease = report['disease'] ?? 'Unknown Disease';
+          final String city = report['city'] ?? 'Unknown Location';
+
           return Marker(
             markerId: MarkerId(report['id'].toString()),
             position: position,
+            infoWindow: InfoWindow(
+              title: disease,
+              snippet: city,
+            ),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              _getMarkerColorForDisease(disease),
+            ),
             onTap: () {
               _showReportDetails(report);
             },
           );
         }).toSet();
+
+        // If we have the user's current location, add it as a blue marker
+        if (_currentLocation != null) {
+          _markers.add(
+            Marker(
+              markerId: const MarkerId('current_location'),
+              position: _currentLocation!,
+              icon: BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueBlue),
+              infoWindow: const InfoWindow(
+                title: 'Your Location',
+              ),
+            ),
+          );
+        }
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -72,18 +101,61 @@ class _DiseaseReportPageState extends State<DiseaseReportPage> {
     }
   }
 
+// Add a method to determine marker color based on disease type
+  double _getMarkerColorForDisease(String disease) {
+    switch (disease) {
+      case 'පත්‍ර කුණු වීමේ රෝගය':
+        return BitmapDescriptor.hueRed;
+      case 'දුඹුරු පැල්ලම්':
+        return BitmapDescriptor.hueOrange;
+      case 'කණාමැදිරි රෝගය':
+        return BitmapDescriptor.hueYellow;
+      case 'මකුළු රෝගය':
+        return BitmapDescriptor.hueMagenta;
+      default:
+        return BitmapDescriptor.hueRose;
+    }
+  }
+
+// Enhance the _showReportDetails method to show more information
   void _showReportDetails(Map<String, dynamic> report) {
+    final String disease = report['disease'] ?? 'Unknown Disease';
+    final String city = report['city'] ?? 'Unknown Location';
+    final String reportDate = report['created_at'] != null
+        ? DateTime.parse(report['created_at']).toString().substring(0, 10)
+        : 'Unknown Date';
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Disease Report Details'),
+          title: Text(disease),
           content: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Disease: ${report['disease']}'),
-              Text('Reported on: ${report['created_at']}'),
-              Text('City: ${report['city']}'),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.location_on, color: Colors.red, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text('ස්ථානය: $city')),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today,
+                      color: Colors.blue, size: 20),
+                  const SizedBox(width: 8),
+                  Text('දිනය: $reportDate'),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '$disease මෙම ප්‍රදේශයෙන් $reportDate දින වාර්තා වී ඇත.',
+                style: const TextStyle(fontStyle: FontStyle.italic),
+              ),
             ],
           ),
           actions: [
@@ -347,12 +419,12 @@ class _DiseaseReportPageState extends State<DiseaseReportPage> {
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('සාර්ථකව රෝගය වාර්තා කිරීමේදී දෝෂයක් ඇති විය: $e')),
+        SnackBar(content: Text('රෝගය වාර්තා කිරීමේදී දෝෂයක් ඇති විය: $e')),
       );
     }
   }
 
+// Update the build method to include a legend for the disease markers
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -361,11 +433,65 @@ class _DiseaseReportPageState extends State<DiseaseReportPage> {
           GoogleMap(
             onMapCreated: (controller) => _mapController = controller,
             initialCameraPosition: CameraPosition(
-              target: _currentLocation ?? const LatLng(0, 0),
-              zoom: 14,
+              target: _currentLocation ?? const LatLng(7.8731, 80.7718),
+              // Default to Sri Lanka center
+              zoom: 8,
             ),
             myLocationEnabled: true,
             myLocationButtonEnabled: true,
+            markers: _markers,
+          ),
+          // Add a refresh button to the map
+          Positioned(
+            top: 16,
+            right: 16,
+            child: FloatingActionButton(
+              mini: true,
+              backgroundColor: Colors.white,
+              child: Icon(Icons.refresh, color: Colors.blue),
+              onPressed: () {
+                _loadDiseaseReports();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Refreshing disease reports...')),
+                );
+              },
+            ),
+          ),
+          // Add a legend for disease markers
+          Positioned(
+            top: 60,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Disease Types:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  _buildLegendItem('පත්‍ර කුණු වීමේ රෝගය', Colors.red),
+                  _buildLegendItem('දුඹුරු පැල්ලම්', Colors.orange),
+                  _buildLegendItem('කණාමැදිරි රෝගය', Colors.yellow),
+                  _buildLegendItem('මකුළු රෝගය', Colors.purple),
+                  _buildLegendItem('Your Location', Colors.blue),
+                ],
+              ),
+            ),
           ),
           Positioned(
             bottom: 110,
@@ -383,6 +509,27 @@ class _DiseaseReportPageState extends State<DiseaseReportPage> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+// Helper method to build legend items
+  Widget _buildLegendItem(String text, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Container(
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(text, style: const TextStyle(fontSize: 12)),
         ],
       ),
     );
