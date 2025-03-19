@@ -10,10 +10,6 @@ class PestPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('පළිබෝධ හඳුනාගැනීම'),
-        backgroundColor: Colors.green.shade100,
-      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -21,7 +17,7 @@ class PestPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'ඔබගේ ඡායාරූපය විශ්ලේෂණය කරමින්...',
+                'ඔබගේ ඡායාරූපය විශ්ලේෂණය කරමින් පවතී...',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -78,7 +74,7 @@ class PestPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'හඳුනාගත් පළිබෝධය:',
+                      'හඳුනාගත් රෝගය:',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
