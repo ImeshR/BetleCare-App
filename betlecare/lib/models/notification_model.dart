@@ -1,4 +1,4 @@
-// notification_model.dart
+ 
 enum NotificationType {
   weather,
   harvest,
@@ -11,7 +11,7 @@ enum NotificationStatus {
   read,
   deleted
 }
-// Add to notification_model.dart
+ 
 class BetelNotification {
   final String id;
   final String userId;
@@ -24,7 +24,7 @@ class BetelNotification {
   final Map<String, dynamic>? metadata;
   final NotificationStatus status;
   final String? uniqueKey;
-  final bool popupDisplayed; // New field
+  final bool popupDisplayed;  
 
   BetelNotification({
     required this.id,
@@ -38,10 +38,10 @@ class BetelNotification {
     this.metadata,
     this.status = NotificationStatus.active,
     this.uniqueKey,
-    this.popupDisplayed = false, // Default value
+    this.popupDisplayed = false,  
   });
 
-  // Update fromJson
+ 
   factory BetelNotification.fromJson(Map<String, dynamic> json) {
     return BetelNotification(
       id: json['id'],
@@ -63,11 +63,11 @@ class BetelNotification {
             )
           : NotificationStatus.active,
       uniqueKey: json['unique_key'],
-      popupDisplayed: json['popup_displayed'] ?? false, // New field
+      popupDisplayed: json['popup_displayed'] ?? false,  
     );
   }
 
-  // Update toJson
+ 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -81,11 +81,11 @@ class BetelNotification {
       'metadata': metadata,
       'status': status.toString().split('.').last,
       'unique_key': uniqueKey,
-      'popup_displayed': popupDisplayed, // New field
+      'popup_displayed': popupDisplayed,  
     };
   }
   
-  // Update copyWith
+  
   BetelNotification copyWith({
     String? id,
     String? userId,
@@ -98,7 +98,7 @@ class BetelNotification {
     Map<String, dynamic>? metadata,
     NotificationStatus? status,
     String? uniqueKey,
-    bool? popupDisplayed, // New parameter
+    bool? popupDisplayed,  
   }) {
     return BetelNotification(
       id: id ?? this.id,
@@ -112,7 +112,7 @@ class BetelNotification {
       metadata: metadata ?? this.metadata,
       status: status ?? this.status,
       uniqueKey: uniqueKey ?? this.uniqueKey,
-      popupDisplayed: popupDisplayed ?? this.popupDisplayed, // New field
+      popupDisplayed: popupDisplayed ?? this.popupDisplayed,  
     );
   }
 }

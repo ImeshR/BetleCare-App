@@ -14,39 +14,35 @@ class NotificationService {
 
   NotificationService._internal();
 
-  // Keep track of deleted notification keys
+
   Set<String> _deletedNotificationKeys = {};
 
-  // Supabase real-time subscription
+ 
   RealtimeChannel? _notificationSubscription;
 
-  // Callback to notify provider of changes
+  // callback to notify provider of changes
   Function? _onNotificationsChanged;
 
-  // Popup notification service
+  // popup notification service
   final PopupNotificationService _popupService = PopupNotificationService();
 
-  // User notification preferences
+  // user notification preferences
   bool _notificationsEnabled = true;
   bool _weatherNotificationsEnabled = true;
   bool _harvestNotificationsEnabled = true;
   bool _fertilizeNotificationsEnabled = true;
   bool _diseaseNotificationsEnabled = true;
 
-  // Initialize the notification service
+  // initialize the notification service
   Future<void> initialize() async {
-    // Initialize popup notifications
+    
     await _popupService.initialize();
-
-    // Load user notification preferences
     await _loadUserNotificationPreferences();
-
-    // Start real-time subscription with a delay to ensure auth is ready
     await Future.delayed(const Duration(seconds: 2));
     await _setupRealtimeSubscription();
   }
 
-  // Load user notification preferences from database
+  // load user notification preferences from db
   Future<void> _loadUserNotificationPreferences() async {
     try {
       final supabase = await SupabaseClientManager.instance;
@@ -58,7 +54,6 @@ class NotificationService {
         return;
       }
 
-      // Get notification preferences from user_settings table
       final userSettings = await supabase.client
           .from('user_settings')
           .select()
@@ -68,7 +63,6 @@ class NotificationService {
       if (userSettings != null) {
         _notificationsEnabled = userSettings['notification_enable'] ?? true;
 
-        // Get specific notification preferences if they exist
         final notificationPrefs = await supabase.client
             .from('notification_preferences')
             .select()
@@ -85,7 +79,7 @@ class NotificationService {
           _diseaseNotificationsEnabled =
               notificationPrefs['disease_notifications'] ?? true;
         } else {
-          // Create default notification preferences if they don't exist
+          
           await _createDefaultNotificationPreferences(user.id);
         }
       } else {
@@ -96,7 +90,7 @@ class NotificationService {
     }
   }
 
-  // Create default notification preferences
+  // create default notification preferences
   Future<void> _createDefaultNotificationPreferences(String userId) async {
     try {
       final supabase = await SupabaseClientManager.instance;
@@ -115,7 +109,7 @@ class NotificationService {
     }
   }
 
-  // Setup real-time subscription to notifications
+  // setup real-time subscription to notifications
   Future<void> _setupRealtimeSubscription() async {
     final supabase = await SupabaseClientManager.instance;
     final user = supabase.client.auth.currentUser;
@@ -130,8 +124,6 @@ class NotificationService {
 
     try {
       debugPrint('Setting up real-time subscription for user ${user.id}...');
-
-      // Create channel with a unique name to avoid conflicts
       final channelName = 'notifications-${user.id.substring(0, 8)}';
 
       _notificationSubscription = supabase.client
@@ -153,7 +145,6 @@ class NotificationService {
               callback: (payload) {
                 debugPrint('⚡ UPDATE notification event received');
 
-                // Check if status changed to active
                 final Map<String, dynamic> newRecord =
                     payload.newRecord as Map<String, dynamic>;
                 final Map<String, dynamic> oldRecord =
@@ -164,10 +155,7 @@ class NotificationService {
                   debugPrint(
                       '⚡ Status changed from deleted to active - showing popup notification');
 
-                  // Create a BetelNotification object to show as popup
                   final notification = BetelNotification.fromJson(newRecord);
-
-                  // Only show popup if the notification is not read and notifications are enabled
                   if (!notification.isRead &&
                       _notificationsEnabled &&
                       _isNotificationTypeEnabled(notification.type)) {
@@ -203,18 +191,12 @@ class NotificationService {
 
   void _handleNotificationPayload(Map<String, dynamic> notificationData) async {
     try {
-      // Parse the notification data
+
       final notification = BetelNotification.fromJson(notificationData);
-
-      // Skip if the notification is already read or popup was already displayed
       if (notification.isRead || notification.popupDisplayed) return;
-
-      // Only show notification if notifications are enabled and this type is enabled
       if (_notificationsEnabled &&
           _isNotificationTypeEnabled(notification.type)) {
         await _popupService.showNotification(notification);
-
-        // After showing popup, update the popup_displayed flag in database
         await _markPopupDisplayed(notification.id);
       }
     } catch (e) {
@@ -222,7 +204,7 @@ class NotificationService {
     }
   }
 
-// Add a new method to mark popup as displayed
+//  method to mark popup as displayed
   Future<void> _markPopupDisplayed(String notificationId) async {
     try {
       final supabase = await SupabaseClientManager.instance;
@@ -238,7 +220,6 @@ class NotificationService {
     }
   }
 
-  // Check if specific notification type is enabled
   bool _isNotificationTypeEnabled(NotificationType type) {
     switch (type) {
       case NotificationType.weather:
@@ -248,13 +229,12 @@ class NotificationService {
       case NotificationType.fertilize:
         return _fertilizeNotificationsEnabled;
       case NotificationType.system:
-        return true; // System notifications are always enabled
+        return true; 
       default:
         return true;
     }
   }
 
-  // Trigger a notification refresh
   void _triggerNotificationRefresh() {
     if (_onNotificationsChanged != null) {
       debugPrint('🔄 Triggering notification refresh callback');
@@ -264,7 +244,6 @@ class NotificationService {
     }
   }
 
-  // Unsubscribe from notifications
   Future<void> _unsubscribeFromNotifications() async {
     if (_notificationSubscription != null) {
       try {
@@ -277,25 +256,24 @@ class NotificationService {
     }
   }
 
-  // Refresh the subscription (useful if connection is lost)
   Future<void> refreshSubscription() async {
     debugPrint('🔄 Refreshing notification subscription');
     await _unsubscribeFromNotifications();
     await _setupRealtimeSubscription();
   }
 
-  // Register callback for notification changes
+  //  callback for notification changes
   void setNotificationCallback(Function callback) {
     debugPrint('Setting notification callback');
     _onNotificationsChanged = callback;
   }
 
-  // Remove callback
+  // remove callback
   void removeNotificationCallback() {
     _onNotificationsChanged = null;
   }
 
-  // Generate a unique key for a notification to avoid duplicates
+  // unique key for a notification to stop duplicates
   String _generateUniqueKey(
       String title, String message, String type, String? bedId) {
     final keyData = '$title-$message-$type-$bedId';
@@ -304,7 +282,7 @@ class NotificationService {
     return digest.toString();
   }
 
-  // Get all notifications for current user
+  // Get all notifications
   Future<List<BetelNotification>> getNotifications() async {
     final supabase = await SupabaseClientManager.instance;
     final user = supabase.client.auth.currentUser;
@@ -320,7 +298,7 @@ class NotificationService {
           .from('notifications')
           .select()
           .eq('user_id', user.id)
-          .neq('status', 'deleted') // Filter out deleted notifications
+          .neq('status', 'deleted') 
           .order('created_at', ascending: false);
 
       debugPrint('📊 Found ${data.length} notifications');
@@ -334,7 +312,7 @@ class NotificationService {
     }
   }
 
-  // Get unread notification count
+  // get unread notification count
   Future<int> getUnreadCount() async {
     final supabase = await SupabaseClientManager.instance;
     final user = supabase.client.auth.currentUser;
@@ -351,7 +329,7 @@ class NotificationService {
           .select('id')
           .eq('user_id', user.id)
           .eq('is_read', false)
-          .neq('status', 'deleted'); // Filter out deleted notifications
+          .neq('status', 'deleted'); 
 
       final count = data.length;
       debugPrint('📊 Unread notification count: $count');
@@ -363,10 +341,10 @@ class NotificationService {
     }
   }
 
-  // Check if notification with similar content already exists to avoid duplicates
+  // check if notification wi similar content already exists to stop duplicates
   Future<bool> _notificationExists(String uniqueKey) async {
     if (_deletedNotificationKeys.contains(uniqueKey)) {
-      return true; // Consider deleted notifications as existing
+      return true; 
     }
 
     final supabase = await SupabaseClientManager.instance;
@@ -386,7 +364,7 @@ class NotificationService {
     return data.isNotEmpty;
   }
 
-  // Create a new notification
+  // create a new notification
   Future<BetelNotification?> createNotification({
     required String title,
     required String message,
@@ -394,7 +372,7 @@ class NotificationService {
     String? bedId,
     Map<String, dynamic>? metadata,
   }) async {
-    // First check if notifications are enabled for this type
+    
     if (!_notificationsEnabled) {
       debugPrint('Notifications disabled, skipping creation entirely');
       return null;
@@ -412,14 +390,14 @@ class NotificationService {
       throw Exception('User not authenticated');
     }
 
-    // Generate a unique key for this notification to check for duplicates
+    //unique key for this notification to check for duplicates
     final uniqueKey =
         _generateUniqueKey(title, message, type.toString(), bedId);
 
-    // Don't create duplicate notifications
+    
     final exists = await _notificationExists(uniqueKey);
     if (exists) {
-      return null; // Skip creating this notification
+      return null; 
     }
 
     final notification = {
@@ -445,11 +423,7 @@ class NotificationService {
           .single();
 
       debugPrint('✅ Notification created with ID: ${response['id']}');
-
-      // Create a BetelNotification object
       final betelNotification = BetelNotification.fromJson(response);
-
-      // Show popup notification
       await _popupService.showNotification(betelNotification);
 
       return betelNotification;
@@ -459,7 +433,7 @@ class NotificationService {
     }
   }
 
-  // Mark notification as read
+  // mark notification as read
   Future<void> markAsRead(String notificationId) async {
     final supabase = await SupabaseClientManager.instance;
 
@@ -477,7 +451,7 @@ class NotificationService {
     }
   }
 
-  // Mark all notifications as read
+  // mark all notifications as read
   Future<void> markAllAsRead() async {
     final supabase = await SupabaseClientManager.instance;
     final user = supabase.client.auth.currentUser;
@@ -505,7 +479,7 @@ class NotificationService {
   // Soft delete a notification
   Future<void> deleteNotification(
       String notificationId, String uniqueKey) async {
-    // Remember this notification key to avoid recreating it
+ 
     if (uniqueKey.isNotEmpty) {
       _deletedNotificationKeys.add(uniqueKey);
     }
@@ -526,7 +500,7 @@ class NotificationService {
     }
   }
 
-  // Get notification preferences
+  // get notification preferences
   Future<Map<String, bool>> getNotificationPreferences() async {
     final supabase = await SupabaseClientManager.instance;
     final user = supabase.client.auth.currentUser;
@@ -536,7 +510,7 @@ class NotificationService {
     }
 
     try {
-      // Get overall notification setting
+
       final userSettings = await supabase.client
           .from('user_settings')
           .select('notification_enable')
@@ -545,7 +519,6 @@ class NotificationService {
 
       _notificationsEnabled = userSettings['notification_enable'] ?? true;
 
-      // Get specific notification preferences
       final notificationPrefs = await supabase.client
           .from('notification_preferences')
           .select()
@@ -562,7 +535,7 @@ class NotificationService {
         _diseaseNotificationsEnabled =
             notificationPrefs['disease_notifications'] ?? true;
       } else {
-        // Create default preferences if they don't exist
+        
         await _createDefaultNotificationPreferences(user.id);
       }
 
@@ -576,7 +549,6 @@ class NotificationService {
     } catch (e) {
       debugPrint('❌ Error getting notification preferences: $e');
 
-      // Return default values if there's an error
       return {
         'notifications_enabled': true,
         'weather_notifications': true,
@@ -587,7 +559,7 @@ class NotificationService {
     }
   }
 
-  // Update notification preferences
+ 
   Future<void> updateNotificationPreferences({
     bool? notificationsEnabled,
     bool? weatherNotifications,
@@ -603,7 +575,7 @@ class NotificationService {
     }
 
     try {
-      // Update main notification setting if provided
+      
       if (notificationsEnabled != null) {
         await supabase.client
             .from('user_settings')
@@ -612,9 +584,9 @@ class NotificationService {
 
         _notificationsEnabled = notificationsEnabled;
 
-        // If turning off main notifications, also set all specific types to false in database
+       
         if (!notificationsEnabled) {
-          // Set all notification types to false in the database
+         
           await supabase.client.from('notification_preferences').update({
             'weather_notifications': false,
             'harvest_notifications': false,
@@ -622,7 +594,7 @@ class NotificationService {
             'disease_notifications': false,
           }).eq('user_id', user.id);
 
-          // Update local variables
+          
           _weatherNotificationsEnabled = false;
           _harvestNotificationsEnabled = false;
           _fertilizeNotificationsEnabled = false;
@@ -630,9 +602,9 @@ class NotificationService {
         }
       }
 
-      // Only update specific notification types if main notifications are enabled
+    
       if (_notificationsEnabled) {
-        // Build update object for specific notification types
+        
         final Map<String, dynamic> prefsUpdate = {};
 
         if (weatherNotifications != null) {
@@ -655,9 +627,9 @@ class NotificationService {
           _diseaseNotificationsEnabled = diseaseNotifications;
         }
 
-        // Only update if we have values to update
+        
         if (prefsUpdate.isNotEmpty) {
-          // Check if preferences record exists
+         
           final existing = await supabase.client
               .from('notification_preferences')
               .select('id')
@@ -665,13 +637,13 @@ class NotificationService {
               .maybeSingle();
 
           if (existing != null) {
-            // Update existing record
+            
             await supabase.client
                 .from('notification_preferences')
                 .update(prefsUpdate)
                 .eq('user_id', user.id);
           } else {
-            // Create new record
+            
             prefsUpdate['user_id'] = user.id;
             await supabase.client
                 .from('notification_preferences')
@@ -687,22 +659,20 @@ class NotificationService {
     }
   }
 
-// Weather alert - check forecasted rainfall/temperature and create notifications
-// Weather alert - check forecasted rainfall/temperature and create notifications
+
+// Weather alert 
 Future<void> checkWeatherAlerts(List<BetelBed> beds) async {
-  // Skip completely if notifications are disabled
+ 
   if (!_notificationsEnabled) {
     debugPrint('Notifications disabled, skipping weather checks entirely');
     return;
   }
 
-  // Skip specifically if weather notifications are disabled
   if (!_weatherNotificationsEnabled) {
     debugPrint('Weather notifications disabled, skipping weather checks');
     return;
   }
 
-  // Collect weather data for all beds first
   Map<String, Map<String, dynamic>> weatherDataMap = {};
   for (final bed in beds) {
     final weatherData = await _getWeatherData(bed.district);
@@ -715,10 +685,8 @@ Future<void> checkWeatherAlerts(List<BetelBed> beds) async {
     debugPrint('No weather data available for any beds');
     return;
   }
-
-  // Find the bed with highest temperature and create notification for it
+  // find the bed with highest temperature and create notification for it
   await _createHighestTemperatureNotification(beds, weatherDataMap);
-  
   // Create notifications for heavy rainfall days
   await _createHeavyRainfallNotifications(beds, weatherDataMap);
 }
@@ -726,13 +694,11 @@ Future<void> checkWeatherAlerts(List<BetelBed> beds) async {
 
 Future<void> _createHighestTemperatureNotification(
     List<BetelBed> beds, Map<String, Map<String, dynamic>> weatherDataMap) async {
-  
-  // Track highest temperature, corresponding bed and date
+
   double highestTemp = 0;
   BetelBed? hottestBed;
   String hottestDay = '';
   
-  // Go through all beds to find the one with highest temperature forecast
   for (final bed in beds) {
     if (!weatherDataMap.containsKey(bed.id)) continue;
     
@@ -740,12 +706,12 @@ Future<void> _createHighestTemperatureNotification(
     final daily = weatherData['daily'];
     if (daily == null) continue;
     
-    // Check each day in forecast
+
     for (int i = 0; i < daily['time'].length; i++) {
       final date = daily['time'][i];
       final maxTemp = daily['temperature_2m_max'][i].toDouble();
       
-      // If this is the highest temperature found so far
+ 
       if (maxTemp > highestTemp) {
         highestTemp = maxTemp;
         hottestBed = bed;
@@ -754,12 +720,12 @@ Future<void> _createHighestTemperatureNotification(
     }
   }
   
-  // Create notification only if we found a high temperature
+  // create notification only if we found a high temperature
   if (hottestBed != null && highestTemp > 33.0) {
     debugPrint('Creating notification for highest temperature: $highestTemp°C for bed: ${hottestBed.name}');
     
     await createNotification(
-      title: 'සතියේ අධික උෂ්ණත්ව අනතුරු ඇඟවීම', // Highest temperature warning of the week
+      title: 'සතියේ අධික උෂ්ණත්ව අනතුරු ඇඟවීම', // highest temperature warning of the week
       message: '${hottestBed.name} සඳහා ${hottestDay} දිනට ඉහළම උෂ්ණත්වය අපේක්ෂා කෙරේ (${highestTemp.toStringAsFixed(1)}°C). ඔබගේ බුලත් පැළවලට හානි නොවන ලෙස නිසි ජල සැපයුමක් පවත්වා ගන්න.',
       type: NotificationType.weather,
       bedId: hottestBed.id,
@@ -775,11 +741,10 @@ Future<void> _createHighestTemperatureNotification(
 
 Future<void> _createHeavyRainfallNotifications(
     List<BetelBed> beds, Map<String, Map<String, dynamic>> weatherDataMap) async {
+  // set threshold for heavy rainfall
+  final heavyRainfallThreshold = 15.0; 
   
-  // Set threshold for heavy rainfall
-  final heavyRainfallThreshold = 15.0; // Over 15mm is considered heavy rain
-  
-  // Process each bed
+
   for (final bed in beds) {
     if (!weatherDataMap.containsKey(bed.id)) continue;
     
@@ -787,21 +752,21 @@ Future<void> _createHeavyRainfallNotifications(
     final daily = weatherData['daily'];
     if (daily == null) continue;
     
-    // Find days with rainfall exceeding threshold
+ 
     bool notificationCreated = false;
     
     for (int i = 0; i < daily['time'].length; i++) {
       final date = daily['time'][i];
       final rainfall = daily['precipitation_sum'][i].toDouble();
       
-      // If rainfall exceeds threshold, create alert
+   
       if (rainfall >= heavyRainfallThreshold && !notificationCreated) {
         final formattedDate = date.toString().substring(0, 10);
         
         debugPrint('Creating heavy rainfall notification: ${rainfall}mm for bed: ${bed.name} on $formattedDate');
         
         await createNotification(
-          title: 'අධික වැසි අනතුරු ඇඟවීම', // Heavy rain warning
+          title: 'අධික වැසි අනතුරු ඇඟවීම',
           message: '${bed.name} සඳහා ${formattedDate} දිනට අධික වැසි අපේක්ෂා කෙරේ (${rainfall.toStringAsFixed(1)}mm). ඔබගේ බුලත් වගාව ආරක්ෂා කර ගැනීමට අවශ්‍ය පියවර ගන්න.',
           type: NotificationType.weather,
           bedId: bed.id,
@@ -820,12 +785,12 @@ Future<void> _createHeavyRainfallNotifications(
 }
 
 
-// Create notifications for days with rainfall less than 15mm
+// create notifications for days with rainfall less than 15mm
 Future<void> _createRainfallNotifications(
     List<BetelBed> beds, Map<String, Map<String, dynamic>> weatherDataMap) async {
   
-  // Set threshold for low rainfall
-  final lowRainfallThreshold = 15.0; // Less than 15mm is considered low
+  
+  final lowRainfallThreshold = 15.0; 
   
   // Process each bed
   for (final bed in beds) {
@@ -835,19 +800,19 @@ Future<void> _createRainfallNotifications(
     final daily = weatherData['daily'];
     if (daily == null) continue;
     
-    // Find days with rainfall less than threshold
+
     for (int i = 0; i < daily['time'].length; i++) {
       final date = daily['time'][i];
       final rainfall = daily['precipitation_sum'][i].toDouble();
       
-      // If rainfall is below threshold, create alert
+
       if (rainfall < lowRainfallThreshold) {
         final formattedDate = date.toString().substring(0, 10);
         
         debugPrint('Creating low rainfall notification: ${rainfall}mm for bed: ${bed.name} on $formattedDate');
         
         await createNotification(
-          title: 'අඩු වැසි අනතුරු ඇඟවීම', // Low rainfall warning
+          title: 'අඩු වැසි අනතුරු ඇඟවීම', 
           message: '${bed.name} සඳහා ${formattedDate} දිනට අඩු වැසි අපේක්ෂා කෙරේ (${rainfall.toStringAsFixed(1)}mm). ඔබගේ බුලත් වගාවට ප්‍රමාණවත් ජලය සැපයීමට සැලසුම් කරන්න.',
           type: NotificationType.weather,
           bedId: bed.id,
@@ -859,32 +824,32 @@ Future<void> _createRainfallNotifications(
           },
         );
         
-        // Only create one notification per bed for low rainfall
+        
         break;
       }
     }
   }
 }
 
-  // Check for rainfall alerts
+  //TODO remove  this after testing
   Future<void> _checkRainfallAlerts(
       BetelBed bed, Map<String, dynamic> weatherData) async {
     final daily = weatherData['daily'];
     if (daily == null) return;
 
-    final highRainfallThreshold = 10.0; // 10mm per day is considered heavy rain
+    final highRainfallThreshold = 10.0; 
 
-    // Check each day in forecast
+    
     for (int i = 0; i < daily['time'].length; i++) {
       final date = daily['time'][i];
       final rainfall = daily['precipitation_sum'][i].toDouble();
 
-      // If rainfall will exceed threshold, create alert
+      
       if (rainfall >= highRainfallThreshold) {
         final formattedDate = date.toString().substring(0, 10);
 
         await createNotification(
-          title: 'අධික වැසි අනතුරු ඇඟවීම', // Heavy rain warning
+          title: 'අධික වැසි අනතුරු ඇඟවීම', 
           message:
               '${bed.name} සඳහා ${formattedDate} දිනට අධික වැසි අපේක්ෂා කෙරේ (${rainfall.toStringAsFixed(1)}mm). ඔබගේ බුලත් වගාව ආරක්ෂා කර ගැනීමට අවශ්‍ය පියවර ගන්න.',
           type: NotificationType.weather,
@@ -900,25 +865,26 @@ Future<void> _createRainfallNotifications(
     }
   }
 
+//TODO remove  this after testing
   // Check for temperature alerts
   Future<void> _checkTemperatureAlerts(
       BetelBed bed, Map<String, dynamic> weatherData) async {
     final daily = weatherData['daily'];
     if (daily == null) return;
 
-    final highTempThreshold = 34.0; // 34°C can be harmful for betel plants
+    final highTempThreshold = 34.0; 
 
-    // Check each day in forecast
+    
     for (int i = 0; i < daily['time'].length; i++) {
       final date = daily['time'][i];
       final maxTemp = daily['temperature_2m_max'][i].toDouble();
 
-      // If temperature will exceed threshold, create alert
+      
       if (maxTemp >= highTempThreshold) {
         final formattedDate = date.toString().substring(0, 10);
 
         await createNotification(
-          title: 'අධික උෂ්ණත්ව අනතුරු ඇඟවීම', // High temperature warning
+          title: 'අධික උෂ්ණත්ව අනතුරු ඇඟවීම', 
           message:
               '${bed.name} සඳහා ${formattedDate} දිනට අධික උෂ්ණත්වයක් අපේක්ෂා කෙරේ (${maxTemp.toStringAsFixed(1)}°C). ඔබගේ බුලත් පැළවලට හානි නොවන ලෙස නිසි අවධානය යොමු කරන්න.',
           type: NotificationType.weather,
@@ -934,16 +900,18 @@ Future<void> _createRainfallNotifications(
     }
   }
 
+
+
   // Check for harvest alerts
   Future<void> checkHarvestAlerts(List<BetelBed> beds) async {
-    // Skip if harvest notifications are disabled
+    
     if (!_notificationsEnabled || !_harvestNotificationsEnabled) {
       debugPrint('Harvest notifications disabled, skipping harvest checks');
       return;
     }
 
     for (final bed in beds) {
-      // First harvest is typically around 105 days (3.5 months) after planting
+      // first harvest is typically around 105 days after planting
       final firstHarvestDays = 105;
       final daysTillFirstHarvest = bed.plantedDate
           .add(Duration(days: firstHarvestDays))
@@ -953,7 +921,7 @@ Future<void> _createRainfallNotifications(
       // If approaching first harvest (7 days before)
       if (daysTillFirstHarvest > 0 && daysTillFirstHarvest <= 7) {
         await createNotification(
-          title: 'අස්වනු කාලය ළඟයි', // Harvest time approaching
+          title: 'අස්වනු කාලය ළඟයි', 
           message:
               '${bed.name} සඳහා පළමු අස්වැන්න නෙලීමට දින ${daysTillFirstHarvest} ක් පමණ ඉතිරිව ඇත. අස්වනු නෙලීමට සූදානම් වන්න.',
           type: NotificationType.harvest,
@@ -965,19 +933,17 @@ Future<void> _createRainfallNotifications(
         );
       }
 
-      // Subsequent harvests happen approximately every 30 days
+      // harvests happen approximately every 30 days
       if (bed.harvestHistory.isNotEmpty) {
         final lastHarvestDate = bed.harvestHistory.last.date;
         final daysSinceLastHarvest =
             DateTime.now().difference(lastHarvestDate).inDays;
 
-        // Regular harvest cycle is typically 30 days
         const harvestCycle = 30;
 
-        // If it's been more than 30 days since last harvest, send a reminder
         if (daysSinceLastHarvest >= harvestCycle) {
           await createNotification(
-            title: 'නව අස්වනු කාලය', // New harvest time
+            title: 'නව අස්වනු කාලය', 
             message:
                 '${bed.name} සඳහා අස්වනු නෙලීමට කාලය පැමිණ ඇත. අවසන් අස්වැන්න සිට දින ${daysSinceLastHarvest}ක් ගතවී ඇත.',
             type: NotificationType.harvest,
@@ -992,9 +958,9 @@ Future<void> _createRainfallNotifications(
     }
   }
 
-  // Check for fertilize alerts
+  // check for fertilize alerts
   Future<void> checkFertilizeAlerts(List<BetelBed> beds) async {
-    // Skip if fertilize notifications are disabled
+   
     if (!_notificationsEnabled || !_fertilizeNotificationsEnabled) {
       debugPrint('Fertilize notifications disabled, skipping fertilize checks');
       return;
@@ -1015,7 +981,7 @@ Future<void> _createRainfallNotifications(
     }
   }
 
-  // Get weather data for a district
+  // get weather data for a district
   Future<Map<String, dynamic>?> _getWeatherData(String district) async {
     final weatherService = WeatherService();
     return await weatherService.fetchWeatherData(district);
@@ -1027,11 +993,11 @@ Future<void> _createRainfallNotifications(
 
     if (user == null) return;
 
-    // Skip if notifications are disabled
+
     if (!_notificationsEnabled) return;
 
     try {
-      // Get active unread notifications that haven't had their popup displayed yet
+      
       final data = await supabase.client
           .from('notifications')
           .select()
@@ -1039,20 +1005,20 @@ Future<void> _createRainfallNotifications(
           .eq('status', 'active')
           .eq('is_read', false)
           .eq('popup_displayed',
-              false); // Only get ones that haven't been displayed
+              false); 
 
       if (data.isNotEmpty) {
         debugPrint(
             'Found ${data.length} active unread notifications to show popups for');
 
-        // Show popup for each eligible notification
+    
         for (final notificationData in data) {
           final notification = BetelNotification.fromJson(notificationData);
 
-          // Only show if this notification type is enabled
+        
           if (_isNotificationTypeEnabled(notification.type)) {
             await _popupService.showNotification(notification);
-            // Mark as displayed
+           
             await _markPopupDisplayed(notification.id);
           }
         }
@@ -1062,7 +1028,7 @@ Future<void> _createRainfallNotifications(
     }
   }
 
-  // Check all notification types
+  // check all notification types
   Future<void> checkAllNotifications(List<BetelBed> beds) async {
     if (!_notificationsEnabled) {
       debugPrint('Notifications are disabled, skipping all checks');
@@ -1078,10 +1044,10 @@ Future<void> _createRainfallNotifications(
     // Check for fertilizing alerts
     await checkFertilizeAlerts(beds);
 
-    // More notification types can be added here as needed
+    // TODO More notification types can be added here as needed
   }
 
-  // Clean up resources
+  // clean up resources
   void dispose() {
     _unsubscribeFromNotifications();
     _onNotificationsChanged = null;

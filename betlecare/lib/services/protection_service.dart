@@ -12,19 +12,19 @@ class ProtectionService {
   
   ProtectionService._internal();
   
-  // Direct URLs to the API endpoints - use IP address that works for your network setup
+
 final String todayUrl = ApiConfig.protectionTodayUrl;
   final String predictUrl = ApiConfig.protectionPredictUrl;
   final String consolidatedUrl = ApiConfig.protectionConsolidatedUrl;
   
-  // Check today's protection needs
+  // check today's protection needs
   Future<Map<String, dynamic>> checkTodayProtectionNeeds(
     String location,
     double rainfall, 
     [double? minTemp, double? maxTemp]
   ) async {
     try {
-      // Properly format the location string
+    
       String formattedLocation = _formatLocation(location);
       
       print('🛡️ Protection API Request:');
@@ -39,7 +39,6 @@ final String todayUrl = ApiConfig.protectionTodayUrl;
         'rainfall': rainfall,
       };
       
-      // Only add temperature parameters if they're provided
       if (minTemp != null) requestBody['min_temp'] = minTemp;
       if (maxTemp != null) requestBody['max_temp'] = maxTemp;
       
@@ -63,14 +62,14 @@ final String todayUrl = ApiConfig.protectionTodayUrl;
     }
   }
   
-  // Get 7-day protection forecast
+  // Get 7 day protection forecast
   Future<Map<String, dynamic>> getProtectionForecast(
     String location,
     List<double> rainfallForecast, 
     [List<double>? minTempForecast, List<double>? maxTempForecast]
   ) async {
     try {
-      // Properly format the location string
+      
       String formattedLocation = _formatLocation(location);
       
       print('🛡️ Protection Forecast API Request:');
@@ -82,7 +81,7 @@ final String todayUrl = ApiConfig.protectionTodayUrl;
         'rainfall_forecast': rainfallForecast,
       };
       
-      // Only add temperature parameters if they're provided
+    
       if (minTempForecast != null) requestBody['min_temp_forecast'] = minTempForecast;
       if (maxTempForecast != null) requestBody['max_temp_forecast'] = maxTempForecast;
       
@@ -106,14 +105,14 @@ final String todayUrl = ApiConfig.protectionTodayUrl;
     }
   }
   
-  // Get consolidated protection forecast (groups similar days)
+  // get consolidated protection forecast 
   Future<Map<String, dynamic>> getConsolidatedProtectionForecast(
     String location,
     List<double> rainfallForecast, 
     [List<double>? minTempForecast, List<double>? maxTempForecast]
   ) async {
     try {
-      // Properly format the location string
+    
       String formattedLocation = _formatLocation(location);
       
       print('🛡️ Consolidated Protection API Request:');
@@ -125,7 +124,6 @@ final String todayUrl = ApiConfig.protectionTodayUrl;
         'rainfall_forecast': rainfallForecast,
       };
       
-      // Only add temperature parameters if they're provided
       if (minTempForecast != null) requestBody['min_temp_forecast'] = minTempForecast;
       if (maxTempForecast != null) requestBody['max_temp_forecast'] = maxTempForecast;
       
@@ -149,12 +147,9 @@ final String todayUrl = ApiConfig.protectionTodayUrl;
     }
   }
   
-  // Format location string to match API requirements (PUTTALAM or KURUNEGALA)
+  // format location string to match API requirements (PUTTALAM or KURUNEGALA)
   String _formatLocation(String location) {
-    // Clean the location string
     String cleaned = location.trim();
-    
-    // Extract the English part if it has both Sinhala and English
     if (cleaned.contains('(') && cleaned.contains(')')) {
       int startIndex = cleaned.indexOf('(');
       int endIndex = cleaned.indexOf(')');
@@ -162,18 +157,15 @@ final String todayUrl = ApiConfig.protectionTodayUrl;
         cleaned = cleaned.substring(startIndex + 1, endIndex).trim();
       }
     }
-    
-    // Convert to uppercase and remove any special characters
+
     cleaned = cleaned.toUpperCase().replaceAll(RegExp(r'[^\w\s]'), '');
-    
-    // Map district names to expected API values
+
     Map<String, String> districtMap = {
       'PUTTALAM': 'PUTTALAM',
       'KURUNEGALA': 'KURUNEGALA',
-      // Add other mappings if needed
+     
     };
     
-    // Check if the location contains any of our valid district keywords
     for (var key in districtMap.keys) {
       if (cleaned.contains(key)) {
         return districtMap[key]!;
@@ -185,7 +177,7 @@ final String todayUrl = ApiConfig.protectionTodayUrl;
     return 'PUTTALAM';
   }
   
-  // Helper method to get protection type description in Sinhala
+
   String getProtectionTypeSinhala(int protectionType) {
     switch (protectionType) {
       case 1:
@@ -197,15 +189,15 @@ final String todayUrl = ApiConfig.protectionTodayUrl;
     }
   }
   
-  // Helper method to get protection icon data based on type
+
   Map<String, dynamic> getProtectionIconData(int protectionType) {
     switch (protectionType) {
-      case 1: // Drought protection
+      case 1: 
         return {
           'icon': 'water_drop',
           'color': 'orange',
         };
-      case 2: // Excess rain protection
+      case 2: 
         return {
           'icon': 'umbrella',
           'color': 'blue',

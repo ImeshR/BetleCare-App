@@ -32,7 +32,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       appBar: AppBar(
         title: Text('දැනුම්දීම් (${notificationProvider.unreadCount})'),
         actions: [
-          // Settings icon to navigate to notification preferences
+          // settings icon  
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
