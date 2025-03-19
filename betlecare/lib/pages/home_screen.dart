@@ -50,10 +50,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-            )
-            )
+            ? const Center(
+                child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+              ))
             : _error != null
                 ? Center(
                     child: Column(
@@ -105,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             const SizedBox(height: 12),
 
-                            // My Beds Card - Main feature card
+                            // My Beds Card
                             _buildFeatureCard(
                               context: context,
                               title: 'මගේ බුලත් වගාවන්',
@@ -132,7 +132,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               color: Colors.purple.shade200,
                               imagePath: 'assets/images/tips.png',
                               onTap: () {
-                                // Navigate to tips screen
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -245,10 +244,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildQuickStatsSection(BuildContext context) {
-    // Get data from provider
+    // get data from provider
     final betelBedProvider = Provider.of<BetelBedProvider>(context);
 
-    // Calculate stats
+    // calculate stats
     final totalBeds = betelBedProvider.totalBeds;
     final bedsNeedingAttention = betelBedProvider.bedsNeedingAttention;
     final totalPlants = betelBedProvider.totalPlants;

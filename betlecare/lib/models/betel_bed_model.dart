@@ -34,7 +34,7 @@ class BetelBed {
     return DateTime.now().difference(plantedDate).inDays;
   }
 
-  // Next required action based on status
+  // next required action based on status
   String get nextAction {
     switch (status) {
       case BetelBedStatus.needsFertilizing:
@@ -62,22 +62,22 @@ class BetelBed {
       return 0;
     }
     final lastFertilize = fertilizeHistory.last.date;
-    const fertilizingInterval = 30; // Typically every 30 days
+    const fertilizingInterval = 30;  
     final nextFertilizeDate = lastFertilize.add(const Duration(days: fertilizingInterval));
     return nextFertilizeDate.difference(DateTime.now()).inDays;
   }
 
   // Days until next harvesting
   int get daysUntilNextHarvesting {
-    // If never harvested, calculate from planting date (typically 90 days for first harvest)
+    
     if (harvestHistory.isEmpty) {
       const firstHarvestDays = 90;
       final firstHarvestDate = plantedDate.add(const Duration(days: firstHarvestDays));
       return firstHarvestDate.difference(DateTime.now()).inDays;
     }
     
-    // If previously harvested, calculate from last harvest (typically every 15-20 days)
-    const harvestInterval = 18; // Assuming every 18 days after first harvest
+     
+    const harvestInterval = 18;  
     final lastHarvest = harvestHistory.last.date;
     final nextHarvestDate = lastHarvest.add(const Duration(days: harvestInterval));
     return nextHarvestDate.difference(DateTime.now()).inDays;
@@ -85,10 +85,10 @@ class BetelBed {
 }
 
 class FertilizeRecord {
-  final String? id; // ID from Supabase
+  final String? id;  
   final DateTime date;
   final String fertilizerType;
-  final double quantity; // in kg or appropriate unit
+  final double quantity;  
   final String notes;
 
   FertilizeRecord({
@@ -101,12 +101,12 @@ class FertilizeRecord {
 }
 
 class HarvestRecord {
-  final String? id; // ID from Supabase
+  final String? id;  
   final DateTime date;
   final int leavesCount;
-  final double weight; // in kg
-  final double revenueEarned; // in LKR
-  final String quality; // 'A', 'B', 'C' etc.
+  final double weight;  
+  final double revenueEarned;  
+  final String quality; 
   final String notes;
 
   HarvestRecord({

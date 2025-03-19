@@ -42,11 +42,11 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
     setState(() {
       _isLoading = true;
       _errorMessage = '';
-      _checkTime(); // Update time check on refresh
+      _checkTime(); 
     });
     
     try {
-      // Get weather data to extract current rainfall
+      // Get weather data to extract current rainfal
       final weatherData = await _weatherService.fetchWeatherData(widget.bed.district);
       
       if (weatherData == null) {
@@ -57,10 +57,10 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
         return;
       }
       
-      // Extract current rainfall from weather data
+      // extract current rainfall 
       final currentRainfall = weatherData['current']['precipitation'] as double? ?? 0.0;
       
-      // Extract 7-day rainfall forecast
+      // extract 7-day rainfall forecast
       List<double> rainfallForecast = [];
       if (weatherData['daily'] != null && weatherData['daily']['precipitation_sum'] != null) {
         final precipitationData = weatherData['daily']['precipitation_sum'];
@@ -74,13 +74,13 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
         rainfallForecast.add(0.0);
       }
       
-      // Get today's fertilizing recommendation
+      // get today's fertilizing recommendation
       final todayRecommendation = await _fertilizingService.checkTodayFertilizingSuitability(
         widget.bed.district,
         currentRainfall,
       );
       
-      // Create fertilizer history from the bed's history
+      // create fertilizer history from the bed's history
       final fertilizeHistory = widget.bed.fertilizeHistory.map((record) {
         return {
           'date': DateFormat('yyyy-MM-dd').format(record.date),
@@ -88,7 +88,7 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
         };
       }).toList();
       
-      // Get fertilizer plan
+      // get fertilizer plan
       final fertilizePlan = await _fertilizingService.getFertilizerPlan(
         widget.bed.district,
         rainfallForecast,
@@ -99,7 +99,7 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
         _todayRecommendation = todayRecommendation;
         _fertilizePlan = fertilizePlan;
         
-        // Get the is_after_six_pm value from the API response or use local check
+        // get the is_after_six_pm value from the API response or use local check
         _isAfterSixPm = fertilizePlan['is_after_six_pm'] ?? 
                          todayRecommendation['is_after_six_pm'] ?? 
                          _isAfterSixPm;
@@ -242,24 +242,23 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
   }
   
   Widget _buildRecommendationCard() {
-    // Get values from API responses with fallbacks
+   
     final isSuitable = _todayRecommendation!['suitable_for_fertilizing'] as bool;
     final isAfterSixPm = _isAfterSixPm;
-    
-    // If it's after 6 PM, adjust the recommendation as needed
+
     final effectiveIsSuitable = isAfterSixPm ? false : isSuitable;
     
-    // Get recommendation text based on time and suitability
+
     String statusText;
     if (isAfterSixPm) {
-      statusText = 'අද පොහොර යෙදීමට ප්‍රමාද වැඩිය';  // It's too late for fertilizing today
+      statusText = 'අද පොහොර යෙදීමට ප්‍රමාද වැඩිය';  
     } else {
       statusText = effectiveIsSuitable 
           ? 'පොහොර යෙදීමට සුදුසු කාලගුණ තත්වයක් අද ඇත' 
           : 'පොහොර යෙදීමට කාළගුණ තත්වයක් අද නැත';
     }
     
-    // Get next recommended date and fertilizer type from plan if available
+
     String nextDate = '';
     String nextFertilizer = '';
     String nextFertilizerSinhala = '';
@@ -270,20 +269,20 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
     if (_fertilizePlan != null && _fertilizePlan!['recommendation'] != null) {
       final recommendation = _fertilizePlan!['recommendation'];
       
-      // Check if this is the first time (no history)
+
       isFirstTime = recommendation['is_first_time'] ?? false;
       
       if (isFirstTime) {
-        // Use appropriate first-time message based on time
+
         firstTimeMessage = isAfterSixPm 
-            ? 'පොහොර යෙදීම හෙටින් ආරම්භ කරන්න'  // Start fertilizing from tomorrow
-            : 'පොහොර යෙදීම අදින් ආරම්භ කරන්න';   // Start fertilizing from today
+            ? 'පොහොර යෙදීම හෙටින් ආරම්භ කරන්න'  
+            : 'පොහොර යෙදීම අදින් ආරම්භ කරන්න';   
             
-        // Get the fertilizer in Sinhala if available
+
         nextFertilizerSinhala = recommendation['next_fertilizer_sinhala'] ?? '';
       } 
       else if (recommendation['recommended_date'] != null) {
-        // Not first time, show next date and fertilizer type
+    
         nextDate = recommendation['recommended_date'];
         nextFertilizer = recommendation['next_fertilizer'] ?? '';
         nextFertilizerSinhala = recommendation['next_fertilizer_sinhala'] ?? nextFertilizer;
@@ -291,7 +290,7 @@ class _FertilizingRecommendationWidgetState extends State<FertilizingRecommendat
       }
     }
     
-    // Check if we have day names in Sinhala
+
     String nextDateFormatted = '';
     if (nextDate.isNotEmpty) {
       try {
