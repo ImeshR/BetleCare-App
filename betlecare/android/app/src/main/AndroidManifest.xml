@@ -15,7 +15,7 @@
         <!-- Google Maps API Key -->
         <meta-data
                 android:name="com.google.android.geo.API_KEY"
-                android:value="AIzaSyDZOh3BY64_4fphkD2pvKTOTj5xu9D8yKw" />
+                android:value="API Key" />
 
         <activity
                 android:name=".MainActivity"
@@ -49,7 +49,7 @@
         <receiver android:name="me.carda.awesome_notifications.notifications.broadcastReceivers.ScheduledNotificationReceiver" />
         <receiver android:name="me.carda.awesome_notifications.notifications.broadcastReceivers.KeepOnTopNotificationReceiver" />
         <receiver android:name="me.carda.awesome_notifications.notifications.broadcastReceivers.ActionButtonsReceiver" />
-        
+
         <receiver android:exported="true" android:name="me.carda.awesome_notifications.notifications.broadcastReceivers.AwesomeNotificationsReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
