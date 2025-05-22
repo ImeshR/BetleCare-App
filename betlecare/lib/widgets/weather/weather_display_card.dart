@@ -10,16 +10,33 @@ class WeatherDisplayCard extends StatefulWidget {
   State<WeatherDisplayCard> createState() => _WeatherDisplayCardState();
 }
 
-class _WeatherDisplayCardState extends State<WeatherDisplayCard> {
+class _WeatherDisplayCardState extends State<WeatherDisplayCard> 
+    with SingleTickerProviderStateMixin {
   final WeatherService _weatherService = WeatherService();
   String selectedLocation = 'වත්මන් ස්ථානය (Current Location)';
   Map<String, dynamic>? weatherData;
   bool isLoading = true;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
     fetchWeatherData();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> fetchWeatherData() async {
@@ -33,6 +50,7 @@ class _WeatherDisplayCardState extends State<WeatherDisplayCard> {
         weatherData = data;
         isLoading = false;
       });
+      _animationController.forward();
     } catch (e) {
       print('Error in weather display card: $e');
       setState(() {
@@ -41,7 +59,6 @@ class _WeatherDisplayCardState extends State<WeatherDisplayCard> {
     }
   }
 
-  // Get today's temperature from weather data
   String getCurrentTemperature() {
     if (weatherData != null && weatherData!['current'] != null) {
       return '${weatherData!['current']['temperature_2m'].round()}°C';
@@ -49,7 +66,6 @@ class _WeatherDisplayCardState extends State<WeatherDisplayCard> {
     return '—°C';
   }
 
-  // Get today's humidity from weather data
   String getCurrentHumidity() {
     if (weatherData != null && weatherData!['current'] != null) {
       return '${weatherData!['current']['relative_humidity_2m'].round()}%';
@@ -57,7 +73,6 @@ class _WeatherDisplayCardState extends State<WeatherDisplayCard> {
     return '—%';
   }
 
-  // Get today's rainfall from weather data
   String getCurrentRainfall() {
     if (weatherData != null && weatherData!['current'] != null) {
       double rainfall = weatherData!['current']['precipitation'] ?? 0.0;
@@ -66,7 +81,6 @@ class _WeatherDisplayCardState extends State<WeatherDisplayCard> {
     return '0.0mm';
   }
 
-  // Get today's min temperature
   String getTodayMinTemperature() {
     if (weatherData != null && weatherData!['daily'] != null) {
       return '${weatherData!['daily']['temperature_2m_min'][0].round()}°C';
@@ -74,7 +88,6 @@ class _WeatherDisplayCardState extends State<WeatherDisplayCard> {
     return '—°C';
   }
 
-  // Get today's max temperature
   String getTodayMaxTemperature() {
     if (weatherData != null && weatherData!['daily'] != null) {
       return '${weatherData!['daily']['temperature_2m_max'][0].round()}°C';
@@ -84,19 +97,16 @@ class _WeatherDisplayCardState extends State<WeatherDisplayCard> {
 
   @override
   Widget build(BuildContext context) {
-    // Get header title with location name
     String headerTitle = 'අද දින කාලගුණය';
     if (selectedLocation == 'වත්මන් ස්ථානය (Current Location)' && 
         _weatherService.currentLocationName != 'වත්මන් ස්ථානය (Current Location)') {
       headerTitle = '${_weatherService.currentLocationName} - අද දින කාලගුණය';
     } else if (selectedLocation != 'වත්මන් ස්ථානය (Current Location)') {
-      // Show selected location name for non-current locations
       headerTitle = '$selectedLocation - අද දින කාලගුණය';
     }
 
     return Column(
       children: [
-        // Add location dropdown
         LocationDropdown(
           selectedLocation: selectedLocation,
           locations: _weatherService.locations,
@@ -109,104 +119,221 @@ class _WeatherDisplayCardState extends State<WeatherDisplayCard> {
             }
           },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Container(
-          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 246, 250, 253),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.blue.shade300, width: 1),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white,
+                Colors.blue.shade50.withOpacity(0.5),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blue.shade100.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+              BoxShadow(
+                color: Colors.white.withOpacity(0.8),
+                blurRadius: 20,
+                offset: const Offset(-5, -5),
+              ),
+            ],
           ),
-          child: isLoading 
-            ? Center(
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
-                  ),
-                ),
-              )
-            : Column(
-                children: [
-                  Text(
-                    headerTitle,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade800,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              child: isLoading 
+                ? SizedBox(
+                    height: 100,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.blue.shade400,
+                        ),
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildWeatherInfo(
-                        icon: Icons.water_drop,
-                        value: getCurrentRainfall(),
-                        label: 'වර්ෂාපතනය',
-                      ),
-                      _buildWeatherInfo(
-                        icon: Icons.wb_sunny,
-                        value: getCurrentTemperature(),
-                        label: 'උෂ්ණත්වය',
-                      ),
-                      _buildWeatherInfo(
-                        icon: Icons.thermostat,
-                        value: getCurrentHumidity(),
-                        label: 'ආර්ද්රතාවය',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildWeatherInfo(
-                        icon: Icons.arrow_downward,
-                        value: getTodayMinTemperature(),
-                        label: 'අවම උෂ්ණත්වය',
-                      ),
-                      const SizedBox(width: 36),
-                      _buildWeatherInfo(
-                        icon: Icons.arrow_upward,
-                        value: getTodayMaxTemperature(),
-                        label: 'උපරිම උෂ්ණත්වය',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => MoreWeatherData(
-                            selectedLocation: selectedLocation,
+                  )
+                : FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.blue.shade100.withOpacity(0.5),
+                                Colors.blue.shade200.withOpacity(0.5),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: Text(
+                            headerTitle,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue.shade900,
+                              letterSpacing: 0.5,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.shade700,
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'තවත් විස්තර',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
+                        const SizedBox(height: 24),
+                        Wrap(
+                          spacing: 16,
+                          runSpacing: 16,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            _buildWeatherInfo(
+                              icon: Icons.water_drop,
+                              value: getCurrentRainfall(),
+                              label: 'වර්ෂාපතනය',
+                              gradientColors: [
+                                Colors.blue.shade300,
+                                Colors.blue.shade500,
+                              ],
+                            ),
+                            _buildWeatherInfo(
+                              icon: Icons.wb_sunny,
+                              value: getCurrentTemperature(),
+                              label: 'උෂ්ණත්වය',
+                              gradientColors: [
+                                Colors.orange.shade300,
+                                Colors.orange.shade500,
+                              ],
+                            ),
+                            _buildWeatherInfo(
+                              icon: Icons.opacity,
+                              value: getCurrentHumidity(),
+                              label: 'ආර්ද්රතාවය',
+                              gradientColors: [
+                                Colors.teal.shade300,
+                                Colors.teal.shade500,
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildTemperatureRange(
+                              icon: Icons.arrow_downward,
+                              value: getTodayMinTemperature(),
+                              label: 'අවම',
+                              color: Colors.blue.shade400,
+                            ),
+                            Container(
+                              height: 40,
+                              width: 1,
+                              margin: const EdgeInsets.symmetric(horizontal: 20),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.grey.shade300.withOpacity(0.1),
+                                    Colors.grey.shade300,
+                                    Colors.grey.shade300.withOpacity(0.1),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            _buildTemperatureRange(
+                              icon: Icons.arrow_upward,
+                              value: getTodayMaxTemperature(),
+                              label: 'උපරිම',
+                              color: Colors.red.shade400,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.blue.shade500,
+                                Colors.blue.shade700,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.blue.shade400.withOpacity(0.4),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => MoreWeatherData(
+                                    selectedLocation: selectedLocation,
+                                  ),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 36,
+                                vertical: 14,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text(
+                                  'තවත් විස්තර',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.arrow_forward,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+            ),
+          ),
         ),
       ],
     );
@@ -216,37 +343,114 @@ class _WeatherDisplayCardState extends State<WeatherDisplayCard> {
     required IconData icon,
     required String value,
     required String label,
+    required List<Color> gradientColors,
   }) {
-    return Column(
+    return Container(
+      constraints: const BoxConstraints(
+        minWidth: 90,
+        maxWidth: 110,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  gradientColors[0].withOpacity(0.2),
+                  gradientColors[1].withOpacity(0.3),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: gradientColors[1].withOpacity(0.3),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: gradientColors[1].withOpacity(0.2),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Icon(
+              icon,
+              size: 28,
+              color: gradientColors[1],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey[800],
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTemperatureRange({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.blue.shade200, width: 1),
+            color: color.withOpacity(0.1),
+            shape: BoxShape.circle,
           ),
           child: Icon(
             icon,
-            size: 30,
-            color: Colors.blue.shade700,
+            size: 18,
+            color: color,
           ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.blue.shade800,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[600],
-          ),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+          ],
         ),
       ],
     );
