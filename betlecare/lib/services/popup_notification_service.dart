@@ -9,10 +9,10 @@ class PopupNotificationService {
   
   PopupNotificationService._internal();
   
-  // Initialize Awesome Notifications
+ 
   Future<void> initialize() async {
     await AwesomeNotifications().initialize(
-      null, // No app icon needed, will use default
+      null, 
       [
         NotificationChannel(
           channelGroupKey: 'basic_channel_group',
@@ -50,54 +50,50 @@ class PopupNotificationService {
       debug: true,
     );
 
-    // Request permission
+    // request permission to show notifications if not allowed
     await AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
       if (!isAllowed) {
         AwesomeNotifications().requestPermissionToSendNotifications();
       }
     });
 
-    // Set up notification action listeners
+    
     AwesomeNotifications().setListeners(
       onActionReceivedMethod: onActionReceivedMethod,
     );
   }
 
-  // This static method is required for background/terminated notifications
+
   static Future<void> onActionReceivedMethod(ReceivedAction receivedAction) async {
-    // When a notification is tapped, navigate to the notification screen
+   
     if (receivedAction.channelKey == 'basic_channel' || 
         receivedAction.channelKey == 'alerts_channel') {
       
-      // Use navigation key to navigate without context
-      navigatorKey.currentState?.pushNamed('/notifications');
       
-      // If notification has an ID in payload, mark it as read
+      navigatorKey.currentState?.pushNamed('/notifications');
       final notificationId = receivedAction.payload?['notification_id'];
       if (notificationId != null) {
-        // We can't directly access the provider here, but we'll handle this 
-        // when the notification screen is opened anyway
+
       }
     }
   }
 
-  // Create a popup notification based on BetelNotification
+  // create a popup notification based on BetelNotification
   Future<void> showNotification(BetelNotification notification) async {
-    // Generate unique notification ID based on the notification ID
-    // Convert first 8 chars of UUID to integer (to avoid potential overflow)
+
     int notificationId;
     try {
       notificationId = int.parse(notification.id.substring(0, 8), radix: 16) % 2147483647;
     } catch (e) {
-      // Fallback if parsing fails
+
       notificationId = notification.id.hashCode % 2147483647;
     }
     
-    // Choose channel based on notification type
+
     String channelKey = notification.type == NotificationType.weather ? 
                         'alerts_channel' : 'basic_channel';
 
-    // Show the notification
+
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
         id: notificationId,
@@ -114,20 +110,20 @@ class PopupNotificationService {
       actionButtons: [
         NotificationActionButton(
           key: 'MARK_READ',
-          label: 'කියවා ඇත', // Mark as read
+          label: 'කියවා ඇත', 
           actionType: ActionType.DismissAction,
         ),
         NotificationActionButton(
           key: 'VIEW',
-          label: 'බලන්න', // View
+          label: 'බලන්න', 
           actionType: ActionType.Default,
         ),
       ],
     );
   }
 
-  // Cleanup
+
   void dispose() {
-    // No need to close action sink in newer version
+    
   }
 }

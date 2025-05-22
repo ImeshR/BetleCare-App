@@ -39,7 +39,7 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
     });
 
     try {
-      // First, get weather data for the bed's location to create forecasts
+      // get weather data for the bed's location to create forecasts
       final String locationKey = _getLocationKeyFromDistrict(widget.bed.district);
       final weatherData = await _weatherService.fetchWeatherData(locationKey);
       
@@ -58,7 +58,7 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
       final List<Map<String, dynamic>> weeklyForecast = [];
       final today = DateTime.now();
       
-      // Add today's recommendation (from API)
+
       weeklyForecast.add({
         'date': today,
         'day': _getDayName(today),
@@ -70,14 +70,13 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
         'minTemp': dailyForecasts[0]['minTemp'],
       });
       
-      // Generate recommendations for the next 6 days based on weather forecast
+
       for (int i = 1; i < dailyForecasts.length && i < 7; i++) {
         final date = today.add(Duration(days: i));
         final forecast = dailyForecasts[i];
         final dayName = _getDayName(date);
         
-        // Get recommendation based on weather forecast
-        // In a real app, you should call your backend API for each day
+
         final recommendation = _getRecommendationFromWeather(
           forecast['rainfall'],
           forecast['minTemp'],
@@ -114,18 +113,18 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
     }
   }
 
-  // Helper method to calculate crop stage (copied from WateringService for consistency)
+ 
   int _calculateCropStage(DateTime plantedDate) {
     final ageInDays = DateTime.now().difference(plantedDate).inDays;
     
-    if (ageInDays < 30) return 1; // Establishing
-    if (ageInDays < 60) return 3; // Young
-    if (ageInDays < 90) return 5; // Early mature
-    if (ageInDays < 180) return 7; // Mature
-    return 10; // Fully mature
+    if (ageInDays < 30) return 1; 
+    if (ageInDays < 60) return 3; 
+    if (ageInDays < 90) return 5; 
+    if (ageInDays < 180) return 7; 
+    return 10; 
   }
   
-  // Helper to map district to the locations used in weather service
+  
   String _getLocationKeyFromDistrict(String district) {
     final districtMap = {
       'කුරුණෑගල': 'කුරුණෑගල (Kurunegala)',
@@ -135,15 +134,13 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
       'පුත්තලම (Puttalam)': 'පුත්තලම (Puttalam)',
       'Puttalam': 'පුත්තලම (Puttalam)',
       'අනමඩුව': 'අනමඩුව (Anamaduwa)',
-      'කොළඹ': 'කොළඹ (Colombo)',
-      'කළුතර': 'කළුතර (Kalutara)',
-      'පානදුර': 'පානදුර (Panadura)',
+
     };
     
     return districtMap[district] ?? 'වත්මන් ස්ථානය (Current Location)';
   }
 
-  // This simulates your backend logic for forecasting days where we don't call the API
+
   Map<String, dynamic> _getRecommendationFromWeather(
     double rainfall, 
     int minTemp, 
@@ -155,14 +152,14 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
     int waterAmount;
     double confidence;
     
-    // Use logic similar to your Python backend's get_watering_recommendation function
+
     if (rainfall >= 15) {
-      // Heavy rain - no watering needed
+      
       recommendation = "No watering needed";
       waterAmount = 0;
       confidence = 90.0;
     } else if (rainfall >= 5) {
-      // Moderate rain - no watering or light watering depending on temperature
+      
       if (maxTemp >= 32) {
         recommendation = "Water once today";
         waterAmount = 3;
@@ -173,13 +170,13 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
         confidence = 80.0;
       }
     } else if (rainfall > 0) {
-      // Light rain - depends on temperature and crop stage
+      
       if (maxTemp >= 32) {
         recommendation = "Water once today";
         waterAmount = 4;
         confidence = 85.0;
       } else if (cropStage <= 3) {
-        // Young plants need more water
+        
         recommendation = "Water once today";
         waterAmount = 4;
         confidence = 80.0;
@@ -189,11 +186,10 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
         confidence = 70.0;
       }
     } else {
-      // No rain - full watering recommendations based on temperature
+      
       if (maxTemp >= 33) {
         if (dayName == 'බ්‍රහස්පතින්දා' || dayName == 'ඉරිදා') {
-          // Special handling for Thursday and Sunday for demonstration
-          // In a real app, this should be based on data, not hardcoded days
+          
           recommendation = "Water once today";
           waterAmount = 5;
           confidence = 80.0;
@@ -208,7 +204,7 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
         confidence = 85.0;
       } else {
         if (cropStage <= 3) {
-          // Young plants always need some water
+         
           recommendation = "Water once today";
           waterAmount = 4;
           confidence = 75.0;
@@ -228,7 +224,7 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
   }
 
   String _getDayName(DateTime date) {
-    // Get Sinhala day name
+    
     final List<String> sinhalaWeekdays = [
       'ඉරිදා', 'සඳුදා', 'අඟහරුවාදා', 'බදාදා', 
       'බ්‍රහස්පතින්දා', 'සිකුරාදා', 'සෙනසුරාදා'
@@ -435,7 +431,7 @@ class _WeeklyWateringRecommendationWidgetState extends State<WeeklyWateringRecom
                       final icon = _getRecommendationIcon(day['recommendation']);
                       
                       return Container(
-                        width: 150, // Increased width for more content
+                        width: 150, 
                         margin: const EdgeInsets.only(right: 8),
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(

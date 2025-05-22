@@ -1,5 +1,5 @@
 
-// WEEKLY PROTECTION RECOMMENDATION WIDGET
+
 
 import 'package:flutter/material.dart';
 import 'package:betlecare/models/betel_bed_model.dart';
@@ -156,14 +156,14 @@ class _WeeklyProtectionRecommendationWidgetState extends State<WeeklyProtectionR
     }
   }
   
-  // Check if there are any protection days in the forecast
+  // check if there are any protection days in the forecast
   bool get _hasProtectionDays => _consolidatedRecommendations.isNotEmpty;
   
   @override
   Widget build(BuildContext context) {
-    // If there are no protection days, return an empty container
+ 
     if (!_isLoading && _errorMessage.isEmpty && !_hasProtectionDays) {
-      return Container(); // Don't show anything if no protection needed
+      return Container(); 
     }
     
     if (_isLoading) {
@@ -175,7 +175,7 @@ class _WeeklyProtectionRecommendationWidgetState extends State<WeeklyProtectionR
     }
     
     if (_currentPeriod == null) {
-      return Container(); // No protection needed
+      return Container(); 
     }
     
     return _buildRecommendationCard();
@@ -253,17 +253,17 @@ class _WeeklyProtectionRecommendationWidgetState extends State<WeeklyProtectionR
   
   Widget _buildRecommendationCard() {
     if (_currentPeriod == null) {
-      return Container(); // This shouldn't happen based on our previous checks
+      return Container(); 
     }
     
-    // Get protection properties
+    
     final protectionType = _currentPeriod!['protection_type'] as int;
     final labelSinhala = _currentPeriod!['protection_label_sinhala'] as String;
     final methods = _currentPeriod!['methods'] as List;
     final reason = _currentPeriod!['reason'] as String;
     final dateRange = _currentPeriod!['date_range'] as String;
     
-    // Use consistent red color for protection regardless of type
+    
     final color = Colors.red.shade700;
     final icon = protectionType == 1 ? Icons.wb_sunny : Icons.umbrella;
     
@@ -382,7 +382,7 @@ class _WeeklyProtectionRecommendationWidgetState extends State<WeeklyProtectionR
             ),
           ),
           
-          // Consolidated periods when expanded
+          
           if (_isExpanded && _consolidatedRecommendations.length > 1) ...[
             const SizedBox(height: 16),
             const Divider(),
@@ -410,12 +410,12 @@ class _WeeklyProtectionRecommendationWidgetState extends State<WeeklyProtectionR
                 return GestureDetector(
                   onTap: () {
                     setState(() {
-                      // Update selection in the list
+                     
                       for (var i = 0; i < _consolidatedRecommendations.length; i++) {
                         _consolidatedRecommendations[i]['isSelected'] = (i == index);
                       }
                       
-                      // Update current period
+                      
                       _currentPeriod = Map<String, dynamic>.from(_consolidatedRecommendations[index]);
                     });
                   },
@@ -473,7 +473,7 @@ class _WeeklyProtectionRecommendationWidgetState extends State<WeeklyProtectionR
   }
   
   String _getShortProtectionLabelWithReason(int protectionType, String reason) {
-    // Extract the first part of the reason (before the comma or period)
+   
     String shortReason = reason;
     if (reason.contains(',')) {
       shortReason = reason.split(',').first;
@@ -481,7 +481,7 @@ class _WeeklyProtectionRecommendationWidgetState extends State<WeeklyProtectionR
       shortReason = reason.split('.').first;
     }
     
-    // Return shortened reason
+   
     return shortReason;
   }
 }

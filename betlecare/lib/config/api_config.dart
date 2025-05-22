@@ -4,7 +4,7 @@ class ApiConfig {
   // Base URL for all API endpoints
 
   static const String apiBaseUrl =
-      'https://web-production-d34d.up.railway.app/api';
+      'https://web-production-fe50.up.railway.app/api';
 
 
   // Derived API endpoints

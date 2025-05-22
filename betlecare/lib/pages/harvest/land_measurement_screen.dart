@@ -32,7 +32,6 @@ class _LandMeasurementScreenState extends State<LandMeasurementScreen> {
     'Puttalam': 'පුත්තලම',
     'Anamaduwa': 'අනමඩුව',
     'Kurunegala': 'කුරුණෑගල',
-    // Add more locations as needed
   };
 
   @override
