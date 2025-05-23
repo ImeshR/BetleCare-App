@@ -537,8 +537,10 @@ class _EditBedScreenState extends State<EditBedScreen> {
                             : const Text(
                                 'යාවත්කාලීන කරන්න',
                                 style: TextStyle(
+                                  color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
+                                 
                                 ),
                               ),
                       ),
