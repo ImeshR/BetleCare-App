@@ -978,11 +978,18 @@ Widget _buildFertilizeHistoryList() {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('අවලංගු කරන්න'),
+            style: ElevatedButton.styleFrom(
+                 
+                foregroundColor: Colors.red, 
+                )
           ),
           ElevatedButton(
             onPressed: onSave,
             style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade700),
+                backgroundColor: Colors.green.shade700,
+                foregroundColor: Colors.white, 
+                ),
+                
             child: const Text('සුරකින්න'),
           ),
         ],
@@ -1021,7 +1028,7 @@ Widget _buildFertilizeHistoryList() {
                     content: Text('බුලත් වගාව සාර්ථකව මකා දමන ලදී')));
 
                 // Important: Pop the current screen AFTER deletion is complete
-                // and pass true to indicate a refresh is needed
+           
                 if (mounted) {
                   Navigator.of(context).pop(true);
                 }
