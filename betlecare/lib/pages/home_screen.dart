@@ -8,6 +8,7 @@ import 'package:betlecare/providers/betel_bed_provider.dart';
 import 'package:betlecare/providers/user_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart'; // Add this import
 
 // Enhanced HarvestService class to fetch all lands and specific land data
 class HarvestService {
@@ -116,6 +117,21 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  // WhatsApp chatbot function
+  Future<void> _openWhatsAppBot() async {
+    const phoneNumber = '+14155238886';
+    const message = 'join cast-add';
+    final uri = Uri.parse('https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}');
+    
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('WhatsApp ඇප් එක විවෘත කිරීමට නොහැකි විය')),
+      );
+    }
   }
 
   Future<void> _loadData() async {
@@ -251,6 +267,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 );
                               },
+                            ),
+                            const SizedBox(height: 12),
+
+                            // WhatsApp Chatbot Card
+                            _buildFeatureCard(
+                              context: context,
+                              title: 'AI සහායක',
+                              description: 'WhatsApp හරහා බුලත් ප්‍රශ්න අසන්න',
+                              iconData: Icons.chat,
+                              color: Colors.blue.shade200,
+                              imagePath: 'assets/images/chat.png',
+                              onTap: _openWhatsAppBot,
                             ),
 
                             const SizedBox(height: 16),
@@ -860,299 +888,300 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(width: 4),
                           Text(
                             'සටහන්',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.blue[700],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        notes,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue[800],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                            style: TextStyle
+                            (
+                             fontSize: 12,
+                             fontWeight: FontWeight.w500,
+                             color: Colors.blue[700],
+                           ),
+                         ),
+                       ],
+                     ),
+                     const SizedBox(height: 4),
+                     Text(
+                       notes,
+                       style: TextStyle(
+                         fontSize: 12,
+                         color: Colors.blue[800],
+                       ),
+                     ),
+                   ],
+                 ),
+               ),
+             ],
 
-              // Betel cultivation tip
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.amber.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.amber.shade200),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.lightbulb,
-                          size: 14,
-                          color: Colors.amber[700],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'බුලත් වගා ඉඟිය',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.amber[700],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      landSize > 1
-                          ? 'විශාල ඉඩම් සඳහා දින 7 චක්‍රය වඩාත් සුදුසු වන අතර එය අර්ධ වශයෙන් අස්වනු නෙලා ගැනීමට හැකි වේ.'
-                          : 'කුඩා ඉඩම් සඳහා දින 14 චක්‍රය වඩාත් සුදුසු වන අතර එය බුලත් කොළ වල ගුණාත්මක බව වැඩි කරයි.',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.amber[800],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+             // Betel cultivation tip
+             const SizedBox(height: 12),
+             Container(
+               width: double.infinity,
+               padding: const EdgeInsets.all(10),
+               decoration: BoxDecoration(
+                 color: Colors.amber.shade50,
+                 borderRadius: BorderRadius.circular(8),
+                 border: Border.all(color: Colors.amber.shade200),
+               ),
+               child: Column(
+                 crossAxisAlignment: CrossAxisAlignment.start,
+                 children: [
+                   Row(
+                     children: [
+                       Icon(
+                         Icons.lightbulb,
+                         size: 14,
+                         color: Colors.amber[700],
+                       ),
+                       const SizedBox(width: 4),
+                       Text(
+                         'බුලත් වගා ඉඟිය',
+                         style: TextStyle(
+                           fontSize: 12,
+                           fontWeight: FontWeight.w500,
+                           color: Colors.amber[700],
+                         ),
+                       ),
+                     ],
+                   ),
+                   const SizedBox(height: 4),
+                   Text(
+                     landSize > 1
+                         ? 'විශාල ඉඩම් සඳහා දින 7 චක්‍රය වඩාත් සුදුසු වන අතර එය අර්ධ වශයෙන් අස්වනු නෙලා ගැනීමට හැකි වේ.'
+                         : 'කුඩා ඉඩම් සඳහා දින 14 චක්‍රය වඩාත් සුදුසු වන අතර එය බුලත් කොළ වල ගුණාත්මක බව වැඩි කරයි.',
+                     style: TextStyle(
+                       fontSize: 11,
+                       color: Colors.amber[800],
+                     ),
+                   ),
+                 ],
+               ),
+             ),
+           ],
+         ),
+       );
+     },
+   );
+ }
 
-  Widget _buildYieldCategory(String category, double yield, Color color) {
-    return Column(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Text(
-              category,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '$yield ',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[800],
-          ),
-        ),
-      ],
-    );
-  }
+ Widget _buildYieldCategory(String category, double yield, Color color) {
+   return Column(
+     children: [
+       Container(
+         width: 40,
+         height: 40,
+         decoration: BoxDecoration(
+           color: color.withOpacity(0.2),
+           shape: BoxShape.circle,
+         ),
+         child: Center(
+           child: Text(
+             category,
+             style: TextStyle(
+               fontSize: 14,
+               fontWeight: FontWeight.bold,
+               color: color,
+             ),
+           ),
+         ),
+       ),
+       const SizedBox(height: 4),
+       Text(
+         '$yield ',
+         style: TextStyle(
+           fontSize: 12,
+           fontWeight: FontWeight.w500,
+           color: Colors.grey[800],
+         ),
+       ),
+     ],
+   );
+ }
 
-  Widget _buildFeatureCard({
-    required BuildContext context,
-    required String title,
-    required String description,
-    required IconData iconData,
-    required Color color,
-    required String imagePath,
-    required VoidCallback onTap,
-    double height = 110,
-  }) {
-    return Container(
-      width: double.infinity,
-      height: height,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(14.0),
-            child: Row(
-              children: [
-                Container(
-                  width: 70,
-                  height: 70,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      iconData,
-                      size: 34,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        description,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[600],
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 14,
-                  color: Colors.grey[400],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+ Widget _buildFeatureCard({
+   required BuildContext context,
+   required String title,
+   required String description,
+   required IconData iconData,
+   required Color color,
+   required String imagePath,
+   required VoidCallback onTap,
+   double height = 110,
+ }) {
+   return Container(
+     width: double.infinity,
+     height: height,
+     decoration: BoxDecoration(
+       color: Colors.white,
+       borderRadius: BorderRadius.circular(16),
+       boxShadow: [
+         BoxShadow(
+           color: Colors.grey.withOpacity(0.1),
+           blurRadius: 6,
+           offset: const Offset(0, 2),
+         ),
+       ],
+     ),
+     child: Material(
+       color: Colors.transparent,
+       child: InkWell(
+         borderRadius: BorderRadius.circular(16),
+         onTap: onTap,
+         child: Padding(
+           padding: const EdgeInsets.all(14.0),
+           child: Row(
+             children: [
+               Container(
+                 width: 70,
+                 height: 70,
+                 decoration: BoxDecoration(
+                   color: color,
+                   borderRadius: BorderRadius.circular(12),
+                 ),
+                 child: Center(
+                   child: Icon(
+                     iconData,
+                     size: 34,
+                     color: Colors.white,
+                   ),
+                 ),
+               ),
+               const SizedBox(width: 14),
+               Expanded(
+                 child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   mainAxisAlignment: MainAxisAlignment.center,
+                   children: [
+                     Text(
+                       title,
+                       style: const TextStyle(
+                         fontSize: 16,
+                         fontWeight: FontWeight.bold,
+                       ),
+                     ),
+                     const SizedBox(height: 2),
+                     Text(
+                       description,
+                       style: TextStyle(
+                         fontSize: 13,
+                         color: Colors.grey[600],
+                       ),
+                       maxLines: 1,
+                       overflow: TextOverflow.ellipsis,
+                     ),
+                   ],
+                 ),
+               ),
+               Icon(
+                 Icons.arrow_forward_ios,
+                 size: 14,
+                 color: Colors.grey[400],
+               ),
+             ],
+           ),
+         ),
+       ),
+     ),
+   );
+ }
 
-  Widget _buildQuickStatsSection(BuildContext context) {
-    // get data from provider
-    final betelBedProvider = Provider.of<BetelBedProvider>(context);
+ Widget _buildQuickStatsSection(BuildContext context) {
+   // get data from provider
+   final betelBedProvider = Provider.of<BetelBedProvider>(context);
 
-    // calculate stats
-    final totalBeds = betelBedProvider.totalBeds;
-    final bedsNeedingAttention = betelBedProvider.bedsNeedingAttention;
-    final totalPlants = betelBedProvider.totalPlants;
+   // calculate stats
+   final totalBeds = betelBedProvider.totalBeds;
+   final bedsNeedingAttention = betelBedProvider.bedsNeedingAttention;
+   final totalPlants = betelBedProvider.totalPlants;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'සාරාංශය',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                title: 'මුළු වගාවන්',
-                value: totalBeds.toString(),
-                iconData: Icons.spa,
-                color: Colors.green,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildStatCard(
-                title: 'අවධානය අවශ්‍ය',
-                value: bedsNeedingAttention.toString(),
-                iconData: Icons.warning_amber,
-                color: Colors.orange,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildStatCard(
-                title: 'මුළු පැළ',
-                value: totalPlants.toString(),
-                iconData: Icons.eco,
-                color: Colors.teal,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+   return Column(
+     crossAxisAlignment: CrossAxisAlignment.start,
+     children: [
+       Text(
+         'සාරාංශය',
+         style: TextStyle(
+           fontSize: 18,
+           fontWeight: FontWeight.bold,
+           color: Colors.grey[800],
+         ),
+       ),
+       const SizedBox(height: 10),
+       Row(
+         children: [
+           Expanded(
+             child: _buildStatCard(
+               title: 'මුළු වගාවන්',
+               value: totalBeds.toString(),
+               iconData: Icons.spa,
+               color: Colors.green,
+             ),
+           ),
+           const SizedBox(width: 10),
+           Expanded(
+             child: _buildStatCard(
+               title: 'අවධානය අවශ්‍ය',
+               value: bedsNeedingAttention.toString(),
+               iconData: Icons.warning_amber,
+               color: Colors.orange,
+             ),
+           ),
+           const SizedBox(width: 10),
+           Expanded(
+             child: _buildStatCard(
+               title: 'මුළු පැළ',
+               value: totalPlants.toString(),
+               iconData: Icons.eco,
+               color: Colors.teal,
+             ),
+           ),
+         ],
+       ),
+     ],
+   );
+ }
 
-  Widget _buildStatCard({
-    required String title,
-    required String value,
-    required IconData iconData,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(
-            iconData,
-            size: 24,
-            color: color,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[600],
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
+ Widget _buildStatCard({
+   required String title,
+   required String value,
+   required IconData iconData,
+   required Color color,
+ }) {
+   return Container(
+     padding: const EdgeInsets.all(10),
+     decoration: BoxDecoration(
+       color: Colors.white,
+       borderRadius: BorderRadius.circular(12),
+       boxShadow: [
+         BoxShadow(
+           color: Colors.grey.withOpacity(0.1),
+           blurRadius: 4,
+           offset: const Offset(0, 2),
+         ),
+       ],
+     ),
+     child: Column(
+       children: [
+         Icon(
+           iconData,
+           size: 24,
+           color: color,
+         ),
+         const SizedBox(height: 6),
+         Text(
+           value,
+           style: const TextStyle(
+             fontSize: 16,
+             fontWeight: FontWeight.bold,
+           ),
+         ),
+         const SizedBox(height: 3),
+         Text(
+           title,
+           style: TextStyle(
+             fontSize: 11,
+             color: Colors.grey[600],
+           ),
+           textAlign: TextAlign.center,
+         ),
+       ],
+     ),
+   );
+ }
 }
