@@ -45,7 +45,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _addressController.dispose(); // Changed from locationController
+    _addressController.dispose(); 
     _areaSizeController.dispose();
     _plantCountController.dispose();
     _sameBedCountController.dispose();
@@ -159,11 +159,11 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
 
         // Create bed object
         final bed = BetelBed(
-          id: '', // Will be assigned by Supabase
+          id: '', 
           name: _nameController.text,
-          address: _addressController.text, // Changed from location to address
-          district: _selectedDistrict!, // New field
-          imageUrl: '', // Will be assigned after upload
+          address: _addressController.text, 
+          district: _selectedDistrict!, 
+          imageUrl: '', 
           plantedDate: _plantedDate,
           betelType: _selectedBetelType!,
           areaSize: double.parse(_areaSizeController.text),
@@ -171,7 +171,7 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
           sameBedCount: int.parse(_sameBedCountController.text),
           fertilizeHistory: [],
           harvestHistory: [],
-          status: BetelBedStatus.healthy, // Default status
+          status: BetelBedStatus.healthy, 
         );
 
         // Save to Supabase
@@ -537,16 +537,16 @@ class _AddNewBedScreenState extends State<AddNewBedScreen> {
               ),
             ),
       bottomNavigationBar: BottomNavBar(
-        selectedIndex: 2, // Home is selected
+        selectedIndex: 2, 
         onTabChange: (index) {
           if (index != 2) {
-            // If not clicking the current tab
+             
             // Create a replacement route to the MainPage with the correct tab index
             WidgetsBinding.instance.addPostFrameCallback((_) {
               // First pop back to the main screen
               Navigator.of(context).pop();
 
-              // Then push a replacement to force refresh the main page with the new index
+             
               Navigator.of(context)
                   .pushReplacementNamed('/main', arguments: index);
             });
