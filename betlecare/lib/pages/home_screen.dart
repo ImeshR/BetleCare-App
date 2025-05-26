@@ -8,8 +8,8 @@ import 'package:betlecare/providers/betel_bed_provider.dart';
 import 'package:betlecare/providers/user_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart'; // Add this import
-
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
 // Enhanced HarvestService class to fetch all lands and specific land data
 class HarvestService {
   final supabase = Supabase.instance.client;
@@ -120,19 +120,113 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // WhatsApp chatbot function
-  Future<void> _openWhatsAppBot() async {
-    const phoneNumber = '+14155238886';
-    const message = 'join cast-add';
-    final uri = Uri.parse('https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}');
-    
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('WhatsApp ඇප් එක විවෘත කිරීමට නොහැකි විය')),
-      );
+// WhatsApp chatbot function with fallback options
+Future<void> _openWhatsAppBot() async {
+  const phoneNumber = '14155238886'; // Without +
+  const message = 'join cast-add';
+  
+  // Try different WhatsApp URL formats
+  final List<String> whatsappUrls = [
+    'whatsapp://send?phone=$phoneNumber&text=${Uri.encodeComponent(message)}',
+    'https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}',
+    'https://api.whatsapp.com/send?phone=$phoneNumber&text=${Uri.encodeComponent(message)}',
+  ];
+  
+  bool opened = false;
+  
+  for (String url in whatsappUrls) {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        opened = true;
+        break;
+      }
+    } catch (e) {
+      continue;
     }
   }
+  
+  if (!opened) {
+    // Show dialog with manual instructions
+    _showWhatsAppInstructions();
+  }
+}
+
+// Show manual instructions dialog
+void _showWhatsAppInstructions() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('WhatsApp වෙත යන්න'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('WhatsApp ස්වයංක්‍රීයව විවෘත නොවීම නිසා, කරුණාකර පහත පියවර අනුගමනය කරන්න:'),
+            const SizedBox(height: 12),
+            const Text('1. WhatsApp ඇප් එක විවෘත කරන්න'),
+            const Text('2. නව chat එකක් ආරම්භ කරන්න'),
+            const Text('3. මෙම නම්බරය යොදන්න:'),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Expanded(child: Text('+14155238886')),
+                  IconButton(
+                    icon: const Icon(Icons.copy),
+                    onPressed: () {
+                      Clipboard.setData(const ClipboardData(text: '+14155238886'));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('නම්බරය copy කරන ලදී')),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text('4. මෙම පණිවිඩය යවන්න:'),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Expanded(child: Text('join cast-add')),
+                  IconButton(
+                    icon: const Icon(Icons.copy),
+                    onPressed: () {
+                      Clipboard.setData(const ClipboardData(text: 'join cast-add'));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('පණිවිඩය copy කරන ලදී')),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('හරි'),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   Future<void> _loadData() async {
     final betelBedProvider =
